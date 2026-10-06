@@ -3,6 +3,8 @@ composer.lock
 .phpunit.result.cache
 .idea/
 .vscode/
-storage/
+/storage/
+starter/storage/*
+!starter/storage/.gitkeep
 .env
 node_modules/

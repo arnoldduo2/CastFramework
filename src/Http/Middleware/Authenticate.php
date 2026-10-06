@@ -31,7 +31,7 @@ final class Authenticate implements Middleware
         if ($guardName === 'auth') {
             return Response::redirect(route((string) Config::get('auth.home_path', '/')));
         }
-        if ($request->expectsJson()) {
+        if ($request->isApi() || ($request->expectsJson() && !$request->isCast())) {
             throw new HttpException(401, 'Your session has expired. Please log in again.');
         }
         return Response::redirect(route((string) Config::get('auth.login_path', '/login')));

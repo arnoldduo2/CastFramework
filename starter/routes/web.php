@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\AuthController;
 use App\Controllers\HomeController;
 use App\Controllers\ItemsController;
+use App\Controllers\StatsController;
 use Cast\Core\Router;
 use Cast\Http\Middleware\Authenticate;
 
@@ -20,9 +21,11 @@ Router::middleware([Authenticate::class, 'auth'], function () {
 // Signed-in users only
 Router::middleware([Authenticate::class, 'private'], function () {
     Router::post('/logout', [AuthController::class, 'logout']);
+    Router::get('/stats', StatsController::class);
 
     Router::group('/items', function () {
         Router::get('/', ItemsController::class);                       // list + form
+        Router::get('/{id}/edit', [ItemsController::class, 'edit']);
         Router::post('/', [ItemsController::class, 'store']);
         Router::put('/{id}', [ItemsController::class, 'update']);
         Router::delete('/{id}', [ItemsController::class, 'destroy'])->middleware(['manage-items']);

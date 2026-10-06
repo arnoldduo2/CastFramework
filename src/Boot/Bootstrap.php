@@ -69,6 +69,7 @@ final class Bootstrap
             'Vary' => 'Origin',
             'Access-Control-Allow-Methods' => 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
             'Access-Control-Allow-Headers' => 'Origin, Content-Type, Accept, Authorization, X-Auth-Token, X-CSRF-TOKEN, X-XSRF-TOKEN, X-Requested-With, X-HTTP-Method-Override, X-Cast-Request, X-Cast-Type, X-Cast-Target, X-Cast-Guard',
+            'Access-Control-Expose-Headers' => 'X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset, Retry-After',
             'Access-Control-Max-Age' => '1000',
         ];
     }

@@ -105,7 +105,8 @@ if (!function_exists('views')) {
     /** Render a view and echo it (`'module.page'` or `'module/page'`). Returns true. Use `$this->view()` in controllers to get a Response. */
     function views(string $view, array $data = []): mixed
     {
-        echo app('view')->render($view, $data);
+        // respond() gives the full page, or the JSON envelope for a Cast (SPA) request
+        echo app('view')->respond($view, $data)->body();
         return true;
     }
 }
@@ -133,6 +134,22 @@ if (!function_exists('__modules')) {
     {
         if ($withAuth && !__getUser()) return '';
         return app('view')->modules($name, $type);
+    }
+}
+
+if (!function_exists('__cast')) {
+    /**
+     * The SPA client: its stylesheet, and its script with the page's settings as data attributes (no inline data blocks).
+     * Put it once in your layout's `<head>`; `$guard` is the page's `authguard`.
+     */
+    function __cast(string $guard = ''): string
+    {
+        $base = Config::get('app.base_path', '') . '/cast';
+        $v = app_version();
+        return "<link rel='stylesheet' href='$base/cast.css$v'/>"
+            . "<script src='$base/cast.module.js$v' data-cast-root='" . htmlspecialchars((string) Config::get('spa.root', 'body'), ENT_QUOTES)
+            . "' data-cast-view='" . htmlspecialchars((string) Config::get('spa.view', '#cast-view'), ENT_QUOTES)
+            . "' data-cast-guard='" . htmlspecialchars($guard, ENT_QUOTES) . "'></script>";
     }
 }
 

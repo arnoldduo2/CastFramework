@@ -7,7 +7,7 @@ use Cast\Core\Session;
 use Cast\Http\Request;
 
 /** Boot a copy of the starter app against an in-memory SQLite database. */
-function starter(): Application
+function starter(bool $lazy = false): Application
 {
     $source = dirname(__DIR__, 2) . '/starter';
     $dir = app_dir();
@@ -29,6 +29,7 @@ function starter(): Application
 
     $app = require "$dir/bootstrap/app.php";
     $app->boot();
+    if (!$lazy) \Cast\Core\Config::set('spa.initial', 'inline');   // most tests look at the page content itself
     return $app;
 }
 

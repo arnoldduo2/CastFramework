@@ -185,7 +185,7 @@ final class Router
             if ($response !== null) return $response;
         }
 
-        if ($route->csrf && in_array($method, self::STATE_CHANGING, true) && !in_array($path, self::$csrfExempt, true)) {
+        if ($route->csrf && in_array($method, self::STATE_CHANGING, true) && !in_array($path, self::$csrfExempt, true) && !self::csrfNotNeeded($request)) {
             Csrf::verify($request);
         }
 
@@ -198,6 +198,16 @@ final class Router
         }
 
         return self::toResponse(self::invoke($route->handler, [...array_values($params), $request->all()]));
+    }
+
+    /**
+     * CSRF protects requests that carry ambient credentials (the session cookie). An API request authenticated by a
+     * bearer token has none, and an API request with no session cookie has nothing to forge: neither needs the token.
+     */
+    private static function csrfNotNeeded(Request $request): bool
+    {
+        if (!$request->isApi()) return false;
+        return $request->usesToken() || $request->cookie((string) Config::get('session.name', 'cast_session')) === null;
     }
 
     private static function runMiddleware(array $spec, Request $request): ?Response

@@ -91,7 +91,7 @@ test('Request: cast (SPA) headers', function () {
     eq('#box', $r->castTarget());
     eq('private', $r->castGuard());
     ok(!(new Request('GET', '/x'))->isCast());
-    eq('page', (new Request('GET', '/x', [], '', ['HTTP_X_CAST_TYPE' => 'weird']))->castType());
+    eq('partial', (new Request('GET', '/x', [], '', ['HTTP_X_CAST_TYPE' => 'weird']))->castType());
 });
 
 test('Request::postData() and getPost(): JSON by default, form on request, sanitiser from config', function () {

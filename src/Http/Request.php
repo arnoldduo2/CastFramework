@@ -19,6 +19,10 @@ final class Request
     private ?array $body = null;
     /** @var array<string, string> */
     private array $routeParams = [];
+    private ?array $user = null;
+    private ?array $token = null;
+    /** @var array<string, string> headers the Kernel adds to the final response (rate-limit info, etc.) */
+    private array $responseHeaders = [];
 
     /**
      * @param array<string, mixed> $query
@@ -38,6 +42,10 @@ final class Request
         private array $post = [],
     ) {
         $this->method = strtoupper($method);
+        // a request built by hand (tests, sub-requests) from a URI with a query string
+        if (!$this->query && ($mark = strpos($uri, '?')) !== false) {
+            parse_str(substr($uri, $mark + 1), $this->query);
+        }
     }
 
     public static function capture(): self
@@ -262,9 +270,17 @@ final class Request
         return str_contains(strtolower((string) $this->header('Content-Type')), 'json');
     }
 
+    /** True for requests under the API prefix (`config('api.prefix')`, default `/api`): they always get JSON, never HTML or redirects. */
+    public function isApi(): bool
+    {
+        $prefix = '/' . trim((string) Config::get('api.prefix', '/api'), '/');
+        $path = $this->path();
+        return $path === $prefix || str_starts_with($path, $prefix . '/');
+    }
+
     public function expectsJson(): bool
     {
-        return $this->isAjax() || $this->isJson() || $this->isCast()
+        return $this->isApi() || $this->isAjax() || $this->isJson() || $this->isCast()
             || str_contains(strtolower((string) $this->header('Accept')), 'json');
     }
 
@@ -276,11 +292,11 @@ final class Request
         return $this->header('X-Cast-Request') === '1';
     }
 
-    /** 'page' | 'partial' | 'modal' */
+    /** 'partial' (default: fill the content container) | 'page' (replace the whole body) | 'modal' */
     public function castType(): string
     {
-        $type = strtolower((string) $this->header('X-Cast-Type', 'page'));
-        return in_array($type, ['page', 'partial', 'modal'], true) ? $type : 'page';
+        $type = strtolower((string) $this->header('X-Cast-Type', 'partial'));
+        return in_array($type, ['page', 'partial', 'modal'], true) ? $type : 'partial';
     }
 
     public function castTarget(): ?string
@@ -291,6 +307,52 @@ final class Request
     public function castGuard(): ?string
     {
         return $this->header('X-Cast-Guard');
+    }
+
+    // ------------------------------------------------------------ API auth
+
+    /** The token of an `Authorization: Bearer ...` header, or null. */
+    public function bearerToken(): ?string
+    {
+        $header = (string) ($this->header('Authorization') ?? $this->server['REDIRECT_HTTP_AUTHORIZATION'] ?? '');
+        if (preg_match('/^Bearer\s+(\S+)$/i', trim($header), $m)) return $m[1];
+        return null;
+    }
+
+    /** Set by {@see \Cast\Http\Middleware\ApiAuth} when a token authenticated this request. */
+    public function setUser(?array $user, ?array $token = null): void
+    {
+        $this->user = $user;
+        $this->token = $token;
+    }
+
+    /** The user a token authenticated for this request, or null (a session user is available from the `guard`). */
+    public function user(): ?array
+    {
+        return $this->user;
+    }
+
+    /** The record of the API token that authenticated this request. */
+    public function token(): ?array
+    {
+        return $this->token;
+    }
+
+    public function usesToken(): bool
+    {
+        return $this->token !== null;
+    }
+
+    /** Ask the Kernel to add a header to whatever response this request ends with. */
+    public function addResponseHeader(string $name, string $value): void
+    {
+        $this->responseHeaders[$name] = $value;
+    }
+
+    /** @return array<string, string> */
+    public function responseHeaders(): array
+    {
+        return $this->responseHeaders;
     }
 
     // ------------------------------------------------------------------- CSRF

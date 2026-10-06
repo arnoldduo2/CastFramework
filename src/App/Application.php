@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '0.2.0';
 
     private static ?self $instance = null;
 
@@ -168,6 +168,7 @@ final class Application
         \Cast\Services\SessionProvider::class,
         \Cast\Services\MaintenanceProvider::class,
         \Cast\Services\ViewProvider::class,
+        \Cast\Services\ApiProvider::class,
         \Cast\Services\RouteProvider::class,
     ];
 
@@ -261,10 +262,13 @@ final class Application
                 'fonts' => ['dir' => 'public/assets/fonts', 'keep_prefix' => false],
                 'images' => ['dir' => 'public/assets/images', 'keep_prefix' => false],
                 'public' => ['dir' => 'public/assets/vendor', 'keep_prefix' => false],
+                'cast' => ['path' => dirname(__DIR__) . '/Resources', 'keep_prefix' => false],   // /cast/cast.module.js, /cast/cast.css
             ],
             'cors' => ['allowed_origins' => array_filter(array_map('trim', explode(',', (string) Env::get('CORS_ALLOWED_ORIGINS', ''))))],
             'models' => ['namespace' => 'App\\Models'],
-            'spa' => ['initial' => 'lazy'],
+            // `routes/api.php` is loaded under this prefix; `middleware` = specs applied to every API route
+            'api' => ['prefix' => '/api', 'middleware' => [], 'tokens' => ['table' => 'api_tokens']],
+            'spa' => ['enabled' => true, 'initial' => 'lazy', 'root' => 'body', 'view' => '#cast-view'],
             'helpers' => ['custom' => null],
         ];
     }

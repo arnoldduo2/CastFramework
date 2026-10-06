@@ -19,20 +19,36 @@ final class Auth
 {
     public function __construct(private UserProvider $users, private ?string $sessionKey = null) {}
 
-    /** Check the credentials; on success start a fresh session and store the user (without the password hash). */
-    public function attempt(string $identifier, string $password): bool
+    /**
+     * Check the credentials without logging anyone in (no session): for issuing API tokens.
+     * @return array|null The user without the password hash, or null when the details are wrong.
+     */
+    public function verify(string $identifier, string $password): ?array
     {
         $user = $this->users->findByCredentials($identifier);
         $key = $this->users->passwordKey();
         if (!$user || !isset($user[$key]) || !password_verify($password, (string) $user[$key])) {
-            return false;
+            return null;
         }
+        unset($user[$key]);
+        return $user;
+    }
+
+    /** Check the credentials; on success start a fresh session and store the user (without the password hash). */
+    public function attempt(string $identifier, string $password): bool
+    {
+        $user = $this->verify($identifier, $password);
+        if ($user === null) return false;
 
         Session::regenerate();
-        unset($user[$key]);
         Session::set($this->key(), $user);
         $this->users->onLogin($user);
         return true;
+    }
+
+    public function provider(): UserProvider
+    {
+        return $this->users;
     }
 
     public function logout(): void

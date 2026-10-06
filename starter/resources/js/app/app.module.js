@@ -1,22 +1,12 @@
 "use strict";
-/**
- * Tiny request helper for the starter: JSON in, JSON out, with the global CSRF token on every request.
- * Works for PUT and DELETE too (the server reads the JSON body for every verb).
- */
-const app = {
-  token: document.querySelector('meta[name="csrf-token"]')?.content ?? "",
-  base: (document.querySelector('meta[name="base-url"]')?.content ?? "").replace(/\/$/, ""),
-  async request(url, { method = "POST", data = null } = {}) {
-    const response = await fetch(app.base + url, {
-      method,
-      credentials: "same-origin",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        "X-CSRF-TOKEN": app.token,
-      },
-      body: data === null ? undefined : JSON.stringify(data),
-    });
-    return response.json();
-  },
-};
+// App-level script: runs once per full page load. Per-page setup belongs in Cast.page() in the page's own module.
+document.addEventListener("cast:mounted", (event) => {
+  document.documentElement.dataset.lastMounted = event.detail.page;
+});
+
+// A Cast form was saved (the add form, or the form inside a modal): close the modal and show the new data.
+document.addEventListener("cast:saved", (event) => {
+  const dialog = event.target.closest && event.target.closest("dialog");
+  if (dialog) dialog.close();
+  Cast.load(location.pathname + location.search, { push: false });
+});

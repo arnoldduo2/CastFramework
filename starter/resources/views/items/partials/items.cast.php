@@ -1,6 +1,6 @@
 <?php extract($data); ?>
 <Card title="Add an item">
-    <form method="post" action="<?= route('/items') ?>" class="row">
+    <form method="post" action="<?= route('/items') ?>" class="row" data-cast-form>
         <?= __csrf() ?>
         <label>Name <input name="name" required><?php __invalidFeedback('name'); ?></label>
         <label>Qty <input name="qty" type="number" min="0" value="0" required><?php __invalidFeedback('qty'); ?></label>
@@ -24,6 +24,7 @@
                         <td><?= (int) $item['qty'] ?></td>
                         <td><?= htchars(price($item['price'])) ?></td>
                         <td>
+                            <a href="<?= route('/items/' . (int) $item['id'] . '/edit') ?>" data-cast="modal">Edit</a>
                             <button type="button" class="link js-restock">+1 qty</button>
                             <button type="button" class="link danger js-delete">Delete</button>
                         </td>

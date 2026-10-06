@@ -7,6 +7,7 @@ namespace Cast\Services;
 use Cast\Contracts\Guard;
 use Cast\Core\Config;
 use Cast\Core\Session;
+use Cast\Http\Request;
 
 /**
  * Default {@see Guard}: the user array lives in the session under `auth.session_key`; permission slugs are the
@@ -16,6 +17,9 @@ final class SessionGuard implements Guard
 {
     public function user(): ?array
     {
+        $viaToken = Request::current()->user();   // set by ApiAuth for bearer-token requests
+        if ($viaToken !== null) return $viaToken;
+
         $user = Session::get((string) Config::get('auth.session_key', 'login'));
         return is_array($user) && $user ? $user : null;
     }

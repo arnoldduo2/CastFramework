@@ -13,6 +13,7 @@ $user = __getUser();
     <meta name="csrf-token" content="<?= htchars(\Cast\Core\Session::csrfToken()) ?>">
     <meta name="base-url" content="<?= htchars(route("/")) ?>">
     <title><?= htchars($appName) ?> | <?= htchars(__ucwords($pageName)) ?></title>
+    <?= __cast($data['authguard'] ?? '') ?>
     <?= __modules('app', 'css') ?>
     <?= __modules("$parentName.$pageName", 'css') ?>
 </head>
@@ -25,7 +26,8 @@ $user = __getUser();
             <a href="<?= route('/') ?>">Home</a>
             <?php if ($user) : ?>
                 <a href="<?= route('/items') ?>">Items</a>
-                <form method="post" action="<?= route('/logout') ?>" class="inline">
+                <a href="<?= route('/stats') ?>">Stats</a>
+                <form method="post" action="<?= route('/logout') ?>" class="inline" data-cast-form>
                     <?= __csrf() ?>
                     <button type="submit" class="link"><?= htchars($user['email']) ?> (log out)</button>
                 </form>

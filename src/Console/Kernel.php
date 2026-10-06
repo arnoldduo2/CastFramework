@@ -21,6 +21,9 @@ final class Kernel
         Commands\UpCommand::class,
         Commands\EnvCheckCommand::class,
         Commands\VersionCommand::class,
+        Commands\TokenCreateCommand::class,
+        Commands\TokenRevokeCommand::class,
+        Commands\TokenSchemaCommand::class,
     ];
 
     /** @var array<string, CommandContract> */

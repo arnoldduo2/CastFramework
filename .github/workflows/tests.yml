@@ -20,3 +20,34 @@ jobs:
       - run: composer validate --strict
       - run: composer install --no-interaction --no-progress
       - run: php tests/run.php
+
+  browser:
+    # the SPA client in Chromium, against the starter app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo, pdo_sqlite, mbstring, json
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install the starter app
+        working-directory: starter
+        run: composer install --no-interaction --no-progress
+      - name: Install Playwright
+        run: |
+          npm install --no-save playwright
+          npx playwright install --with-deps chromium
+      - name: Run the browser checks
+        run: |
+          rm -f starter/storage/database.sqlite
+          mkdir -p starter/storage
+          cp starter/.env.example starter/.env
+          php -S 127.0.0.1:8099 -t starter/public starter/public/index.php > server.log 2>&1 &
+          sleep 2
+          BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
+      - name: Server log
+        if: failure()
+        run: cat server.log

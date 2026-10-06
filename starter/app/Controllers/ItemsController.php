@@ -23,8 +23,18 @@ class ItemsController extends Controller
             'parentName' => 'items',
             'pageName' => 'items',
             'authguard' => 'private',
+            'spa' => true,
             'items' => Items::getAll(null, 'active', 'id', 'DESC'),
         ]);
+    }
+
+    /** GET /items/{id}/edit: an edit form for a modal (a Cast request with X-Cast-Type: modal; a browser gets the bare form) */
+    public function edit(string $id): Response
+    {
+        $item = Items::getOne($id);
+        if (!$item) return $this->error('That item does not exist.', 404);
+
+        return $this->view('items.modals.edit', ['item' => $item, 'modalClass' => 'modal-sm', 'form' => 'edit-item-form', 'fragment' => true]);
     }
 
     /** POST /items (a normal form, or JSON) */

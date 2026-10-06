@@ -11,7 +11,7 @@ class AuthController extends Controller
 {
     public function login(): Response
     {
-        return $this->view('auth.auth', ['parentName' => 'auth', 'pageName' => 'login', 'authguard' => 'auth']);
+        return $this->view('auth.auth', ['parentName' => 'auth', 'pageName' => 'login', 'authguard' => 'auth', 'spa' => true]);
     }
 
     public function attempt(): Response

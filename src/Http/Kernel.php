@@ -40,6 +40,15 @@ final class Kernel
     /** Turn a request into a response (no output, no exit): this is what tests call. */
     public function handle(Request $request): Response
     {
+        $response = $this->process($request);
+        foreach ($request->responseHeaders() as $name => $value) {
+            if ($response->getHeader($name) === null) $response->header($name, $value);
+        }
+        return $response;
+    }
+
+    private function process(Request $request): Response
+    {
         Request::setCurrent($request);
 
         try {
@@ -56,12 +65,33 @@ final class Kernel
 
             UpdateManager::check($this->app);
 
-            return Router::dispatch($request);
+            return $this->forClient(Router::dispatch($request), $request);
         } catch (HttpException $e) {
             return $this->httpError($e, $request);
         } catch (ValidationException $e) {
             return $this->validationError($e, $request);
+        } catch (\Throwable $e) {
+            // API and Cast (SPA) clients expect JSON even when the server fails; other requests go to the error handler
+            if (!$request->isApi() && !$request->isCast()) throw $e;
+            return $this->serverError($e);
         }
+    }
+
+    /** A redirect cannot be followed cleanly by a Cast (XHR) client, so it becomes an envelope the client navigates with. */
+    private function forClient(Response $response, Request $request): Response
+    {
+        $location = $response->getHeader('Location');
+        if ($request->isCast() && $location !== null && $response->statusCode() >= 300 && $response->statusCode() < 400) {
+            return Response::success('', ['type' => 'redirect', 'url' => $location]);
+        }
+        return $response;
+    }
+
+    private function serverError(\Throwable $e): Response
+    {
+        error_log(sprintf('%s: %s in %s:%d', $e::class, $e->getMessage(), $e->getFile(), $e->getLine()));
+        $debug = (bool) Config::get('app.debug', false);
+        return Response::error($debug ? $e->getMessage() : 'Something went wrong on our side. Please try again shortly.', 500);
     }
 
     private function httpError(HttpException $e, Request $request): Response
@@ -69,8 +99,13 @@ final class Kernel
         $code = $e->statusCode();
         $message = $e->getMessage();
 
-        if ($request->expectsJson()) {
-            $response = Response::error($message, $code);
+        if ($request->isCast()) {
+            // a maintenance or update page is a whole page: let the browser load it
+            $response = $code === 503
+                ? Response::json(['status' => 'error', 'msg' => $message, 'data' => ['type' => 'reload', 'code' => $code]], $code)
+                : Response::json(['status' => 'error', 'msg' => $message !== '' ? $message : (Response::PHRASES[$code] ?? 'Error'), 'data' => ['type' => 'error', 'code' => $code]], $code);
+        } elseif ($request->expectsJson()) {
+            $response = Response::error($message !== '' ? $message : (Response::PHRASES[$code] ?? 'Error'), $code);
         } else {
             $view = $this->app->has('view') ? $this->app->make('view') : null;
             $html = $view instanceof View

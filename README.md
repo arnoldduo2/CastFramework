@@ -8,17 +8,19 @@ It is built on [CastTemplateEngine](https://github.com/arnoldduo2/CastTemplateEn
 - A validation system (string rules, rule objects, closures) plus the old pipe syntax for legacy code.
 - Sessions with flash data, an `Auth` service, a query builder that binds every value, a small `Model`.
 - Views with auto-loaded page CSS and JS, error pages, maintenance mode, an update hook, a console (`php cast`).
+- An optional **SPA layer**: opted-in pages load lazily and swap only their content (a small JS client, no build step); `View` decides full page, partial or modal.
+- A first-class **JSON API** (`routes/api.php`): always-JSON errors, bearer tokens with abilities, rate limiting, CORS, for a front-end framework or other servers.
 - No ERP or business logic: it holds only what every app needs. See [docs/ERP-PORTING.md](docs/ERP-PORTING.md) for what was left out.
 
 Requires PHP 8.1 or newer and `ext-pdo`, `ext-mbstring`, `ext-json`.
 
-> **Status:** version 0.x. The SPA layer (lazy-loaded pages and partials swapped in by a small JS client) is the next milestone;
-> the server side is designed for it (`Request::isCast()`, `View::respond()`).
+> **Status:** version 0.x: the API may still change between minor versions (see the [changelog](CHANGELOG.md)).
 
 ## Contents
 
 [Install](#install) · [A first app](#a-first-app) · [Configuration](#configuration) · [Routing](#routing) · [Request and Response](#request-and-response) · [CSRF](#csrf) ·
 [Controllers](#controllers) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Models and the query builder](#models-and-the-query-builder) · [Views](#views) ·
+[SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api) ·
 [Helpers](#helpers) · [Static files](#static-files) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Console](#console) · [Contracts](#contracts) ·
 [Security notes](#security-notes) · [Testing](#testing) · [Versioning](#versioning)
 
@@ -52,6 +54,7 @@ my-app/
   public/index.php          the only file the web server runs
   config/                   app.php, auth.php, ...  (only list what you change)
   routes/web.php            routes (every *.php in this folder is loaded)
+  routes/api.php            optional: the JSON API, registered under /api
   app/                      Controllers/, Models/, Services/, Providers/, helpers/
   resources/views/          layouts, pages, components/
   resources/css, resources/js    auto-loaded per page
@@ -153,6 +156,8 @@ Cast\Core\Config::has('auth.login_path');
 | `view.ext`, `view.components` | `.cast.php`, `components` | Views |
 | `static` | css, js, styles, fonts, images, public | [Static file map](#static-files) |
 | `cors.allowed_origins` | `[]` | Exact origins allowed |
+| `spa.enabled`, `initial`, `root`, `view` | `true`, `lazy`, `body`, `#cast-view` | [SPA](#spa-pages-without-full-reloads) |
+| `api.prefix`, `api.middleware`, `api.tokens.table` | `/api`, `[]`, `api_tokens` | [JSON API](#json-api) |
 | `models.namespace` | `App\Models` | Where `getModelInstance()` looks |
 | `helpers.custom` | `null` | Folder of your own helper files |
 | `database.*` | from `.env` | `driver`, `host`, `port`, `name`, `user`, `pass`, `charset`, `dsn` |
@@ -249,7 +254,7 @@ One token per session (`Session::csrfToken()`), renewed on login/logout (`Sessio
 
 - **Forms:** `<?= __csrf() ?>` renders `<input type="hidden" name="_token" ...>`.
 - **Ajax:** send the header `X-CSRF-TOKEN` (or `X-XSRF-TOKEN`), or `_token` in the JSON body. Put the token in a `<meta name="csrf-token">`.
-- **Checked centrally** for every **POST, PUT, PATCH and DELETE** route, with `hash_equals`. A missing or wrong token is a **419**
+- **Checked centrally** for every **POST, PUT, PATCH and DELETE** route, with `hash_equals` (API requests with a bearer token, or without a session cookie, are the one exception: see [CSRF and cookies on the API](#csrf-and-cookies-on-the-api)). A missing or wrong token is a **419**
   (JSON `{status:'error'}` for ajax, a page otherwise). GET requests never need one.
 - `__verifyCsrf($token)` checks a token by hand (throws 419). `Csrf::valid($request)` returns a bool.
 
@@ -331,6 +336,7 @@ Services are plain classes; the controller calls them.
 ```php
 $auth = new Cast\Services\Auth(new UserStore());              // UserStore implements Cast\Contracts\UserProvider
 if ($auth->attempt($email, $password)) { /* logged in: new session id, new CSRF token, no password hash kept */ }
+$user = $auth->verify($email, $password);                      // check credentials only, no session (API token login)
 $auth->user(); $auth->check(); $auth->logout();
 Auth::hash($password);                                         // password_hash; $2a$ hashes from older apps verify too
 ```
@@ -407,13 +413,180 @@ app('view')->share('appName', 'My App');             // data every view receives
 Inside a view the data is available as variables and as `$data`. Components: a `.cast.php` component receives camelCased props and `$children`;
 a legacy `.php` component receives `$data`. A view that is not found in your folder falls back to the framework's own (error pages).
 
+## SPA: pages without full reloads
+
+Opt a page in with `'spa' => true`. The first visit loads the layout and a placeholder; a small JavaScript client then fetches the content, and
+later links swap only what changed. Pages that do not opt in load normally, and `views()` / `$this->view()` keep working as they are:
+**`View` is the one place that decides full page, partial or modal**; controllers do not change.
+
+```php
+return $this->view('items.items', ['parentName' => 'items', 'pageName' => 'items', 'authguard' => 'private', 'spa' => true, 'items' => $items]);
+```
+
+Layout (`resources/views/layouts/header.cast.php`): add the client once in `<head>`, with the page's `authguard`:
+
+```php
+<meta name="csrf-token" content="<?= htchars(\Cast\Core\Session::csrfToken()) ?>">
+<?= __cast($data['authguard'] ?? '') ?>          <!-- /cast/cast.css and /cast/cast.module.js, served by the framework -->
+<?= __modules('app', 'css') ?>
+<?= __modules("$parentName.$pageName", 'css') ?>
+```
+
+The page file stays the shell (header, content partial, footer). The partial named `{parentName}.partials.{pageName}` is the *content area*:
+it is what gets fetched and swapped, so keep everything that changes from page to page in it.
+
+### What the server does
+
+| Request | Response |
+| --- | --- |
+| Browser, page without `spa` | The full page, as before |
+| Browser, `spa` page | The full layout; the content area is `<div id="cast-view" data-cast-page="items.items" data-cast-lazy>` with a skeleton (`spa.initial` = `lazy`, default), or the real content (`inline`, no extra request) |
+| Cast request (`X-Cast-Request: 1`) for a `spa` page | JSON envelope with the content (below) |
+| Cast request for a page that is not `spa` | `{type: 'reload'}`: the client does a normal page load |
+| Cast request to a redirect | `{type: 'redirect', url}` (an XHR cannot follow a login redirect cleanly) |
+| Cast request that fails | HTTP status + `{status: 'error', msg, data: {type: 'error', code}}`; a 503 (maintenance) is `type: 'reload'` |
+
+The envelope follows the app-wide `{status, msg, data}` shape:
+
+```json
+{ "status": "success", "msg": "",
+  "data": { "type": "partial", "target": "#cast-view", "title": "App | Items", "html": "<section>...</section>",
+            "css": ["/css/items/items.css?v=..."], "js": ["/js/items/items.module.js?v=..."], "own": ["...the page's own files..."],
+            "guard": "private", "url": "/items", "page": "items.items", "modalClass": null, "form": null, "csrf": "..." } }
+```
+
+- **`type`** is chosen by `View`: `partial` fills a container (`target`, default `#cast-view`); `page` replaces the whole body (used when the page's `authguard` is not the one the client sent in
+  `X-Cast-Guard`, e.g. after login, so the layout can change, or when the client asks for `X-Cast-Type: page`); `modal` opens a modal.
+- **A fragment** is a view that is only a piece of page. Return it with `'fragment' => true` (any container, `X-Cast-Target`), or with `'type' => 'modal'` plus `modalClass` / `form`;
+  these do not need `spa`. A browser that requests such a URL directly gets the bare view.
+- **Assets:** `css` / `js` are the files `__modules()` would link for the page (`resources/css/{parent}/{page}.css`, `resources/js/{parent}/{page}.module.js`, and the same for `tabName`),
+  so a swap loads what a full load would. `own` marks the page's own files; the client removes them when it leaves the page. On a full-body swap the lists come from the rendered layout.
+- `title` is `$data['title']`, else the rendered `<title>`, else "App | Page name". `csrf` is the current token (it changes at login).
+
+### The client (`Cast`)
+
+Plain JavaScript, no dependencies. Links and forms are picked up automatically.
+
+```html
+<a href="/items">Items</a>                                   <!-- same-origin link on a Cast page: swaps the content, updates the URL and title -->
+<a href="/report.pdf" download>PDF</a>                       <!-- download, target=_blank, modifier keys, other origins: normal -->
+<a href="/legacy" data-cast="off">Old page</a>               <!-- opt out: a full load -->
+<a href="/items/5/edit" data-cast="modal">Edit</a>           <!-- open the response in a modal; data-cast="page" swaps the whole body -->
+<a href="/items/top" data-cast-target="#side">Top</a>        <!-- fill another container -->
+<form method="post" action="/items" data-cast-form>          <!-- submitted with fetch; 422 errors appear under the fields -->
+    <?= __csrf() ?>
+    <input name="name"><p data-cast-message role="alert"></p>   <!-- other errors (e.g. a wrong password) go here -->
+</form>
+```
+
+```js
+Cast.load("/items?page=2");                         // load into the content area (type: "partial" | "page" | "modal", target, push, replace)
+const res = await Cast.http({ url: "/items/5", type: "PUT", data: { qty: 3 } });   // JSON, CSRF header, resolves with {status, msg, data}
+if (res.status === "success") Cast.load(location.pathname, { push: false });       // refresh the current page
+
+// resources/js/items/items.module.js: loaded once, mount() runs on every visit, destroy() when the page is left
+Cast.page({
+    mount(ctx) {
+        ctx.on("click", ".js-delete", async (event, button) => { /* delegated, removed automatically on leave */ });
+        // ctx.el = the container, ctx.signal aborts on leave (pass it to fetch)
+    },
+    destroy(ctx) {},
+});
+```
+
+- `Cast.http` accepts `url, data, type|method, isform, busy, follow, headers`; it always resolves (network and server errors become `{status: 'error', msg}`), follows redirect envelopes, and updates the CSRF token.
+  Replace it with `Cast.configure({ http: yourAxiosWrapper })`, and open modals your own way with `Cast.configure({ modal: (envelope) => ... })`.
+- **Events** (bubbling, native `CustomEvent`s; `event.detail` has the data, in jQuery use `event.originalEvent.detail`): `cast:mounted` (every container that was filled, also modals), `cast:destroy`, `cast:navigate`,
+  `cast:saved` (a `data-cast-form` succeeded), `cast:invalid` (422), `cast:error`. Initialise widgets (date pickers, selects) on `cast:mounted` instead of on `DOM ready`.
+- History: `pushState` / `popstate` with scroll restore, one request in flight at a time (a new click cancels the old one), a normal page load as the fallback for anything that is not a Cast answer.
+- **Rules for page scripts:** use `Cast.page()` instead of `$(document).ready` (it would run only on the first visit); inline `<script>` blocks inside swapped HTML are not run (page code belongs in the page module, data in attributes); same-origin assets only.
+- Without JavaScript the shell shows a `<noscript>` note; set `'initial' => 'inline'` in `config/spa.php` to render the first page's content on the server.
+
+`config/spa.php`: `enabled` (`true`; `false` turns the whole layer off), `initial` (`lazy` | `inline`), `root` (`body`), `view` (`#cast-view`). Override the skeleton with `resources/views/spa/skeleton.cast.php`,
+and the colours with the `--cast-*` CSS variables.
+
+## JSON API
+
+For a front-end framework (Next.js, Vue, React, a mobile app) or any other server. Put the routes in **`routes/api.php`**: they are registered under `/api` (`config('api.prefix')`), so
+`Router::get('/items', ...)` there answers `GET /api/items`. Everything under the prefix is JSON in and out, with the same `{status, msg, data}` shape; there is no HTML and no redirect, whatever the client sends.
+
+```php
+// routes/api.php
+use Cast\Core\Router;
+use Cast\Http\Middleware\{ApiAuth, Throttle};
+
+Router::post('/auth/token', [TokenController::class, 'issue'])->use([Throttle::class, 10, 1]);   // email + password => token
+
+Router::middleware([ApiAuth::class], function () {                                               // a valid token (or a login session)
+    Router::get('/me', [TokenController::class, 'me']);
+    Router::middleware([ApiAuth::class, 'items:write'], function () {                           // the token must have this ability
+        Router::post('/items', [ItemsController::class, 'store']);
+        Router::delete('/items/{id}', [ItemsController::class, 'destroy'])->middleware(['manage-items']);   // + a permission of the user
+    });
+});
+```
+
+| Status | When |
+| --- | --- |
+| 200, 201 | `Response::success($msg, $data, $status)` (a returned array is also sent as JSON) |
+| 401 | No credentials, or a bad / revoked / expired token (`WWW-Authenticate: Bearer`) |
+| 403 | A missing ability or permission |
+| 404, 405 | Unknown path, wrong verb (`Allow` header) |
+| 419 | A cookie-authenticated write without the CSRF token (see below) |
+| 422 | Validation: `{status: 'error', msg, data: {errors: {field: 'message'}}}` |
+| 429 | Rate limit (`Retry-After`, `X-RateLimit-*`) |
+| 500 | `{status: 'error', msg}`; the real message only when `APP_DEBUG=true` (it is always logged) |
+
+### Tokens
+
+A token is `{id}|{secret}`: the id finds the record, and **only the SHA-256 of the secret is stored**, so a leaked table does not leak usable tokens (compared with `hash_equals`).
+The plain token is shown once, when it is created. Each token has a name, abilities, an optional expiry and a last-used time, and can be revoked.
+
+```php
+$issued = app('tokens')->issue($user['id'], 'mobile app', ['items:read', 'items:write'], ttl: 30 * 86400);
+$issued['token'];                       // "9f3c1a2b4d5e6f70|k3J..." : give this to the client, once
+app('tokens')->revoke($issued['id']);   // or ->revokeAllFor($user['id'])
+```
+
+Abilities are strings you choose: `*` (everything), `items:*` (a group) or `items:read` (one). A token can only do what its **user** may do **and** what its abilities allow.
+`app('auth')->verify($email, $password)` checks credentials without starting a session, for the login route.
+
+Setup: create the table once (`php vendor/bin/cast token:schema --run`, or run `ApiTokenSchema::sql($driver)`), and make your user store also implement
+`Cast\Contracts\FindsUsersById` (`findById($id): ?array`), because a token only holds the user's id. Keep tokens elsewhere by binding your own `Cast\Contracts\TokenStore` as `token_store`.
+Console: `token:create <login> [--name=] [--abilities=a,b] [--days=N]`, `token:revoke <id>`, `token:schema [--run]`.
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8000/api/auth/token -H 'Content-Type: application/json' \
+        -d '{"email":"admin@example.com","password":"password"}' | jq -r .data.token)
+curl -s http://localhost:8000/api/items -H "Authorization: Bearer $TOKEN"
+curl -s -X POST http://localhost:8000/api/items -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' -d '{"name":"Bolt","qty":10,"price":1.5}'
+```
+
+```js
+// a front end (Next.js, Vue, ...) : no cookies, no CSRF token, the token in a header
+const api = (path, init = {}) => fetch(`${API}/api${path}`, { ...init, headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...init.headers } }).then((r) => r.json());
+const { data } = await api("/items?page=1&per_page=20");
+```
+
+### CSRF and cookies on the API
+
+CSRF protects requests that carry **ambient credentials** (the session cookie). So on API routes the token is **not** required for a request that is authenticated by a bearer token, or that has no
+session cookie at all; it **is** required (419) for writes from a browser that sends the session cookie. A front end on another origin that uses cookies instead of tokens needs
+`CORS_ALLOWED_ORIGINS=https://app.example.com`, `fetch(..., { credentials: "include" })`, `COOKIE_SITE=None` with `COOKIE_SECURE=true`, and the `X-CSRF-TOKEN` header; bearer tokens avoid all of that.
+
+### Rate limiting and CORS
+
+`[Throttle::class, 60, 1]` allows 60 requests per minute per caller (the token, otherwise the IP address), counted across every route that uses the same limit (add a third argument, `[Throttle::class, 5, 1, 'login']`, for a separate counter; counters are files in `storage/framework/throttle`), adds `X-RateLimit-Limit/Remaining/Reset`, and answers 429 with `Retry-After`.
+Apply it to a route with `->use([...])`, to a group with `Router::middleware([...])`, or to the whole API with `'middleware' => [[Throttle::class, 60, 1]]` in `config/api.php`. Behind a proxy make sure `REMOTE_ADDR` is the client address.
+CORS: only exact origins in `CORS_ALLOWED_ORIGINS` get headers (`Authorization`, `X-CSRF-TOKEN` and the verbs including PATCH are allowed; the rate-limit headers are exposed); `OPTIONS` preflight is answered before authentication.
+
 ## Helpers
 
 Installing the package loads these global functions (each wrapped in `function_exists`, so you can define your own first). Names are unchanged from the apps they came from.
 
 | File | Contents |
 | --- | --- |
-| `core.php` | `app`, `env`, `config`, `base_path`, `storage_path`, `resource_path`, `public_path`, `useConfig`, `__getConfig`, `views`, `Component`, `__includes`, `__modules`, `render404`, `route`, `route_to`, `abort`, `_access`, `file_control`, `app_version`, `sendAlert`, `__getAlerts`, `__busyLoader`, `clearState`, `__getSess`, `dd`, `dump`, `vd`, `__prev` |
+| `core.php` | `app`, `env`, `config`, `base_path`, `storage_path`, `resource_path`, `public_path`, `useConfig`, `__getConfig`, `views`, `Component`, `__includes`, `__modules`, `__cast`, `render404`, `route`, `route_to`, `abort`, `_access`, `file_control`, `app_version`, `sendAlert`, `__getAlerts`, `__busyLoader`, `clearState`, `__getSess`, `dd`, `dump`, `vd`, `__prev` |
 | `request.php` | `request`, `response`, `getPost` |
 | `security.php` | `__csrf`, `__verifyCsrf`, `hashPassword`, `verifyPassword`, `__randStr`, `tokenGen`, `__getUser`, `_checkAccess` |
 | `strings.php` | `__ucwords`, `__ucfirst`, `str_capitalize`, `snakeCase`, `htchars`, `str_escape`, `htmlNewLine`, `strReplace`, `str_addHyphen`, `__getSplitStr` |
@@ -477,6 +650,7 @@ php vendor/bin/cast            # list commands
 | `down [--message=] [--secret=] [--retry=] [--in=]` / `up` | Maintenance mode |
 | `env:check` | Checks PHP, extensions, `.env`, debug in production, writable `storage/`, folders |
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
+| `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--run]` | API tokens |
 | `version` | Framework and PHP versions |
 
 Your own commands extend `Cast\Console\Command` and are listed in `config/console.php`: `return ['commands' => [App\Console\Commands\SyncStockCommand::class]];`.
@@ -493,6 +667,8 @@ Interfaces in `Cast\Contracts` where an app plugs in its own behaviour:
 | `Middleware` | your middleware, `Csrf`, `Authenticate`, `Maintenance` | Route middleware |
 | `Guard` | `SessionGuard` (default) or your own | Who is logged in and what they may do |
 | `UserProvider` | your user store | `Auth` |
+| `FindsUsersById` | your user store (next to `UserProvider`) | Turning an API token back into a user |
+| `TokenStore` | `DatabaseTokenStore` (default) or your own | Where API tokens are kept |
 | `Rule` | your validation rules | `Validator` |
 | `ViewRenderer` | `Core\View` | The template layer |
 | `MaintenanceStore` | `FileMaintenanceStore` (default) | Where maintenance state lives |
@@ -507,6 +683,9 @@ Interfaces in `Cast\Contracts` where an app plugs in its own behaviour:
 - Set `APP_DEBUG=false` in production (`php vendor/bin/cast env:check` warns when it is not).
 - Passwords: `Auth::hash()` uses `password_hash`; the session never stores the hash; a new session id and CSRF token are issued at login.
 - Keep `.env` out of git. The starter ships `.env.example` only.
+- API tokens: only a SHA-256 of the secret is stored; give each client its own token with the fewest abilities it needs, set an expiry, and revoke tokens that leak.
+  Send them over HTTPS only. Rate-limit the login route.
+- The SPA client inserts server-rendered HTML (the same trust as a normal page); it sets titles and error text with `textContent` and loads same-origin scripts and styles only.
 
 ## Testing
 
@@ -516,7 +695,16 @@ php tests/run.php            # all suites (no PHPUnit needed)
 php tests/run.php router     # only suites whose file name contains "router"
 ```
 
-The suites cover each subsystem and the starter app end to end (login, CSRF, JSON verbs, validation, maintenance, error pages).
+The suites cover each subsystem and the starter app end to end (login, CSRF, JSON verbs, validation, maintenance, error pages, the SPA envelopes, API tokens, rate limits, CORS).
+
+Browser checks for the SPA client run in Chromium with [Playwright](https://playwright.dev) against the starter app (Playwright is not a dependency of the package):
+
+```bash
+cd starter && composer install && rm -f storage/database.sqlite
+php -S 127.0.0.1:8099 -t public public/index.php &
+cd .. && npm i playwright && npx playwright install chromium
+BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
+```
 
 ## Versioning
 

@@ -11,7 +11,7 @@ use Cast\Http\Response;
 
 /**
  * Serves static files (CSS, JS, fonts, images, vendor libraries) before routing, from the folders in
- * `config('static')`: URL prefix => ['dir' => folder relative to the app base, 'keep_prefix' => bool].
+ * `config('static')`: URL prefix => ['dir' => folder relative to the app base (or 'path' => an absolute folder), 'keep_prefix' => bool].
  *
  *   '/css/app.css'     => resources/css/app.css            (keep_prefix: true)
  *   '/public/x/y.js'   => public/assets/vendor/x/y.js      (keep_prefix: false hides the real folder)
@@ -48,7 +48,7 @@ final class StaticResourceProvider
             $relative = substr($path, strlen($prefix) + 2);
             $relative = ($options['keep_prefix'] ?? true) ? "$prefix/$relative" : $relative;
 
-            $base = realpath($this->app->basePath((string) ($options['dir'] ?? '')));
+            $base = realpath(isset($options['path']) ? (string) $options['path'] : $this->app->basePath((string) ($options['dir'] ?? '')));
             $file = $base === false ? false : realpath($base . DIRECTORY_SEPARATOR . $relative);
             if ($base === false || $file === false || !str_starts_with($file, $base . DIRECTORY_SEPARATOR) || !is_file($file)) {
                 continue;

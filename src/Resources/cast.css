@@ -1,0 +1,68 @@
+/* CastFramework SPA client: loading bar, skeleton, modal and error blocks. Override the variables to match your theme. */
+:root {
+  --cast-accent: #2563eb;
+  --cast-muted: #e5e7eb;
+  --cast-surface: #ffffff;
+  --cast-text: #111827;
+  --cast-danger: #b91c1c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cast-accent: #60a5fa;
+    --cast-muted: #374151;
+    --cast-surface: #1f2937;
+    --cast-text: #f3f4f6;
+    --cast-danger: #f87171;
+  }
+}
+
+/* thin progress bar while a request is in flight */
+html.cast-busy::before {
+  content: "";
+  position: fixed;
+  inset: 0 auto auto 0;
+  height: 3px;
+  width: 40%;
+  background: var(--cast-accent);
+  z-index: 2147483000;
+  animation: cast-progress 1s ease-in-out infinite;
+}
+html.cast-busy { cursor: progress; }
+@keyframes cast-progress {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(260%); }
+}
+
+/* skeleton shown while the first content loads */
+.cast-skeleton { display: grid; gap: .75rem; padding: 1rem 0; }
+.cast-skeleton-line, .cast-skeleton-block {
+  background: linear-gradient(90deg, var(--cast-muted) 25%, transparent 50%, var(--cast-muted) 75%);
+  background-size: 200% 100%;
+  border-radius: .375rem;
+  animation: cast-shimmer 1.4s linear infinite;
+}
+.cast-skeleton-line { height: .9rem; }
+.cast-skeleton-block { height: 8rem; }
+.cast-w-40 { width: 40%; } .cast-w-75 { width: 75%; } .cast-w-90 { width: 90%; }
+@keyframes cast-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .cast-skeleton-line, .cast-skeleton-block, html.cast-busy::before { animation: none; }
+}
+
+/* error block shown in place of a page that failed to load */
+.cast-error { padding: 2rem 1rem; text-align: center; color: var(--cast-text); }
+.cast-error h2 { margin: 0 0 .5rem; font-size: 2.5rem; color: var(--cast-danger); }
+.cast-error p { margin: 0; }
+.cast-error-text { color: var(--cast-danger); font-size: .85rem; margin-top: .25rem; }
+
+/* modal (a native <dialog>) */
+.cast-modal {
+  border: 0; border-radius: .75rem; padding: 0; max-width: min(40rem, 92vw); width: 100%;
+  background: var(--cast-surface); color: var(--cast-text); box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
+}
+.cast-modal::backdrop { background: rgba(0, 0, 0, .45); }
+.cast-modal-body { padding: 1.25rem; }
+.cast-modal-close {
+  position: absolute; top: .5rem; right: .75rem; border: 0; background: transparent;
+  font-size: 1.5rem; line-height: 1; cursor: pointer; color: inherit;
+}
