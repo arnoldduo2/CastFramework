@@ -1,0 +1,37 @@
+{
+  "name": "anode/cast-framework",
+  "description": "CastFramework: a small PHP MVC framework with an SPA-ready view layer, built on CastTemplateEngine.",
+  "type": "library",
+  "license": "MIT",
+  "keywords": ["framework", "mvc", "spa", "php", "cast"],
+  "homepage": "https://github.com/arnoldduo2/CastFramework",
+  "authors": [
+    { "name": "arnoldduo2", "email": "arnoldduo2@gmail.com" }
+  ],
+  "require": {
+    "php": ">=8.1",
+    "ext-json": "*",
+    "ext-mbstring": "*",
+    "ext-pdo": "*",
+    "anode/cast-template-engine": "^1.0",
+    "anode/error-handler": "^1.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "Cast\\": "src/"
+    },
+    "files": [
+      "src/Helpers/helpers.php"
+    ]
+  },
+  "bin": [
+    "bin/cast"
+  ],
+  "scripts": {
+    "test": "php tests/run.php"
+  },
+  "config": {
+    "sort-packages": true
+  },
+  "minimum-stability": "stable"
+}

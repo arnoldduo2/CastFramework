@@ -1,0 +1,21 @@
+{
+  "name": "anode/cast-starter",
+  "description": "A small CastFramework app: pages, auth, validation, JSON verbs, SQLite.",
+  "type": "project",
+  "license": "MIT",
+  "require": {
+    "php": ">=8.1",
+    "ext-pdo_sqlite": "*",
+    "anode/cast-framework": "*"
+  },
+  "repositories": [
+    { "type": "path", "url": "..", "options": { "symlink": true } }
+  ],
+  "autoload": {
+    "psr-4": {
+      "App\\": "app/"
+    }
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
+}

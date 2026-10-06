@@ -1,0 +1,29 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * CastFramework console. Run from your app's folder:  php vendor/bin/cast <command>
+ * If the app has `bootstrap/app.php` (returning an Application) it is used; otherwise the current folder is the app.
+ */
+
+declare(strict_types=1);
+
+// the app's own autoloader first (it knows the app's classes), then the one this package is installed in
+foreach ([getcwd() . '/vendor/autoload.php', __DIR__ . '/../../../autoload.php', __DIR__ . '/../vendor/autoload.php'] as $autoload) {
+    if (is_file($autoload)) {
+        require $autoload;
+        break;
+    }
+}
+if (!class_exists(\Cast\App\Application::class)) {
+    fwrite(STDERR, "Could not find the Composer autoloader. Run `composer install` first.\n");
+    exit(1);
+}
+
+$base = getcwd();
+$bootstrap = $base . '/bootstrap/app.php';
+$app = is_file($bootstrap) ? require $bootstrap : new \Cast\App\Application($base);
+
+$argv = $_SERVER['argv'];
+array_shift($argv);
+exit((new \Cast\Console\Kernel($app))->run($argv));

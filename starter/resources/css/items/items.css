@@ -1,0 +1,1 @@
+#items-table tr:hover td { background: color-mix(in srgb, var(--primary-color) 8%, transparent); }

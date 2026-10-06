@@ -1,0 +1,35 @@
+:root {
+  --primary-color: #00a000;
+  --danger-color: #f21e50;
+  --main-bg: #e8e8e8;
+  --card-bg: #f8f8f8;
+  --text-color: #212121;
+  --text-off-light: #6d6d6d;
+  --border-color: #cecece;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --main-bg: #15171a; --card-bg: #1f2226; --text-color: #e6e6e6; --text-off-light: #9aa0a6; --border-color: #343a40; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--main-bg); color: var(--text-color); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.topbar { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
+.topbar nav { display: flex; gap: 16px; align-items: center; }
+.brand { font-weight: 700; color: var(--primary-color); text-decoration: none; }
+a { color: var(--primary-color); }
+.page { max-width: 760px; margin: 24px auto; padding: 0 16px; display: grid; gap: 16px; }
+.card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; }
+.card h2 { margin: 0 0 12px; font-size: 18px; }
+.muted { color: var(--text-off-light); }
+.foot { text-align: center; color: var(--text-off-light); font-size: 12px; padding: 24px; }
+.btn { display: inline-block; padding: 8px 16px; border-radius: 5px; border: 1px solid var(--primary-color); background: var(--primary-color); color: #fff; text-decoration: none; cursor: pointer; font: inherit; }
+.btn-ghost { background: transparent; color: var(--primary-color); }
+.row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }
+.stack { display: grid; gap: 12px; }
+label { display: grid; gap: 4px; font-size: 13px; color: var(--text-off-light); }
+input { padding: 7px 10px; border: 1px solid var(--border-color); border-radius: 5px; background: var(--main-bg); color: var(--text-color); font: inherit; }
+.validation { color: var(--danger-color); }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border-color); }
+button.link { background: none; border: 0; color: var(--primary-color); cursor: pointer; font: inherit; padding: 0 6px; }
+button.link.danger { color: var(--danger-color); }
+form.inline { display: inline; }
