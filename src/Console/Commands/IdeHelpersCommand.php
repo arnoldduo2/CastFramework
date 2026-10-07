@@ -44,6 +44,7 @@ final class IdeHelpersCommand extends Command
         }
         $path = $input->option('path');
         $file = is_string($path) && $path !== '' ? (preg_match('#^([a-z]:)?[\\/]#i', $path) ? $path : $this->app->basePath($path)) : $this->app->basePath('_ide_helpers.php');
+        if (!is_dir(dirname($file))) mkdir(dirname($file), 0775, true);
         file_put_contents($file, $code);
         $output->info('Wrote ' . basename($file) . ' (' . count($functions) . ' helper functions). Reload the editor window if it still shows "Undefined function".');
         return 0;
