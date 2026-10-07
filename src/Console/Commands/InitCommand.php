@@ -48,10 +48,11 @@ final class InitCommand extends Command
             if ($target === '.env' || ($demo && $target === '.env.example')) {
                 $contents = $this->withAppName($contents, $name);
             }
-            $this->write($base . '/' . $target, $contents, $force, $target);
+            // .env holds the app's settings and secrets: it is created when missing and never overwritten, even with --force
+            $this->write($base . '/' . $target, $contents, $force && $target !== '.env', $target);
 
             if ($demo && $target === '.env.example') {
-                $this->write($base . '/.env', $contents, $force, '.env');
+                $this->write($base . '/.env', $contents, false, '.env');
             }
         }
 
@@ -63,7 +64,7 @@ final class InitCommand extends Command
         $autoload = $this->registerAutoload($base);
 
         foreach ($this->created as $file) $output->info('created  ' . $file);
-        foreach ($this->skipped as $file) $output->warn('exists   ' . $file . ' (kept; use --force to overwrite)');
+        foreach ($this->skipped as $file) $output->warn('exists   ' . $file . ($file === '.env' ? ' (kept: init never overwrites .env)' : ' (kept; use --force to overwrite)'));
 
         $output->line();
         if ($autoload === 'changed') {

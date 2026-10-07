@@ -29,6 +29,7 @@ final class Kernel
         Commands\MigrateRefreshCommand::class,
         Commands\MigrateFreshCommand::class,
         Commands\MigrateStatusCommand::class,
+        Commands\MigrateBaselineCommand::class,
         Commands\MakeMigrationCommand::class,
         Commands\MakeSeederCommand::class,
         Commands\DbSeedCommand::class,

@@ -97,6 +97,8 @@ test('init: the app name comes from the folder, and existing files are kept unle
 
     [, $out] = cast_in($named, 'init --force');
     has('created  routes/web.php', $out);
+    eq("APP_NAME=\"Mine\"\n", file_get_contents("$named/.env"), '--force never overwrites .env');
+    has('init never overwrites .env', $out);
     has('use Cast\Core\Router;', file_get_contents("$named/routes/web.php"));
 });
 

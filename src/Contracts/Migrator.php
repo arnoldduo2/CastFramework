@@ -36,6 +36,13 @@ interface Migrator
     /** @return list<array{migration: string, ran: bool, batch: ?int}> */
     public function status(): array;
 
+    /**
+     * Record the pending migrations as already run, without running them: for a database whose tables already exist
+     * (an app that created them by hand or with older code) that now adopts migrations.
+     * @return list<string> the names recorded
+     */
+    public function baseline(): array;
+
     /** Create a migration file and return its path. */
     public function make(string $name, ?string $create = null, ?string $table = null): string;
 

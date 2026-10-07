@@ -2,6 +2,12 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.3.2
+
+- **`php cast migrate:baseline`** (and `Migrator::baseline()` in the contract): records the pending migrations as run without running them, so an app whose tables already exist can adopt migrations without losing data.
+- `cast init --force` never overwrites `.env` (it holds settings and secrets), and says so.
+- New [docs/UPGRADING.md](docs/UPGRADING.md): moving an app made on 0.2.x to 0.3 (the `^0.2` constraint does not reach 0.3), refreshing the demo files, adopting migrations.
+
 ## 0.3.1
 
 - **PHPUnit:** `composer test` runs every case through PHPUnit 10.5 (`phpunit.xml.dist`, `tests/phpunit/`), each named `<file>: <case>`; `--filter`, `--testdox`. The dependency-free runner stays (`composer test:plain`) and now lists failed cases by name at the end. CI runs PHPUnit on PHP 8.1 to 8.4 and against MySQL 8 and PostgreSQL 16, and writes the failed cases to the job summary.

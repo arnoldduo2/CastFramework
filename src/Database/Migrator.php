@@ -111,6 +111,20 @@ final class Migrator implements MigratorContract
         return $this->migrate();
     }
 
+    public function baseline(): array
+    {
+        return $this->locked(function () {
+            $this->ensureTable();
+            $pending = $this->pending();
+            $batch = $this->lastBatch() + 1;
+            foreach ($pending as $name) {
+                QueryBuilder::table($this->table())->insert(['migration' => $name, 'batch' => $batch, 'ran_at' => date('c')]);
+                $this->say("Recorded:  $name");
+            }
+            return $pending;
+        });
+    }
+
     public function status(): array
     {
         $ran = [];

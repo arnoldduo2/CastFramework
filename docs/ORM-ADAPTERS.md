@@ -31,7 +31,7 @@ The callable runs once, lazily, on first use. It must return a `PDO` (anything e
 
 ## 2. Bind your migrator
 
-`php cast migrate`, `migrate:rollback`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` and `make:migration` only call
+`php cast migrate`, `migrate:rollback`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status`, `migrate:baseline` and `make:migration` only call
 `Cast\Contracts\Migrator`. Write a small adapter around your tool and bind it from a provider listed in `app.providers` (those register after the framework's own
 providers, so yours wins):
 
@@ -53,6 +53,7 @@ final class DoctrineMigrator implements Cast\Contracts\Migrator
     public function reset(): array { /* migrate to 'first' */ }
     public function refresh(): array { $this->reset(); return $this->migrate(); }
     public function fresh(): array { /* drop schema, then migrate */ }
+    public function baseline(): array { /* mark pending migrations as run without running them */ }
     public function status(): array { /* [['migration' => 'Version20260101', 'ran' => true, 'batch' => null], ...] */ }
     public function make(string $name, ?string $create = null, ?string $table = null): string { /* generate a file, return its path */ }
     public function pretended(): array { /* ['Version...' => ['SQL...']] after a pretend run */ }

@@ -35,7 +35,7 @@ php cast serve                      # http://127.0.0.1:8000
 ```
 
 `cast init` writes `public/`, `bootstrap/`, `config/`, `routes/`, a home page, `.env` (named after the folder), `storage/` and the `.gitignore` lines, and adds the `App\` namespace to
-your `composer.json` (the app works right away: the framework maps `App\` to `app/` itself; `composer dump-autoload -o` is for production). It never overwrites a file you already have unless you pass `--force`.
+your `composer.json` (the app works right away: the framework maps `App\` to `app/` itself; `composer dump-autoload -o` is for production). It never overwrites a file you already have unless you pass `--force` (and never `.env`).
 
 `php cast init --demo` copies the [`starter/`](starter) app instead: login (`admin@example.com` / `password`), an items page with `PUT`/`DELETE` and an edit modal, a stats page, and a
 JSON API with bearer tokens, on SQLite.
@@ -751,7 +751,7 @@ php cast            # list commands
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
 | `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--migration|--run]` | API tokens |
 | `init [--demo] [--no-migrate] [--force]` | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded) |
-| `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations) |
+| `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:baseline`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations) |
 | `make:seeder`, `db:seed [--class=]` | Seeders |
 | `editor:install [--editor=] [--dir=] [--uninstall]` | Install the VS Code extension for `.cast.php` views |
 | `version` | Framework and PHP versions |
@@ -819,6 +819,10 @@ php -S 127.0.0.1:8099 -t public public/index.php &
 cd .. && npm i playwright && npx playwright install chromium
 BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
 ```
+
+## Upgrading
+
+[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^0.3` (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
 
 ## Versioning
 

@@ -19,6 +19,7 @@ final class FakeOrmMigrator implements MigratorContract
     public function reset(): array { self::$calls[] = ['reset']; return []; }
     public function refresh(): array { self::$calls[] = ['refresh']; return ['a', 'b']; }
     public function fresh(): array { self::$calls[] = ['fresh']; return ['a']; }
+    public function baseline(): array { self::$calls[] = ['baseline']; return ['orm_x']; }
     public function status(): array { return [['migration' => 'orm_migration_1', 'ran' => true, 'batch' => 3]]; }
     public function make(string $name, ?string $create = null, ?string $table = null): string { self::$calls[] = ['make', $name, $create, $table]; return '/orm/' . $name . '.php'; }
     public function pretended(): array { return ['orm_pending' => ['SELECT 1']]; }
@@ -207,4 +208,45 @@ test('another ORM: config database.connection lets it own the PDO that the frame
     Database::reset();
     Config::set('database.connection', fn() => 'not a pdo');
     throws(InvalidArgumentException::class, fn() => Database::connection(), 'must return a PDO');
+});
+
+test('migrate:baseline records the pending migrations as run without running them, so an existing database can adopt migrations', function () {
+    $app = console_app(['database/migrations/2026_01_01_000001_create_old_table.php' => migration_source('$schema->create("old", fn(Blueprint $t) => $t->id());', '$schema->dropIfExists("old");'),
+        'database/migrations/2026_01_01_000002_create_other_table.php' => migration_source('$schema->create("other", fn(Blueprint $t) => $t->id());', '$schema->dropIfExists("other");')]);
+    // the tables already exist (made by older code)
+    Database::connection()->exec('CREATE TABLE old (id INTEGER PRIMARY KEY AUTOINCREMENT, keep TEXT)');
+    Database::connection()->exec("INSERT INTO old (keep) VALUES ('my data')");
+
+    [$code, $out] = cast(['migrate'], $app);
+    eq(1, $code, 'a plain migrate fails: the table exists');
+    has('already exists', $out);
+
+    [$code, $out] = cast(['migrate:baseline'], $app);
+    eq(0, $code, $out);
+    has('2 migrations recorded as run.', $out);
+    has('Recorded:  2026_01_01_000001_create_old_table', $out);
+    ok(!in_array('other', tables(), true), 'nothing was executed');
+    eq('my data', Database::connection()->query('SELECT keep FROM old')->fetchColumn(), 'the data is untouched');
+
+    has('Yes', cast(['migrate:status'], $app)[1]);
+    has('Nothing to migrate.', cast(['migrate'], $app)[1]);
+    has('Nothing to record.', cast(['migrate:baseline'], $app)[1]);
+
+    // later migrations run normally, in their own batch
+    file_put_contents($app->databasePath('migrations/2026_02_01_000000_create_new_table.php'), migration_source('$schema->create("fresh_one", fn(Blueprint $t) => $t->id());', '$schema->dropIfExists("fresh_one");'));
+    eq(0, cast(['migrate'], $app)[0]);
+    ok(in_array('fresh_one', tables(), true));
+    eq([1, 1, 2], array_map(fn($r) => (int) $r['batch'], QueryBuilder::table('migrations')->orderBy('id')->get()));
+});
+
+test('migrate:baseline needs --force in production, and another ORM\'s migrator handles it', function () {
+    $app = console_app([], 'production');
+    eq(1, cast(['migrate:baseline'], $app)[0]);
+
+    FakeOrmMigrator::$calls = [];
+    $orm = console_app(['config/app.php' => '<?php return ["providers" => [' . FakeOrmProvider::class . '::class]];']);
+    [$code, $out] = cast(['migrate:baseline'], $orm);
+    eq(0, $code, $out);
+    eq([['baseline']], FakeOrmMigrator::$calls);
+    has('1 migration recorded as run.', $out);
 });
