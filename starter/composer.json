@@ -9,7 +9,13 @@
     "anode/cast-framework": "*"
   },
   "repositories": [
-    { "type": "path", "url": "..", "options": { "symlink": true } }
+    {
+      "type": "path",
+      "url": "..",
+      "options": {
+        "symlink": true
+      }
+    }
   ],
   "autoload": {
     "psr-4": {
@@ -17,5 +23,10 @@
     }
   },
   "minimum-stability": "dev",
-  "prefer-stable": true
+  "prefer-stable": true,
+  "config": {
+    "allow-plugins": {
+      "anode/cast-framework": true
+    }
+  }
 }
