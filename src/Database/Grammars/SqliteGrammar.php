@@ -94,7 +94,7 @@ final class SqliteGrammar extends Grammar
 
     public function compileListTables(): string
     {
-        return "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%'";
+        return "SELECT name FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name";
     }
 
     public function compileDropAll(array $tables): array
@@ -107,6 +107,6 @@ final class SqliteGrammar extends Grammar
 
     public function compileListColumns(string $table): array
     {
-        return ['SELECT name FROM pragma_table_info(?)', [$table]];
+        return ['SELECT name FROM pragma_table_info(?) ORDER BY cid', [$table]];
     }
 }

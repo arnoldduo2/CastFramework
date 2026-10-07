@@ -413,3 +413,15 @@ test('Migrator: custom migrations table and path from config', function () {
     $app->make('migrator')->migrate();
     ok(in_array('schema_log', tables(), true) && in_array('z', tables(), true) && !in_array('migrations', tables(), true));
 });
+
+test('Schema: columns() come in table order and tables() sorted, whatever the database returns them in', function () {
+    $s = new Schema(sqlite());
+    $s->create('zebra', function (Blueprint $t) { $t->id(); $t->string('zeta'); $t->string('alpha'); $t->string('mid'); });
+    $s->create('apple', fn(Blueprint $t) => $t->id());
+    eq(['id', 'zeta', 'alpha', 'mid'], $s->columns('zebra'), 'not alphabetical');
+    eq(['apple', 'zebra'], array_values(array_diff($s->tables(), ['sqlite_sequence'])));
+    foreach ([new MySqlGrammar(), new PostgresGrammar(), new SqliteGrammar()] as $g) {
+        has('ORDER BY', $g->compileListTables(), $g->driver() . ' tables');
+        has('ORDER BY', $g->compileListColumns('t')[0], $g->driver() . ' columns');
+    }
+});

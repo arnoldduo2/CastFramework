@@ -99,7 +99,7 @@ final class PostgresGrammar extends Grammar
 
     public function compileListTables(): string
     {
-        return 'SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = \'BASE TABLE\'';
+        return 'SELECT table_name FROM information_schema.tables WHERE table_schema = current_schema() AND table_type = \'BASE TABLE\' ORDER BY table_name';
     }
 
     public function compileDropAll(array $tables): array
@@ -109,6 +109,6 @@ final class PostgresGrammar extends Grammar
 
     public function compileListColumns(string $table): array
     {
-        return ['SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ?', [$table]];
+        return ['SELECT column_name FROM information_schema.columns WHERE table_schema = current_schema() AND table_name = ? ORDER BY ordinal_position', [$table]];
     }
 }
