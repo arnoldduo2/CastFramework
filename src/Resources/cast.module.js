@@ -620,7 +620,7 @@
   }
 
   window.Cast = {
-    version: "0.5.0",
+    version: "0.5.2",
     load,
     http: (options) => http(options),
     page,

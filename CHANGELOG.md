@@ -2,6 +2,10 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.5.2
+
+- Fix: on a PHP fatal error the framework's JSON answer for Cast and API clients was followed by the Anode error handler's HTML page (the handler's shutdown function ran after ours), so the response was not valid JSON. The JSON answer now ends the request. For browsers the error handler, when it is on, keeps showing its own page.
+
 ## 0.5.0
 
 - **`php cast init` asks questions** (or takes options; `-n` uses the defaults): the **source folder** (new default `src`, was `app`; existing apps are not affected, their `config/app.php` says `app`), **web or API**, **how the front end works** (the built-in SPA client, server pages with normal loads, or an API for a front-end framework with CORS), whether to use the **Anode error handler** (all its settings and defaults are listed and can be configured), and **default or custom error pages**. Options: `--source`, `--frontend=spa|php|external|api`, `--cors`, `--error-handler=yes|no`, `--error-pages=default|custom`.

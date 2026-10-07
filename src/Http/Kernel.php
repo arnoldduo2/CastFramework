@@ -52,6 +52,9 @@ final class Kernel
             if ($error === null || !in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR], true)) return;
             error_log(sprintf('Fatal error: %s in %s:%d', $error['message'], $error['file'], $error['line']));
             if (headers_sent()) return;
+            // for a browser the error handler (when it is on) shows its own page for fatal errors: leave it to it
+            $machine = $request->isCast() || $request->isApi() || $request->expectsJson();
+            if (!$machine && $this->app->has('error_handler')) return;
             while (ob_get_level() > 0) @ob_end_clean();
 
             $debug = (bool) Config::get('app.debug', false);
@@ -66,6 +69,8 @@ final class Kernel
                 $response = Response::html('<h1>500</h1><p>' . htmlspecialchars($message !== '' ? $message : 'Something went wrong on our side.', ENT_QUOTES) . '</p>', 500);
             }
             $response->send();
+            // nothing may add to this answer: shutdown functions registered later (the error handler's HTML page) must not run
+            exit(1);
         });
     }
 
