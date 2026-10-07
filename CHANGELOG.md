@@ -2,6 +2,11 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.3.1
+
+- **PHPUnit:** `composer test` runs every case through PHPUnit 10.5 (`phpunit.xml.dist`, `tests/phpunit/`), each named `<file>: <case>`; `--filter`, `--testdox`. The dependency-free runner stays (`composer test:plain`) and now lists failed cases by name at the end. CI runs PHPUnit on PHP 8.1 to 8.4 and against MySQL 8 and PostgreSQL 16, and writes the failed cases to the job summary.
+- Fix: `Schema::columns()` and `tables()` return rows in a defined order (`ORDER BY ordinal_position` / `table_name`). MySQL 8 returned columns alphabetically, MariaDB in table order, so the result differed between servers (found by the MySQL CI job, reproduced on MySQL 8.0).
+
 ## 0.3.0
 
 - **Migrations:** `Schema` / `Blueprint` builder with MySQL, PostgreSQL and SQLite grammars; the `Migrator` (batches, rollback, reset, refresh, fresh, status, pretend, lock file, transactional DDL where supported);

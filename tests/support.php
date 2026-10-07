@@ -10,6 +10,9 @@ use Cast\Core\Router;
 use Cast\Http\Request;
 use Cast\Validation\Validator;
 
+// the framework logs server errors with error_log(); keep that out of the test output
+ini_set('error_log', sys_get_temp_dir() . '/cast-tests-error.log');
+
 $GLOBALS['failures'] = 0;
 $GLOBALS['total'] = 0;
 $GLOBALS['tmp_dirs'] = [];
@@ -18,8 +21,17 @@ register_shutdown_function(function () {
     foreach ($GLOBALS['tmp_dirs'] as $dir) exec('rm -rf ' . escapeshellarg($dir));
 });
 
+/**
+ * Register a test case. With `$GLOBALS['cast_collect']` set (the PHPUnit bridge) the case is collected and run later by
+ * PHPUnit; otherwise (tests/run.php) it runs right away and prints its result.
+ */
 function test(string $name, callable $fn): void
 {
+    if (isset($GLOBALS['cast_collect'])) {
+        $GLOBALS['cast_collect'][] = [(string) ($GLOBALS['cast_file'] ?? ''), $name, $fn];
+        return;
+    }
+
     $GLOBALS['total']++;
     reset_state();
     try {
@@ -27,6 +39,7 @@ function test(string $name, callable $fn): void
         echo "  ok    $name\n";
     } catch (\Throwable $e) {
         $GLOBALS['failures']++;
+        $GLOBALS['failed'][] = ($GLOBALS['cast_file'] ?? '') . ': ' . $name;
         echo "  FAIL  $name\n        " . str_replace("\n", "\n        ", $e->getMessage()) . "\n";
         if (!$e instanceof AssertionError) echo '        at ' . basename($e->getFile()) . ':' . $e->getLine() . "\n";
     }

@@ -794,8 +794,19 @@ Interfaces in `Cast\Contracts` where an app plugs in its own behaviour:
 
 ```bash
 composer install
-php tests/run.php            # all suites (no PHPUnit needed)
-php tests/run.php router     # only suites whose file name contains "router"
+composer test                          # PHPUnit: every case, named "<file>: <case>"
+composer test -- --filter migrations   # only the cases whose name contains "migrations"
+composer test -- --testdox             # one readable line per case
+composer test:plain                    # the same cases with the dependency-free runner (no PHPUnit needed): php tests/run.php [filter]
+```
+
+Both runners execute the same cases (`tests/cases/*.php`, written as `test('name', fn)` with small helpers). A failing case is reported by name in both. `tests/phpunit/` is the bridge that hands each case to PHPUnit.
+
+Against a real database server (the suite creates and drops tables in that database, so use a scratch one):
+
+```bash
+CAST_TEST_DB=mysql CAST_TEST_DB_HOST=127.0.0.1 CAST_TEST_DB_NAME=cast_test CAST_TEST_DB_USER=root CAST_TEST_DB_PASS=secret composer test
+CAST_TEST_DB=pgsql CAST_TEST_DB_USER=postgres CAST_TEST_DB_PASS=secret composer test      # CAST_TEST_DB_PORT is optional
 ```
 
 The suites cover each subsystem and the starter app end to end (login, CSRF, JSON verbs, validation, maintenance, error pages, the SPA envelopes, API tokens, rate limits, CORS).

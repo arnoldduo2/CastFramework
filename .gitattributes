@@ -4,3 +4,4 @@
 /.gitignore export-ignore
 /editor/vscode/test export-ignore
 /editor/vscode/package-lock.json export-ignore
+/phpunit.xml.dist export-ignore

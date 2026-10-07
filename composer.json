@@ -38,7 +38,8 @@
         "bin/cast"
     ],
     "scripts": {
-        "test": "php tests/run.php"
+        "test": "phpunit",
+        "test:plain": "php tests/run.php"
     },
     "config": {
         "sort-packages": true
@@ -46,5 +47,8 @@
     "minimum-stability": "stable",
     "extra": {
         "class": "Cast\\Composer\\Plugin"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.5"
     }
 }
