@@ -23,6 +23,8 @@ final class Kernel
         Commands\VersionCommand::class,
         Commands\InitCommand::class,
         Commands\EditorInstallCommand::class,
+        Commands\ComponentsCommand::class,
+        Commands\MakeComponentCommand::class,
         Commands\MigrateCommand::class,
         Commands\MigrateRollbackCommand::class,
         Commands\MigrateResetCommand::class,

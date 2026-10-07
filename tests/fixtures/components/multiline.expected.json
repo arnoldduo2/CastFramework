@@ -1,0 +1,41 @@
+{
+  "description": "A card with a title.\n\nWraps its children in a bordered box.",
+  "props": [
+    {
+      "name": "title",
+      "type": "string",
+      "description": "The heading shown at the top of the card, which may be long and wraps onto a second line",
+      "required": true,
+      "default": null,
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "compact",
+      "type": "bool",
+      "description": "Use less padding [optional]",
+      "required": false,
+      "default": "false",
+      "values": [],
+      "kind": "bool",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "total",
+      "type": "int|float",
+      "description": "The amount shown in the corner",
+      "required": true,
+      "default": null,
+      "values": [],
+      "kind": "number",
+      "deprecated": false,
+      "inferred": false
+    }
+  ],
+  "slots": [],
+  "examples": [],
+  "deprecated": false
+}

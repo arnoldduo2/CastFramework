@@ -2,6 +2,12 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## Unreleased
+
+- **Component docs:** a component's docblock (`@var type $prop description`, `@slot`, `@example`, `@deprecated`) and its `??=` defaults are read as the component's spec, by the VS Code extension and by `Cast\Support\ComponentDocs`; both readers give identical JSON (shared fixtures in `tests/fixtures/components`).
+- `php cast components [Tag] [--json|--markdown] [--write=PATH] [--check]` and `php cast make:component Name --props=...`; `cast init` writes an `AGENTS.md` for AI tools when none exists. The starter's Button and Card are documented. See [docs/COMPONENTS.md](docs/COMPONENTS.md).
+- VS Code extension 0.2.0: prop/value/slot/tag completion, hover tables, diagnostics (`cast.diagnostics`), quick fixes, go to prop definition.
+
 ## 0.3.2
 
 - **`php cast migrate:baseline`** (and `Migrator::baseline()` in the contract): records the pending migrations as run without running them, so an app whose tables already exist can adopt migrations without losing data.

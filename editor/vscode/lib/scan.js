@@ -50,9 +50,15 @@ function scanComponents(src) {
     if (tag) {
       const closing = tag[1] === "/";
       const start = pos + 1 + tag[1].length;
-      found.push({ kind: "component", name: tag[2], start, end: start + tag[2].length, closing });
+      const ref = { kind: "component", name: tag[2], start, end: start + tag[2].length, closing, tagStart: pos, tagEnd: null, selfClosing: false, attrs: [] };
+      found.push(ref);
       pos += tag[0].length;
-      pos = closing ? skipTo(src, pos, ">") : attributes(src, pos, found);
+      if (closing) {
+        pos = skipTo(src, pos, ">");
+        ref.tagEnd = src[pos - 1] === ">" ? pos : null;
+      } else {
+        pos = attributes(src, pos, found, ref);
+      }
       continue;
     }
 
@@ -70,15 +76,63 @@ function skipTo(src, pos, char) {
   return i < 0 ? src.length : i + 1;
 }
 
-/** Walks the attributes of a tag up to and including its `>`; components inside `{ }` values are collected. */
-function attributes(src, pos, found) {
+const ATTRIBUTE_NAME = /[A-Za-z_:@][-A-Za-z0-9_:.@]*/y;
+
+/**
+ * Walks the attributes of a tag up to and including its `>`; components inside `{ }` values are collected.
+ * When `ref` is given (a component tag), its attributes are recorded on it: {name, nameStart, nameEnd, equals, valueType, valueStart, valueEnd}.
+ * `valueType` is 'string' (inside the quotes), 'brace' (inside the braces) or 'spread' (`{...$x}`); `valueEnd` is null when unterminated.
+ */
+function attributes(src, pos, found, ref = null) {
   while (pos < src.length) {
     const c = src[pos];
-    if (c === ">") return pos + 1;
+    if (c === ">") {
+      if (ref) {
+        ref.tagEnd = pos + 1;
+        ref.selfClosing = src[pos - 1] === "/";
+      }
+      return pos + 1;
+    }
+
+    if (ref && /[A-Za-z_:@]/.test(c)) {
+      ATTRIBUTE_NAME.lastIndex = pos;
+      const m = ATTRIBUTE_NAME.exec(src);
+      const attr = { name: m[0], nameStart: pos, nameEnd: pos + m[0].length, equals: null, valueType: null, valueStart: null, valueEnd: null };
+      ref.attrs.push(attr);
+      pos = attr.nameEnd;
+
+      let look = pos;
+      while (look < src.length && /\s/.test(src[look])) look++;
+      if (src[look] === "=") {
+        attr.equals = look;
+        pos = look + 1;
+        while (pos < src.length && /\s/.test(src[pos])) pos++;
+        const q = src[pos];
+        if (q === '"' || q === "'") {
+          attr.valueType = "string";
+          attr.valueStart = pos + 1;
+          const end = quoted(src, pos, q);
+          attr.valueEnd = src[end - 1] === q && end - 1 >= attr.valueStart ? end - 1 : null;
+          pos = end;
+        } else if (q === "{") {
+          attr.valueType = "brace";
+          attr.valueStart = pos + 1;
+          const end = braces(src, pos + 1, found);
+          attr.valueEnd = src[end - 1] === "}" && end - 1 >= attr.valueStart ? end - 1 : null;
+          pos = end;
+        }
+      }
+      continue;
+    }
+
     if (c === '"' || c === "'") {
       pos = quoted(src, pos, c);
     } else if (c === "{") {
+      const start = pos;
       pos = braces(src, pos + 1, found);
+      if (ref && /^\{\s*\.\.\./.test(src.slice(start, start + 12))) {
+        ref.attrs.push({ name: null, nameStart: start, nameEnd: start, equals: null, valueType: "spread", valueStart: start + 1, valueEnd: src[pos - 1] === "}" ? pos - 1 : null });
+      }
     } else if (src.startsWith("<?", pos)) {
       const end = src.indexOf("?>", pos + 2);
       pos = end < 0 ? src.length : end + 2;
@@ -126,8 +180,9 @@ function braces(src, pos, found) {
       const tag = COMPONENT_OPEN.exec(src);
       if (tag && tag[1] === "") {
         const start = pos + 1;
-        found.push({ kind: "component", name: tag[2], start, end: start + tag[2].length, closing: false });
-        pos = attributes(src, pos + tag[0].length, found);
+        const ref = { kind: "component", name: tag[2], start, end: start + tag[2].length, closing: false, tagStart: pos, tagEnd: null, selfClosing: false, attrs: [] };
+        found.push(ref);
+        pos = attributes(src, pos + tag[0].length, found, ref);
         continue;
       }
     }

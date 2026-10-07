@@ -1,0 +1,52 @@
+{
+  "description": "",
+  "props": [
+    {
+      "name": "title",
+      "type": null,
+      "description": "",
+      "required": false,
+      "default": "'KPI'",
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": true
+    },
+    {
+      "name": "hasLabel",
+      "type": null,
+      "description": "",
+      "required": false,
+      "default": "false",
+      "values": [],
+      "kind": "bool",
+      "deprecated": false,
+      "inferred": true
+    },
+    {
+      "name": "limit",
+      "type": null,
+      "description": "",
+      "required": false,
+      "default": "10",
+      "values": [],
+      "kind": "number",
+      "deprecated": false,
+      "inferred": true
+    },
+    {
+      "name": "items",
+      "type": null,
+      "description": "",
+      "required": false,
+      "default": "['a', 'b; c']",
+      "values": [],
+      "kind": "other",
+      "deprecated": false,
+      "inferred": true
+    }
+  ],
+  "slots": [],
+  "examples": [],
+  "deprecated": false
+}

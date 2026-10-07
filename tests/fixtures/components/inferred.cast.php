@@ -1,0 +1,7 @@
+<?php
+$title ??= 'KPI';
+$hasLabel ??= false;
+$limit ??= 10;
+$items ??= ['a', 'b; c'];
+?>
+<div><?= $title ?></div>

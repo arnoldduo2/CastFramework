@@ -1,0 +1,107 @@
+{
+  "description": "Types of every shape.",
+  "props": [
+    {
+      "name": "nickname",
+      "type": "?string",
+      "description": "Optional by its type",
+      "required": false,
+      "default": null,
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "variant",
+      "type": "'primary'|'secondary'|'ghost'",
+      "description": "One of the styles",
+      "required": true,
+      "default": null,
+      "values": [
+        "primary",
+        "secondary",
+        "ghost"
+      ],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "order",
+      "type": "'asc' | 'desc' | null",
+      "description": "Sorted how",
+      "required": false,
+      "default": null,
+      "values": [
+        "asc",
+        "desc"
+      ],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "options",
+      "type": "array<string, mixed>",
+      "description": "Free-form options",
+      "required": true,
+      "default": null,
+      "values": [],
+      "kind": "other",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "filter",
+      "type": "callable(int, string): bool",
+      "description": "Called for each row",
+      "required": true,
+      "default": null,
+      "values": [],
+      "kind": "other",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "count",
+      "type": "int",
+      "description": "How many",
+      "required": true,
+      "default": null,
+      "values": [],
+      "kind": "number",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "anything",
+      "type": "mixed",
+      "description": "Whatever",
+      "required": false,
+      "default": null,
+      "values": [],
+      "kind": "other",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "level",
+      "type": "string",
+      "description": "The level, one of `low`, `mid`, `high`",
+      "required": true,
+      "default": null,
+      "values": [
+        "low",
+        "mid",
+        "high"
+      ],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    }
+  ],
+  "slots": [],
+  "examples": [],
+  "deprecated": false
+}

@@ -54,8 +54,45 @@ class Hover {
   }
 }
 
+class CompletionItem {
+  constructor(label, kind) {
+    this.label = label;
+    this.kind = kind;
+  }
+}
+class SnippetString {
+  constructor(value) {
+    this.value = value;
+  }
+}
+class Diagnostic {
+  constructor(range, message, severity) {
+    this.range = range;
+    this.message = message;
+    this.severity = severity;
+  }
+}
+class CodeAction {
+  constructor(title, kind) {
+    this.title = title;
+    this.kind = kind;
+  }
+}
+class WorkspaceEdit {
+  constructor() {
+    this.edits = [];
+  }
+  insert(uri, position, text) {
+    this.edits.push({ type: "insert", position, text });
+  }
+  replace(uri, range, text) {
+    this.edits.push({ type: "replace", range, text });
+  }
+}
+
 function create({ root, settings = {} }) {
   const providers = {};
+  const collections = {};
   const api = {
     Position,
     Range,
@@ -65,10 +102,26 @@ function create({ root, settings = {} }) {
     MarkdownString,
     Hover,
     providers,
+    collections,
+    CompletionItem,
+    CompletionItemKind: { Class: 6, Property: 9, EnumMember: 19, Field: 4 },
+    SnippetString,
+    Diagnostic,
+    CodeAction,
+    CodeActionKind: { QuickFix: "quickfix" },
+    WorkspaceEdit,
     languages: {
       registerDocumentLinkProvider: (selector, p) => ((providers.links = p), { dispose() {} }),
-      registerDefinitionProvider: (selector, p) => ((providers.definition = p), { dispose() {} }),
-      registerHoverProvider: (selector, p) => ((providers.hover = p), { dispose() {} }),
+      // several providers of a kind may register: tests look at them by role
+      registerDefinitionProvider: (selector, p) => ((providers[p.constructor.name === "PropDefinitions" ? "propDefinition" : "definition"] = p), { dispose() {} }),
+      registerHoverProvider: (selector, p) => ((providers[p.constructor.name === "ComponentHovers" ? "componentHover" : "hover"] = p), { dispose() {} }),
+      registerCompletionItemProvider: (selector, p) => ((providers.completion = p), { dispose() {} }),
+      registerCodeActionsProvider: (selector, p) => ((providers.codeActions = p), { dispose() {} }),
+      createDiagnosticCollection: (name) => {
+        const store = new Map();
+        collections[name] = store;
+        return { set: (uri, list) => store.set(uri.fsPath, list), delete: (uri) => store.delete(uri.fsPath), dispose() {} };
+      },
     },
     workspace: {
       getWorkspaceFolder: () => (root ? { uri: Uri.file(root) } : undefined),
@@ -95,4 +148,4 @@ function document(file, text) {
   return { uri: Uri.file(file), getText: () => text, positionAt, offsetAt: (p) => starts[p.line] + p.character };
 }
 
-module.exports = { create, document, Position, path };
+module.exports = { create, document, Position, Range, path };

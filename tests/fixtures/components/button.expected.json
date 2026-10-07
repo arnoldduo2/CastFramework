@@ -1,0 +1,60 @@
+{
+  "description": "Button component",
+  "props": [
+    {
+      "name": "label",
+      "type": "string|null",
+      "description": "The text to display on the button",
+      "required": false,
+      "default": "'Button'",
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "type",
+      "type": "string|null",
+      "description": "The button type (e.g., \"button\", \"submit\", \"reset\")",
+      "required": false,
+      "default": "'button'",
+      "values": [
+        "button",
+        "submit",
+        "reset"
+      ],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "href",
+      "type": "string|null",
+      "description": "The URL to link to (if provided, renders an <a> tag instead of a <button>)",
+      "required": false,
+      "default": "null",
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "variant",
+      "type": "string|null",
+      "description": "The button variant (e.g., \"primary\", \"secondary\", \"ghost\")",
+      "required": false,
+      "default": "'primary'",
+      "values": [
+        "primary",
+        "secondary",
+        "ghost"
+      ],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    }
+  ],
+  "slots": [],
+  "examples": [],
+  "deprecated": false
+}

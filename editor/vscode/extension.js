@@ -8,6 +8,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 const { scanComponents, scanHelpers } = require("./lib/scan");
 const { resolveComponent, resolveLegacyComponent, resolveView, resolveModule, propsOf } = require("./lib/resolve");
+const { lookup, listComponents, findProp, specOf } = require("./lib/components");
+const { contextAt, diagnose } = require("./lib/complete");
+const { camel } = require("./lib/docblock");
 
 const SELECTOR = { scheme: "file", pattern: "**/*.cast.php" };
 
@@ -109,14 +112,271 @@ class Hovers {
   }
 }
 
+
+// ------------------------------------------------------------------ component docs
+
+/** The prop name as it is written in a tag, in the style of the `cast.propCase` setting. */
+function spell(name, style) {
+  const words = name.replace(/([a-z0-9])([A-Z])/g, "$1 $2").toLowerCase().split(/[\s_-]+/);
+  if (style === "kebab") return words.join("-");
+  if (style === "snake") return words.join("_");
+  return camel(name);
+}
+
+function markdownFor(file, spec, tag) {
+  const md = new vscode.MarkdownString();
+  md.appendMarkdown(`**<${tag}>**`);
+  if (spec.deprecated) md.appendMarkdown(` — *deprecated${spec.deprecated === true ? "" : ": " + spec.deprecated}*`);
+  md.appendMarkdown("\n\n");
+  if (spec.description) md.appendMarkdown(spec.description + "\n\n");
+
+  if (spec.props.length) {
+    md.appendMarkdown("| Prop | Type | | Description |\n| --- | --- | --- | --- |\n");
+    for (const p of spec.props) {
+      const flag = p.required ? "required" : p.default !== null ? `= ${p.default}` : "optional";
+      const text = (p.description || "").replace(/\|/g, "\\|").replace(/\n/g, " ");
+      md.appendMarkdown(`| \`${p.name}\` | ${p.type ? "`" + p.type.replace(/\|/g, "\\|") + "`" : ""} | ${flag.replace(/\|/g, "\\|")} | ${text} |\n`);
+    }
+    md.appendMarkdown("\n");
+  }
+  if (spec.slots.length) md.appendMarkdown("Slots: " + spec.slots.map((s) => `\`${s.name}\`${s.description ? " (" + s.description + ")" : ""}`).join(", ") + "\n\n");
+  for (const example of spec.examples) md.appendCodeblock(example, "php");
+  md.appendMarkdown(`\`${file}\``);
+  return md;
+}
+
+function propMarkdown(tag, prop) {
+  const md = new vscode.MarkdownString();
+  md.appendMarkdown(`**${prop.name}**` + (prop.type ? `: \`${prop.type}\`` : "") + (prop.required ? " — required" : prop.default !== null ? ` — default \`${prop.default}\`` : " — optional") + "\n\n");
+  if (prop.description) md.appendMarkdown(prop.description + "\n\n");
+  if (prop.values.length) md.appendMarkdown("One of: " + prop.values.map((v) => `\`${v}\``).join(", ") + "\n\n");
+  md.appendMarkdown(`*prop of* \`<${tag}>\``);
+  return md;
+}
+
+/** Which refs (components and attributes) the cursor is on, for hover and go-to-definition. */
+function componentAt(document, position) {
+  const text = document.getText();
+  const offset = document.offsetAt(position);
+  const where = locations(document);
+  for (const ref of scanComponents(text)) {
+    if (ref.name === "Slot") continue;
+    if (offset >= ref.start && offset <= ref.end) return { kind: "tag", ref, where, found: lookup(ref.name, where) };
+    for (const attr of ref.attrs || []) {
+      if (attr.name && offset >= attr.nameStart && offset <= attr.nameEnd) {
+        const found = lookup(ref.name, where);
+        return { kind: "attribute", ref, attr, where, found, prop: found ? findProp(found.spec, attr.name) : null };
+      }
+    }
+  }
+  return null;
+}
+
+class Completions {
+  provideCompletionItems(document, position) {
+    const text = document.getText();
+    const offset = document.offsetAt(position);
+    const context = contextAt(text, offset);
+    if (!context) return undefined;
+
+    const where = locations(document);
+    const config = vscode.workspace.getConfiguration("cast", document.uri);
+    const style = config.get("propCase", "camel");
+    const range = (a, b) => new vscode.Range(document.positionAt(a), document.positionAt(b));
+    const items = [];
+    const Kind = vscode.CompletionItemKind;
+
+    if (context.type === "tag") {
+      for (const { tag, file } of listComponents(where.componentDirs, where.ext)) {
+        const spec = specOf(file);
+        const item = new vscode.CompletionItem(tag, Kind.Class);
+        item.detail = spec && spec.description ? spec.description.split("\n")[0] : "component";
+        if (spec) item.documentation = markdownFor(file, spec, tag);
+        const required = spec ? spec.props.filter((p) => p.required && !p.inferred) : [];
+        item.insertText = new vscode.SnippetString(tag + required.map((p, i) => ` ${spell(p.name, style)}=` + (p.kind === "string" ? `"$${i + 1}"` : `{$${i + 1}}`)).join(""));
+        item.range = range(context.start, context.end);
+        item.sortText = spec && spec.deprecated ? "1" + tag : "0" + tag;
+        if (spec && spec.deprecated) item.tags = [1];
+        items.push(item);
+      }
+      return items;
+    }
+
+    const found = lookup(context.ref.name, where);
+
+    if (context.type === "slot") {
+      const parent = context.parent && lookup(context.parent.name, where);
+      for (const slot of parent ? parent.spec.slots : []) {
+        const item = new vscode.CompletionItem(slot.name, Kind.Field);
+        item.detail = slot.description;
+        item.range = range(context.start, context.end);
+        items.push(item);
+      }
+      return items;
+    }
+    if (!found) return undefined;
+
+    if (context.type === "attribute") {
+      const used = context.used;
+      for (const prop of found.spec.props) {
+        if (used.has(camel(prop.name))) continue;
+        const name = spell(prop.name, style);
+        const item = new vscode.CompletionItem(name, Kind.Property);
+        item.detail = [prop.type, prop.required ? "required" : prop.default !== null ? `default ${prop.default}` : "optional"].filter(Boolean).join(" · ");
+        item.documentation = propMarkdown(context.ref.name, prop);
+        item.sortText = (prop.deprecated ? "2" : prop.required ? "0" : prop.inferred ? "1z" : "1") + name;
+        if (prop.deprecated) item.tags = [1];
+        const placeholder = prop.values.length ? `\${1|${prop.values.join(",")}|}` : "$1";
+        item.insertText = new vscode.SnippetString(prop.kind === "bool" ? name : prop.kind === "string" ? `${name}="${placeholder}"` : `${name}={$1}`);
+        item.range = range(context.start, context.end);
+        if (prop.kind !== "bool") item.command = { command: "editor.action.triggerSuggest", title: "values" };
+        items.push(item);
+      }
+      return items;
+    }
+
+    if (context.type === "value") {
+      const prop = findProp(found.spec, context.attr.name);
+      if (!prop) return undefined;
+      const values = prop.kind === "bool" ? ["true", "false"] : prop.values;
+      for (const value of values) {
+        const item = new vscode.CompletionItem(value, Kind.EnumMember);
+        item.detail = prop.name;
+        if (prop.kind === "bool") {
+          item.insertText = context.quoted ? value : `{${value}}`;
+        } else {
+          item.insertText = context.quoted ? value : `"${value}"`;
+        }
+        item.range = range(context.start, context.end);
+        items.push(item);
+      }
+      return items;
+    }
+    return undefined;
+  }
+}
+
+class ComponentHovers {
+  provideHover(document, position) {
+    const hit = componentAt(document, position);
+    if (!hit || !hit.found) return undefined;
+    const range = new vscode.Range(
+      document.positionAt(hit.kind === "tag" ? hit.ref.start : hit.attr.nameStart),
+      document.positionAt(hit.kind === "tag" ? hit.ref.end : hit.attr.nameEnd)
+    );
+    if (hit.kind === "tag") return new vscode.Hover(markdownFor(hit.found.file, hit.found.spec, hit.ref.name), range);
+    return hit.prop ? new vscode.Hover(propMarkdown(hit.ref.name, hit.prop), range) : undefined;
+  }
+}
+
+/** Ctrl+click on a prop name: the line in the component file that documents or defaults it. */
+class PropDefinitions {
+  provideDefinition(document, position) {
+    const hit = componentAt(document, position);
+    if (!hit || hit.kind !== "attribute" || !hit.found || !hit.prop) return undefined;
+    let source;
+    try {
+      source = fs.readFileSync(hit.found.file, "utf8");
+    } catch {
+      return undefined;
+    }
+    const name = hit.prop.name.replace(/[$]/g, "");
+    const re = new RegExp(`@(?:var|param|prop|property)[^\\n]*\\$${name}\\b|\\$${name}\\s*\\?\\?=`);
+    const m = re.exec(source);
+    if (!m) return undefined;
+    const before = source.slice(0, m.index);
+    const line = before.split("\n").length - 1;
+    const column = m.index - (before.lastIndexOf("\n") + 1);
+    return new vscode.Location(vscode.Uri.file(hit.found.file), new vscode.Position(line, column));
+  }
+}
+
+const SEVERITY = { hint: 3, warning: 1 };
+
+/** Problems in component tags, shown as hints (the default) or warnings; `cast.diagnostics: off` turns them off. */
+function publishDiagnostics(document, collection) {
+  if (!/\.cast\.php$/.test(document.uri.fsPath)) return;
+  const level = vscode.workspace.getConfiguration("cast", document.uri).get("diagnostics", "hint");
+  if (level === "off" || !(level in SEVERITY)) {
+    collection.set(document.uri, []);
+    return;
+  }
+  const where = locations(document);
+  const problems = diagnose(document.getText(), (tag) => lookup(tag, where));
+  collection.set(document.uri, problems.map((p) => {
+    const d = new vscode.Diagnostic(new vscode.Range(document.positionAt(p.start), document.positionAt(p.end)), p.message, SEVERITY[level]);
+    d.source = "cast";
+    d.code = p.kind;
+    d.cast = p;
+    if (p.kind === "deprecated" || p.kind === "deprecated-prop") d.tags = [2];
+    return d;
+  }));
+}
+
+class Fixes {
+  provideCodeActions(document, range, context) {
+    const actions = [];
+    for (const d of context.diagnostics) {
+      const p = d.cast;
+      if (!p) continue;
+      if (p.kind === "missing") {
+        const style = vscode.workspace.getConfiguration("cast", document.uri).get("propCase", "camel");
+        const found = lookup(p.tag, locations(document));
+        const text = p.missing.map((m) => {
+          const prop = found && findProp(found.spec, m);
+          return ` ${spell(m, style)}=` + (prop && prop.kind === "string" ? '""' : "{}");
+        }).join("");
+        actions.push(edit(`Add ${p.missing.map((m) => `"${m}"`).join(", ")}`, document, d, (we) => we.insert(document.uri, document.positionAt(p.insertAt), text)));
+      } else if (p.kind === "unknown" && p.suggestion) {
+        const style = vscode.workspace.getConfiguration("cast", document.uri).get("propCase", "camel");
+        actions.push(edit(`Change to "${spell(p.suggestion, style)}"`, document, d, (we) => we.replace(document.uri, d.range, spell(p.suggestion, style))));
+      } else if (p.kind === "value" && p.values) {
+        for (const v of p.values) actions.push(edit(`Use "${v}"`, document, d, (we) => we.replace(document.uri, d.range, v)));
+      }
+    }
+    return actions;
+  }
+}
+
+function edit(title, document, diagnostic, apply) {
+  const action = new vscode.CodeAction(title, vscode.CodeActionKind.QuickFix);
+  action.diagnostics = [diagnostic];
+  action.edit = new vscode.WorkspaceEdit();
+  apply(action.edit);
+  return action;
+}
+
 function activate(context) {
+  const diagnostics = vscode.languages.createDiagnosticCollection("cast");
   context.subscriptions.push(
     vscode.languages.registerDocumentLinkProvider(SELECTOR, new Links()),
     vscode.languages.registerDefinitionProvider(SELECTOR, new Definitions()),
-    vscode.languages.registerHoverProvider(SELECTOR, new Hovers())
+    vscode.languages.registerDefinitionProvider(SELECTOR, new PropDefinitions()),
+    vscode.languages.registerHoverProvider(SELECTOR, new ComponentHovers()),
+    vscode.languages.registerHoverProvider(SELECTOR, new Hovers()),
+    vscode.languages.registerCompletionItemProvider(SELECTOR, new Completions(), "<", " ", '"', "'", "=", "."),
+    vscode.languages.registerCodeActionsProvider(SELECTOR, new Fixes(), { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
+    diagnostics
   );
+
+  // problems are refreshed when a file opens or changes (a short delay while typing), and when settings change
+  const timers = new Map();
+  const refresh = (document) => {
+    clearTimeout(timers.get(document.uri.fsPath));
+    timers.set(document.uri.fsPath, setTimeout(() => publishDiagnostics(document, diagnostics), 250));
+  };
+  if (vscode.workspace.onDidOpenTextDocument) {
+    context.subscriptions.push(
+      vscode.workspace.onDidOpenTextDocument(refresh),
+      vscode.workspace.onDidChangeTextDocument((e) => refresh(e.document)),
+      vscode.workspace.onDidCloseTextDocument((d) => diagnostics.delete(d.uri)),
+      vscode.workspace.onDidSaveTextDocument(refresh),
+      vscode.workspace.onDidChangeConfiguration(() => (vscode.workspace.textDocuments || []).forEach(refresh))
+    );
+    (vscode.workspace.textDocuments || []).forEach(refresh);
+  }
 }
 
 function deactivate() {}
 
-module.exports = { activate, deactivate, references, locations };
+module.exports = { activate, deactivate, references, locations, publishDiagnostics, spell };

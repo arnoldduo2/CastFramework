@@ -1,0 +1,52 @@
+{
+  "description": "",
+  "props": [
+    {
+      "name": "title",
+      "type": "string",
+      "description": "Must be given",
+      "required": true,
+      "default": null,
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "qty",
+      "type": "int",
+      "description": "Quantity",
+      "required": true,
+      "default": null,
+      "values": [],
+      "kind": "number",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "note",
+      "type": "string",
+      "description": "Has a default so it is optional",
+      "required": false,
+      "default": "''",
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    },
+    {
+      "name": "hint",
+      "type": "string|null",
+      "description": "Optional",
+      "required": false,
+      "default": null,
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    }
+  ],
+  "slots": [],
+  "examples": [],
+  "deprecated": false
+}

@@ -1,8 +1,8 @@
 {
   "name": "cast-framework",
   "displayName": "CastFramework",
-  "description": "Syntax highlighting and navigation for CastFramework views (.cast.php): component tags, props, slots, and Ctrl+click to open a component's file.",
-  "version": "0.1.0",
+  "description": "Highlighting, navigation and prop-aware completion for CastFramework views (.cast.php): component tags, docblock props and types, Ctrl+click to open a component's file.",
+  "version": "0.2.0",
   "publisher": "anode",
   "license": "MIT",
   "repository": {
@@ -80,6 +80,26 @@
           "type": "string",
           "default": ".cast.php",
           "markdownDescription": "The extension of view and component files that use the engine syntax."
+        },
+        "cast.diagnostics": {
+          "type": "string",
+          "enum": [
+            "off",
+            "hint",
+            "warning"
+          ],
+          "default": "hint",
+          "markdownDescription": "Problems in component tags, for components that document their props: unknown prop, missing required prop, a value outside the documented list, deprecated component or prop. `hint` shows faint dots only."
+        },
+        "cast.propCase": {
+          "type": "string",
+          "enum": [
+            "camel",
+            "kebab",
+            "snake"
+          ],
+          "default": "camel",
+          "markdownDescription": "How prop names are written when completed: `hasLabel`, `has-label` or `has_label` (the engine treats all three the same)."
         }
       }
     }

@@ -1,0 +1,30 @@
+{
+  "description": "A list item with two sides.",
+  "props": [
+    {
+      "name": "right",
+      "type": "string",
+      "description": "The text on the right",
+      "required": true,
+      "default": null,
+      "values": [],
+      "kind": "string",
+      "deprecated": false,
+      "inferred": false
+    }
+  ],
+  "slots": [
+    {
+      "name": "left",
+      "description": "The HTML on the left side, usually badges"
+    },
+    {
+      "name": "footer",
+      "description": "Optional footer"
+    }
+  ],
+  "examples": [
+    "<SelectItem right=\"Stock\">\n    <Slot name=\"left\"><Badge text=\"New\" /></Slot>\n</SelectItem>"
+  ],
+  "deprecated": "Use ListRow instead"
+}

@@ -60,6 +60,8 @@ final class InitCommand extends Command
         // `php cast <command>`: the launcher is always (re)checked, also for apps made before it existed
         $this->write($base . '/cast', (string) file_get_contents(dirname(__DIR__, 2) . '/Stubs/init/cast.stub'), $force, 'cast');
         @chmod($base . '/cast', 0755);
+        // agent hints belong to the app once written: only ever created, never overwritten
+        $this->write($base . '/AGENTS.md', (string) file_get_contents(dirname(__DIR__, 2) . '/Stubs/agents.md'), false, 'AGENTS.md');
         $this->ignoreFile($base, $output);
         $autoload = $this->registerAutoload($base);
 

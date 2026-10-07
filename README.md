@@ -679,6 +679,10 @@ Then reload the editor window. It gives you:
 come from the `cast.componentsPath`, `cast.viewsPath` and `cast.resourcesPath` settings (and `config/view.php`). Details: [editor/vscode/README.md](editor/vscode/README.md).
 A Marketplace extension (with prop completion, diagnostics and rename) will follow as the framework grows.
 
+### Component docs: props, types, agents
+
+Write a docblock in a component file (`@var string|null $label The text to show`) and the extension shows it on hover, completes props and values, and warns about unknown or missing props. `php cast components --json` gives the same information to AI tools, and `php cast make:component` starts new components documented. See [docs/COMPONENTS.md](docs/COMPONENTS.md).
+
 ## Helpers
 
 Installing the package loads these global functions (each wrapped in `function_exists`, so you can define your own first). Names are unchanged from the apps they came from.
