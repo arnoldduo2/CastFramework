@@ -786,6 +786,7 @@ The full reference for every command and flag is in [docs/COMMANDS.md](docs/COMM
 | `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:baseline`, `migrate:sync`, `db:sequence`, `components`, `make:component`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations) |
 | `make:seeder`, `db:seed [--class=]` | Seeders |
 | `editor:install [--editor=] [--dir=] [--uninstall]` | Install the VS Code extension for `.cast.php` views |
+| `ide:helpers [--path=]` | Write `_ide_helpers.php` so the editor knows the global helpers (fixes "Undefined function 'htchars'") |
 | `views:check [--fix]` | Find views that start with `declare(strict_types=1);` (PHP refuses it inside a template) |
 | `help [command]`, `<command> --help` | Usage, arguments, options and examples ([docs/COMMANDS.md](docs/COMMANDS.md)) |
 | `version` | Framework and PHP versions |

@@ -123,6 +123,22 @@ php cast env:check
 php cast env:check
 ```
 
+## `ide:helpers`
+
+Write _ide_helpers.php so the editor knows the global helper functions (no more "Undefined function").
+
+```
+php cast ide:helpers [options]
+```
+
+| Option | |
+| --- | --- |
+| `--path=FILE` | Where to write it (default _ide_helpers.php in the app folder) |
+
+```bash
+php cast ide:helpers   # then reload the editor window
+```
+
 ## `init`
 
 Create the files of a new app in the current folder.

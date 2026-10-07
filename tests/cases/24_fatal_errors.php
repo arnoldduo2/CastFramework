@@ -66,3 +66,22 @@ test('a PHP fatal error in a view is answered as an error: JSON for Cast clients
     lacks('strict_types', $body);
     has('Something went wrong', $body);
 });
+
+test('ide:helpers writes the helper signatures for editors; init creates it and ignores it', function () {
+    $dir = init_dir();
+    [$code, $out] = cast_in($dir, 'init');
+    eq(0, $code, $out);
+    has('_ide_helpers.php', $out);
+    $stub = (string) file_get_contents("$dir/_ide_helpers.php");
+    has('function htchars(string $str): string {}', $stub);
+    has('function views(', $stub);
+    ok(substr_count($stub, "\nfunction ") > 60, 'every helper is listed');
+    exec('php -l ' . escapeshellarg("$dir/_ide_helpers.php") . ' 2>&1', $lint, $lintCode);
+    eq(0, $lintCode, implode("\n", $lint));
+    has('/_ide_helpers.php', (string) file_get_contents("$dir/.gitignore"));
+
+    unlink("$dir/_ide_helpers.php");
+    [$code, $out] = cast_in($dir, 'ide:helpers --path=ide/stubs.php');
+    eq(0, $code, $out);
+    ok(is_file("$dir/ide/stubs.php"), '--path');
+});

@@ -74,6 +74,9 @@ final class InitCommand extends Command
         $this->write($base . '/AGENTS.md', (string) file_get_contents(dirname(__DIR__, 2) . '/Stubs/agents.md'), false, 'AGENTS.md');
         $this->ignoreFile($base, $output);
         $autoload = $this->registerAutoload($base);
+        // so the editor knows htchars(), views(), ... from the first minute
+        (new IdeHelpersCommand($this->app))->handle(new Input(['ide:helpers']), new Output(fopen('php://memory', 'w+')));
+        $this->created[] = '_ide_helpers.php';
 
         foreach ($this->created as $file) $output->info('created  ' . $file);
         foreach ($this->skipped as $file) $output->warn('exists   ' . $file . ($file === '.env' ? ' (kept: init never overwrites .env)' : ' (kept; use --force to overwrite)'));
@@ -154,7 +157,7 @@ final class InitCommand extends Command
         $path = $base . '/.gitignore';
         $have = is_file($path) ? (string) file_get_contents($path) : '';
         $add = [];
-        foreach (['/vendor/', '.env', '/storage/*', '!/storage/.gitkeep'] as $line) {
+        foreach (['/vendor/', '.env', '/storage/*', '!/storage/.gitkeep', '/_ide_helpers.php'] as $line) {
             if (!preg_match('/^' . preg_quote($line, '/') . '\s*$/m', $have)) $add[] = $line;
         }
         if (!$add) return;

@@ -18,6 +18,7 @@ final class Kernel
         Commands\RouteListCommand::class,
         Commands\ViewsClearCommand::class,
         Commands\ViewsCheckCommand::class,
+        Commands\IdeHelpersCommand::class,
         Commands\DownCommand::class,
         Commands\UpCommand::class,
         Commands\EnvCheckCommand::class,
