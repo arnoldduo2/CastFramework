@@ -130,13 +130,31 @@ test('init --demo: copies the starter app (login, items, API) without per-instal
     has('admin@example.com', $out);
     has('DB_NAME=storage/database.sqlite', file_get_contents("$dir/.env"));
 
-    // it runs: the demo creates its SQLite database and user on first request
+    // init migrated and seeded the demo's SQLite database
+    has('3 migrations ran.', $out);
+    has('Seeded: Database\\Seeders\\DatabaseSeeder', $out);
+    ok(is_file("$dir/storage/database.sqlite"), 'the database was created in storage/');
+    [, $status] = cast_in($dir, 'migrate:status');
+    eq(3, substr_count($status, 'Yes'));
+
     [$status, $html] = app_get($dir, '/');
     eq(200, $status, $html);
     has('Welcome', json_decode(app_get($dir, '/', ['X-Cast-Request' => '1'])[1], true)['data']['html']);
     [$status] = app_get($dir, '/items');
     eq(302, $status, 'guests are sent to the login page');
-    ok(is_file("$dir/storage/database.sqlite"), 'the database was created in storage/');
+});
+
+test('init --demo --no-migrate leaves the database alone; `cast migrate --seed` does it later', function () {
+    $dir = init_dir();
+    [$code, $out] = cast_in($dir, 'init --demo --no-migrate');
+    eq(0, $code, $out);
+    lacks('migrations ran', $out);
+    ok(!is_file("$dir/storage/database.sqlite"));
+    [$code, $out] = cast_in($dir, 'migrate --seed');
+    eq(0, $code, $out);
+    ok(is_file("$dir/storage/database.sqlite"));
+    [$status] = app_get($dir, '/items');
+    eq(302, $status);
 });
 
 test('php cast <command>: the launcher runs the console of its own app, from any folder', function () {

@@ -17,7 +17,7 @@ use RecursiveIteratorIterator;
 final class InitCommand extends Command
 {
     protected string $name = 'init';
-    protected string $description = 'Create the files of a new app here (--demo for the full starter app, --force to overwrite)';
+    protected string $description = 'Create the files of a new app here (--demo: the full starter app, migrated and seeded; --force: overwrite)';
 
     /** Starter paths that are not copied by --demo (they are per install, or built by Composer). */
     private const DEMO_SKIP = ['composer.json', 'composer.lock', 'vendor', '.env', 'storage/database.sqlite'];
@@ -71,9 +71,23 @@ final class InitCommand extends Command
         } elseif ($autoload === 'missing') {
             $output->warn('No composer.json found here. Add  "autoload": {"psr-4": {"App\\\\": "app/"}}  to yours, then run composer dump-autoload');
         }
+        if ($demo && !$input->hasOption('no-migrate')) $this->migrate($base, $output);
+
         $output->line('Start it:  php cast serve   (then open http://127.0.0.1:8000). See all commands:  php cast list');
         if ($demo) $output->line('Demo login:  admin@example.com / password');
         return 0;
+    }
+
+    /** Create the demo's tables and user in a separate process (this one booted before the new .env and config existed). */
+    private function migrate(string $base, Output $output): void
+    {
+        $output->line('Running the migrations and the seeder...');
+        exec(sprintf('%s %s migrate --seed 2>&1', escapeshellarg(PHP_BINARY), escapeshellarg($base . DIRECTORY_SEPARATOR . 'cast')), $lines, $code);
+        foreach ($lines as $line) {
+            if (!str_starts_with($line, 'fatal:')) $output->line('  ' . $line);   // (git's own noise from another package is dropped)
+        }
+        if ($code !== 0) $output->warn('The migrations did not finish. Fix the problem above, then run:  php cast migrate --seed');
+        $output->line();
     }
 
     /** @return list<string> files below $dir, relative, with forward slashes */

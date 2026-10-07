@@ -28,6 +28,7 @@ final class Application
         'views' => 'resources/views',
         'resources' => 'resources',
         'storage' => 'storage',
+        'database' => 'database',
         'public' => 'public',
     ];
     /** @var array<string, array{Closure, bool}> */
@@ -95,6 +96,12 @@ final class Application
     public function storagePath(string $path = ''): string
     {
         return $this->join($this->basePath($this->paths['storage']), $path);
+    }
+
+    /** Migrations and seeders live here (`paths.database`, default `database/`). */
+    public function databasePath(string $path = ''): string
+    {
+        return $this->join($this->basePath($this->paths['database']), $path);
     }
 
     public function publicPath(string $path = ''): string
@@ -169,6 +176,7 @@ final class Application
         \Cast\Services\MaintenanceProvider::class,
         \Cast\Services\ViewProvider::class,
         \Cast\Services\ApiProvider::class,
+        \Cast\Services\DatabaseProvider::class,
         \Cast\Services\RouteProvider::class,
     ];
 
@@ -189,14 +197,18 @@ final class Application
     private static array $mapped = [];
 
     /**
-     * Map the app's namespace to its source folder (`app.namespace` => `app.source_path`, default `App\` => `app/`) when
-     * Composer's autoloader does not know it yet (a new app before `composer dump-autoload`, or a composer.json without
-     * the `App\` entry). Composer's own mapping, when present, is tried first.
+     * Map the app's namespace to its source folder (`app.namespace` => `app.source_path`, default `App\` => `app/`) and the
+     * seeders (`Database\Seeders\` => `database/seeders`) when Composer's autoloader does not know them yet (a new app before
+     * `composer dump-autoload`). Composer's own mapping, when present, is tried first.
      */
     private function registerAppAutoloader(): void
     {
-        $namespace = trim((string) Config::get('app.namespace', 'App'), '\\') . '\\';
-        $dir = $this->basePath((string) Config::get('app.source_path', 'app'));
+        $this->mapNamespace(trim((string) Config::get('app.namespace', 'App'), '\\') . '\\', $this->basePath((string) Config::get('app.source_path', 'app')));
+        $this->mapNamespace('Database\\Seeders\\', $this->databasePath('seeders'));
+    }
+
+    private function mapNamespace(string $namespace, string $dir): void
+    {
         $key = $namespace . '|' . $dir;
         if (isset(self::$mapped[$key])) return;
         self::$mapped[$key] = true;
@@ -258,6 +270,10 @@ final class Application
                 'user' => Env::get('DB_USER', ''),
                 'pass' => Env::get('DB_PASS', ''),
                 'charset' => 'utf8mb4',
+                // a callable returning a PDO: let another ORM / DBAL own the connection (see docs/ORM-ADAPTERS.md)
+                'connection' => null,
+                'migrations' => ['table' => 'migrations', 'path' => null],
+                'seeder' => 'DatabaseSeeder',
             ],
             'request' => ['sanitizer' => null],
             'session' => [

@@ -19,7 +19,16 @@ final class Database
 
     public static function connection(): PDO
     {
-        return self::$connection ??= self::connect((array) Config::get('database', []));
+        if (self::$connection !== null) return self::$connection;
+
+        // another ORM or DBAL can own the connection: config('database.connection') is a callable returning a PDO
+        $resolver = Config::get('database.connection');
+        if (is_callable($resolver)) {
+            $pdo = $resolver();
+            if (!$pdo instanceof PDO) throw new InvalidArgumentException('config("database.connection") must return a PDO.');
+            return self::$connection = $pdo;
+        }
+        return self::$connection = self::connect((array) Config::get('database', []));
     }
 
     /** Use an existing PDO (tests, or an app with its own connection setup). */

@@ -45,6 +45,7 @@ jobs:
           rm -f starter/storage/database.sqlite
           mkdir -p starter/storage
           cp starter/.env.example starter/.env
+          (cd starter && php cast migrate --seed)
           php -S 127.0.0.1:8099 -t starter/public starter/public/index.php > server.log 2>&1 &
           sleep 2
           BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
@@ -85,3 +86,43 @@ jobs:
       - name: Server log
         if: failure()
         run: cat server.log
+
+  databases:
+    # the migrations and the query builder against real servers
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        db: [mysql, pgsql]
+    services:
+      mysql:
+        image: mysql:8
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: cast_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -proot" --health-interval=5s --health-timeout=5s --health-retries=20
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: root
+          POSTGRES_DB: cast_test
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U postgres" --health-interval=5s --health-timeout=5s --health-retries=20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo, pdo_sqlite, pdo_mysql, pdo_pgsql, mbstring, json
+      - run: composer install --no-interaction --no-progress
+      - name: Run the suite against ${{ matrix.db }}
+        env:
+          CAST_TEST_DB: ${{ matrix.db }}
+          CAST_TEST_DB_HOST: 127.0.0.1
+          CAST_TEST_DB_NAME: cast_test
+          CAST_TEST_DB_USER: ${{ matrix.db == 'mysql' && 'root' || 'postgres' }}
+          CAST_TEST_DB_PASS: root
+        run: php tests/run.php

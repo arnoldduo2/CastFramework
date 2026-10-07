@@ -256,7 +256,7 @@ class QueryBuilder
         return $this->executeSafe($fetchMode);
     }
 
-    /** @return int The new row's auto-increment id. */
+    /** @return int The new row's auto-increment id (0 for a table whose key is not generated). */
     public function insert(array $data): int
     {
         if (empty($data)) {
@@ -277,7 +277,11 @@ class QueryBuilder
         $stmt = self::conn()->prepare("INSERT INTO {$this->table} (" . implode(', ', $columns) . ') VALUES (' . implode(', ', $placeholders) . ')');
         $stmt->execute($bindings);
 
-        return (int) self::conn()->lastInsertId();
+        try {
+            return (int) self::conn()->lastInsertId();
+        } catch (\PDOException) {
+            return 0;   // PostgreSQL: the table has no sequence (a text or composite key), so there is no generated id
+        }
     }
 
     /** @return int Number of affected rows. */

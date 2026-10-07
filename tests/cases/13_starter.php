@@ -29,6 +29,8 @@ function starter(bool $lazy = false): Application
 
     $app = require "$dir/bootstrap/app.php";
     $app->boot();
+    $app->make('migrator')->migrate();       // the tables come from database/migrations
+    \Cast\Database\SeederRunner::run('UserSeeder');
     if (!$lazy) \Cast\Core\Config::set('spa.initial', 'inline');   // most tests look at the page content itself
     return $app;
 }

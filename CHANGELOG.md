@@ -2,6 +2,15 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.3.0
+
+- **Migrations:** `Schema` / `Blueprint` builder with MySQL, PostgreSQL and SQLite grammars; the `Migrator` (batches, rollback, reset, refresh, fresh, status, pretend, lock file, transactional DDL where supported);
+  seeders; commands `make:migration`, `migrate`, `migrate:rollback|reset|refresh|fresh|status`, `make:seeder`, `db:seed`, `token:schema --migration`. Production runs need `--force`.
+- **Another ORM:** `Cast\Contracts\Migrator` (bind your own as `migrator`), `config('database.connection')` (a callable that returns your PDO), [docs/ORM-ADAPTERS.md](docs/ORM-ADAPTERS.md).
+- `cast init --demo` now creates the starter's tables with real migrations and seeds the demo user (`--no-migrate` to skip); the starter's `AppServiceProvider` no longer creates tables.
+- Fix: `QueryBuilder::insert()` on PostgreSQL for a table without a generated key (such as the API tokens table) no longer throws; it returns 0.
+- Tests run against real PostgreSQL and MySQL/MariaDB servers too (`CAST_TEST_DB`), and the CI has jobs for them.
+
 ## 0.2.2
 
 - The framework maps the app's namespace (`app.namespace` => `app.source_path`, default `App\` => `app/`) itself when Composer's autoloader does not know it, so a new app works before `composer dump-autoload` (fixes "Class App\Providers\AppServiceProvider not found" right after `cast init --demo`).

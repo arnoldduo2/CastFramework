@@ -150,3 +150,23 @@ test('Console: token:create prints a working token once, token:revoke revokes it
     [, $sql] = cast(['token:schema'], $app);
     has('CREATE TABLE IF NOT EXISTS api_tokens', $sql);
 });
+
+test('Console: token:schema --migration writes a migration once, and it creates a working table', function () {
+    $app = boot_app();
+    sqlite();
+    [$code, $out] = cast(['token:schema', '--migration'], $app);
+    eq(0, $code, $out);
+    has('_create_api_tokens_table.php', $out);
+    $files = glob($app->databasePath('migrations/*_create_api_tokens_table.php'));
+    eq(1, count($files));
+    has("->string('id', 32)->primary()", file_get_contents($files[0]));
+
+    [, $again] = cast(['token:schema', '--migration'], $app);
+    has('already exists', $again);
+    eq(1, count(glob($app->databasePath('migrations/*_create_api_tokens_table.php'))));
+
+    cast(['migrate'], $app);
+    $tokens = new Cast\Services\ApiTokens(new Cast\Services\DatabaseTokenStore());
+    $issued = $tokens->issue(1, 'm', ['*'], 60);
+    ok($tokens->authenticate($issued['token']) !== null);
+});

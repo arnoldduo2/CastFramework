@@ -19,7 +19,7 @@ Requires PHP 8.1 or newer and `ext-pdo`, `ext-mbstring`, `ext-json`.
 ## Contents
 
 [Install](#install) · [A first app](#a-first-app) · [Configuration](#configuration) · [Routing](#routing) · [Request and Response](#request-and-response) · [CSRF](#csrf) ·
-[Controllers](#controllers) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Models and the query builder](#models-and-the-query-builder) · [Views](#views) ·
+[Controllers](#controllers) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Views](#views) ·
 [SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api) ·
 [Helpers](#helpers) · [Static files](#static-files) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Console](#console) · [Contracts](#contracts) ·
 [Security notes](#security-notes) · [Testing](#testing) · [Versioning](#versioning)
@@ -159,7 +159,7 @@ Cast\Core\Config::has('auth.login_path');
 | `api.prefix`, `api.middleware`, `api.tokens.table` | `/api`, `[]`, `api_tokens` | [JSON API](#json-api) |
 | `models.namespace` | `App\Models` | Where `getModelInstance()` looks |
 | `helpers.custom` | `null` | Folder of your own helper files |
-| `database.*` | from `.env` | `driver`, `host`, `port`, `name`, `user`, `pass`, `charset`, `dsn` |
+| `database.*` | from `.env` | `driver`, `host`, `port`, `name`, `user`, `pass`, `charset`, `dsn`, `connection` (a callable returning your own PDO), `migrations.table` / `.path`, `seeder` |
 
 ### Providers
 
@@ -378,6 +378,72 @@ JournalEntries::raw('SELECT ... WHERE a = :a', ['a' => 1]);     // bound paramet
 anything else throws `InvalidArgumentException`. Transactions: `Model::beginTrans() / commitTrans() / rollbackTrans() / inTransaction()`.
 There are no joins, grouping or sums: use `raw()` for those.
 
+## Migrations
+
+Describe your tables in PHP; the same migration runs on MySQL, PostgreSQL and SQLite.
+
+```bash
+php cast make:migration create_orders_table          # database/migrations/2026_10_07_101500_create_orders_table.php
+php cast make:migration add_status_to_orders_table   # the stub is picked from the name (create_x_table, add_y_to_x_table)
+php cast migrate                                     # run what is pending (one batch)
+php cast migrate:status                              # what ran, in which batch
+php cast migrate:rollback                            # undo the last batch  (--step=2: the last two migrations)
+php cast migrate:refresh --seed                      # undo everything, run everything again, seed
+php cast migrate:fresh --seed                        # drop ALL tables, run everything, seed
+php cast migrate --pretend                           # print the SQL, change nothing
+```
+
+```php
+// database/migrations/2026_10_07_101500_create_orders_table.php
+use Cast\Database\{Blueprint, Migration, Schema};
+
+return new class extends Migration
+{
+    public function up(Schema $schema): void
+    {
+        $schema->create('orders', function (Blueprint $table) {
+            $table->id();                                              // auto-increment primary key
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();   // references users.id
+            $table->string('number', 30)->unique();
+            $table->decimal('total', 12, 2)->default(0);
+            $table->enum('status', ['new', 'paid', 'void'])->default('new');
+            $table->text('note')->nullable();
+            $table->timestamps();                                      // created_at, updated_at
+            $table->index(['user_id', 'status']);
+        });
+    }
+
+    public function down(Schema $schema): void
+    {
+        $schema->dropIfExists('orders');
+    }
+};
+```
+
+| Area | Methods |
+| --- | --- |
+| Tables | `create`, `table` (change), `drop`, `dropIfExists`, `rename`, `hasTable`, `hasColumn`, `columns`, `tables`, `statement($sql, $bindings)` (anything else), `pretend(fn)` |
+| Columns | `id`, `increments`, `string($n, $len)`, `char`, `text`, `mediumText`, `longText`, `integer`, `bigInteger`, `smallInteger`, `tinyInteger`, `boolean`, `decimal($n, $p, $s)`, `float`, `double`, `date`, `time`, `dateTime`, `timestamp`, `timestamps`, `softDeletes`, `json`, `uuid`, `binary`, `enum($n, [...])`, `foreignId` |
+| Modifiers | `nullable`, `default($v)` (a value or `Schema::raw('CURRENT_TIMESTAMP')`), `useCurrent`, `unsigned`, `unique`, `index`, `primary`, `after($col)` (MySQL), `comment($t)`, `constrained($table = null)` |
+| Keys | `index`, `unique`, `primary`, `foreign($col)->references('id')->on('t')->onDelete('cascade')` / `cascadeOnDelete` / `nullOnDelete`, `dropIndex`, `dropUnique`, `dropPrimary`, `dropForeign`, `dropColumn`, `renameColumn` |
+
+- Columns are `NOT NULL` unless you say `nullable()`. Every name is checked and quoted for the database, every default is escaped: nothing from a migration is put in SQL unchecked.
+- PostgreSQL and SQLite run each migration in a transaction, so a failed one leaves nothing behind. **MySQL commits every `CREATE`/`ALTER` itself**, so a migration that fails half way
+  stays half applied: keep MySQL migrations small. A lock file (`storage/framework/migrate.lock`) stops two deploys from migrating at the same time.
+- SQLite cannot add a foreign key or a primary key to an existing table, nor add a `NOT NULL` column without a default: the migration says so and points you to `$schema->statement()`.
+- **Production:** every command that changes the database refuses to run when `APP_ENV=production` unless you add `--force` (`migrate:status`, `make:migration` and `--pretend` are always allowed).
+- The migrations table is `migrations` (`config('database.migrations.table')`); the folder is `database/migrations` (`paths.database`, or `database.migrations.path`).
+
+**Seeders:** `php cast make:seeder UserSeeder` creates `database/seeders/UserSeeder.php` (`namespace Database\Seeders; class UserSeeder extends Cast\Database\Seeder { public function run(): void {...} }`).
+`php cast db:seed` runs `DatabaseSeeder` (change it with `config('database.seeder')`), `--class=UserSeeder` runs one, `migrate --seed` migrates and seeds. A seeder calls others with `$this->call(OtherSeeder::class)`.
+
+**API tokens table:** `php cast token:schema --migration` writes the migration for it.
+
+### Using another ORM
+
+Migrations, the connection and the models each sit behind a small contract, so Doctrine, Eloquent, Cycle or Phinx can replace the built-in pieces and `php cast migrate` keeps working:
+bind your adapter as `migrator`, return the ORM's `PDO` from `config('database.connection')`, and implement `ModelContract` on its models. See [docs/ORM-ADAPTERS.md](docs/ORM-ADAPTERS.md).
+
 ## Views
 
 Views are `.cast.php` files under `resources/views`. They are PHP with the CastTemplateEngine tags added: `<Card title="x">...</Card>`, `value={$expr}`, `<Slot name="left">`.
@@ -564,7 +630,7 @@ app('tokens')->revoke($issued['id']);   // or ->revokeAllFor($user['id'])
 Abilities are strings you choose: `*` (everything), `items:*` (a group) or `items:read` (one). A token can only do what its **user** may do **and** what its abilities allow.
 `app('auth')->verify($email, $password)` checks credentials without starting a session, for the login route.
 
-Setup: create the table once (`php cast token:schema --run`, or run `ApiTokenSchema::sql($driver)`), and make your user store also implement
+Setup: create the table once (`php cast token:schema --migration` then `php cast migrate`, or `--run`, or `ApiTokenSchema::sql($driver)`), and make your user store also implement
 `Cast\Contracts\FindsUsersById` (`findById($id): ?array`), because a token only holds the user's id. Keep tokens elsewhere by binding your own `Cast\Contracts\TokenStore` as `token_store`.
 Console: `token:create <login> [--name=] [--abilities=a,b] [--days=N]`, `token:revoke <id>`, `token:schema [--run]`.
 
@@ -663,8 +729,10 @@ php cast            # list commands
 | `down [--message=] [--secret=] [--retry=] [--in=]` / `up` | Maintenance mode |
 | `env:check` | Checks PHP, extensions, `.env`, debug in production, writable `storage/`, folders |
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
-| `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--run]` | API tokens |
-| `init [--demo] [--force]` | Create a new app's files in the current folder |
+| `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--migration|--run]` | API tokens |
+| `init [--demo] [--no-migrate] [--force]` | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded) |
+| `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations) |
+| `make:seeder`, `db:seed [--class=]` | Seeders |
 | `version` | Framework and PHP versions |
 
 Your own commands extend `Cast\Console\Command` and are listed in `config/console.php`: `return ['commands' => [App\Console\Commands\SyncStockCommand::class]];`.
@@ -714,7 +782,7 @@ The suites cover each subsystem and the starter app end to end (login, CSRF, JSO
 Browser checks for the SPA client run in Chromium with [Playwright](https://playwright.dev) against the starter app (Playwright is not a dependency of the package):
 
 ```bash
-cd starter && composer install && rm -f storage/database.sqlite
+cd starter && composer install && rm -f storage/database.sqlite && php cast migrate --seed
 php -S 127.0.0.1:8099 -t public public/index.php &
 cd .. && npm i playwright && npx playwright install chromium
 BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
