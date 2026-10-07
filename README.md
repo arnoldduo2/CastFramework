@@ -29,16 +29,20 @@ Requires PHP 8.1 or newer and `ext-pdo`, `ext-mbstring`, `ext-json`.
 ```bash
 mkdir my-app && cd my-app
 composer init --name=me/my-app --no-interaction
-composer require anode/cast-framework
-php vendor/bin/cast init            # creates the app files here (add --demo for the full starter app), and the `cast` launcher
+composer require anode/cast-framework     # answer "y" when Composer asks to trust the plugin (see below)
+php cast init                       # creates the app files here (add --demo for the full starter app)
 php cast serve                      # http://127.0.0.1:8000
 ```
 
-`cast init` writes `cast` (the console launcher), `public/`, `bootstrap/`, `config/`, `routes/`, a home page, `.env` (named after the folder), `storage/` and the `.gitignore` lines, and adds the `App\` namespace to
+`cast init` writes `public/`, `bootstrap/`, `config/`, `routes/`, a home page, `.env` (named after the folder), `storage/` and the `.gitignore` lines, and adds the `App\` namespace to
 your `composer.json` (then run `composer dump-autoload`). It never overwrites a file you already have unless you pass `--force`.
 
-`php vendor/bin/cast init --demo` copies the [`starter/`](starter) app instead: login (`admin@example.com` / `password`), an items page with `PUT`/`DELETE` and an edit modal, a stats page, and a
+`php cast init --demo` copies the [`starter/`](starter) app instead: login (`admin@example.com` / `password`), an items page with `PUT`/`DELETE` and an edit modal, a stats page, and a
 JSON API with bearer tokens, on SQLite.
+
+**The `cast` launcher.** The package includes a small Composer plugin that puts the console launcher, a file named `cast`, in your project root after every install or update (it never overwrites
+an existing one). That is what makes `php cast <command>` work from the first command. Composer asks you once to trust it; non-interactively, allow it first:
+`composer config allow-plugins.anode/cast-framework true`. If you decline, `php vendor/bin/cast init` creates the same file.
 
 ## A first app
 
@@ -415,7 +419,7 @@ Quick try (no Apache needed): `php cast serve` serves `public/` on http://127.0.
 Under XAMPP (`C:\xampp\htdocs\my-app`):
 
 1. Use PHP 8.1+ and enable `extension=pdo_sqlite`, `extension=mbstring` (and `pdo_mysql` for MySQL) in `php.ini`; restart Apache. Install [Composer](https://getcomposer.org).
-2. In `C:\xampp\htdocs`: `mkdir my-app`, `cd my-app`, `composer init --name=me/my-app --no-interaction`, `composer require anode/cast-framework`, `php vendor/bin/cast init --demo`, `composer dump-autoload`.
+2. In `C:\xampp\htdocs`: `mkdir my-app`, `cd my-app`, `composer init --name=me/my-app --no-interaction`, `composer require anode/cast-framework` (answer `y` to the plugin question), `php cast init --demo`, `composer dump-autoload`.
 3. Either point a virtual host's `DocumentRoot` at `my-app/public` (then nothing else to configure), or browse to `http://localhost/my-app/public/` and set `APP_BASE_PATH=/my-app/public` in `.env`.
    `public/.htaccess` sends every request that is not a real file to `index.php`, so `mod_rewrite` must be on and `AllowOverride All` set for the folder. `storage/` must be writable.
 4. The app's URLs, assets and the SPA client all use `APP_BASE_PATH`; use `route('/items')` in views instead of hand-written paths.

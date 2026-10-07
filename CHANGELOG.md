@@ -4,7 +4,7 @@ This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 mino
 
 ## 0.2.2
 
-- **`php cast <command>`**: `cast init` creates (and the starter ships) a `cast` launcher in the app root (works from any folder); `php vendor/bin/cast` keeps working.
+- **`php cast <command>`**: a Composer plugin in the package creates the `cast` launcher in the project root on install/update (never overwrites), so `php cast init` is the first command; `init` and the starter also provide it. Works from any folder; `php vendor/bin/cast` remains as a fallback when plugins are not allowed. The package type is now `composer-plugin`; allow it with `composer config allow-plugins.anode/cast-framework true`.
 - Docs, stubs and the starter use `php cast ...`.
 
 ## 0.2.1

@@ -69,8 +69,10 @@ jobs:
           composer init --name=ci/app --no-interaction
           composer config minimum-stability dev
           composer config repositories.cast path ../framework
+          composer config allow-plugins.anode/cast-framework true
           composer require anode/cast-framework:@dev --no-interaction
-          php vendor/bin/cast init --demo
+          test -x cast          # the Composer plugin created the launcher
+          php cast init --demo
           composer dump-autoload
       - name: The app answers
         working-directory: my-app

@@ -10,7 +10,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 /**
- * `php vendor/bin/cast init [--demo] [--force]` (later: `php cast <command>`): creates the files of a new app in the current folder
+ * `php vendor/bin/cast init [--demo] [--force]` (the Composer plugin has normally made `php cast` available already): creates the files of a new app in the current folder
  * (`composer require anode/cast-framework` is the only install step). `--demo` copies the full starter app instead
  * (login, items with an edit modal, stats, and a JSON API).
  */
