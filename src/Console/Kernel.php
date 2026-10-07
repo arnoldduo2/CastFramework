@@ -22,6 +22,7 @@ final class Kernel
         Commands\EnvCheckCommand::class,
         Commands\VersionCommand::class,
         Commands\InitCommand::class,
+        Commands\EditorInstallCommand::class,
         Commands\MigrateCommand::class,
         Commands\MigrateRollbackCommand::class,
         Commands\MigrateResetCommand::class,

@@ -73,6 +73,7 @@ final class InitCommand extends Command
         }
         if ($demo && !$input->hasOption('no-migrate')) $this->migrate($base, $output);
 
+        $output->line('VS Code:   php cast editor:install   (highlighting and Ctrl+click for .cast.php views)');
         $output->line('Start it:  php cast serve   (then open http://127.0.0.1:8000). See all commands:  php cast list');
         if ($demo) $output->line('Demo login:  admin@example.com / password');
         return 0;

@@ -1,0 +1,95 @@
+{
+  "name": "cast-framework",
+  "displayName": "CastFramework",
+  "description": "Syntax highlighting and navigation for CastFramework views (.cast.php): component tags, props, slots, and Ctrl+click to open a component's file.",
+  "version": "0.1.0",
+  "publisher": "anode",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/arnoldduo2/CastFramework.git",
+    "directory": "editor/vscode"
+  },
+  "homepage": "https://github.com/arnoldduo2/CastFramework#editor-support",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "cast",
+    "castframework",
+    "php",
+    "template",
+    "component",
+    "cast.php"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:php",
+    "workspaceContains:**/*.cast.php"
+  ],
+  "contributes": {
+    "grammars": [
+      {
+        "scopeName": "cast.injection",
+        "path": "./syntaxes/cast-injection.tmLanguage.json",
+        "injectTo": [
+          "text.html.php"
+        ]
+      }
+    ],
+    "snippets": [
+      {
+        "language": "php",
+        "path": "./snippets/cast.code-snippets"
+      },
+      {
+        "language": "javascript",
+        "path": "./snippets/cast-js.code-snippets"
+      }
+    ],
+    "configuration": {
+      "title": "CastFramework",
+      "properties": {
+        "cast.componentsPath": {
+          "type": [
+            "string",
+            "array"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "default": "resources/views/components",
+          "markdownDescription": "Folder(s) with the component files, relative to the workspace folder. Used for Ctrl+click on `<Component />` tags. When `config/view.php` sets `components`, that folder is used as well."
+        },
+        "cast.viewsPath": {
+          "type": "string",
+          "default": "resources/views",
+          "markdownDescription": "Folder of the views, relative to the workspace folder (for `__includes('layouts.header')`, `views('home.home')`, `Component('btns.add')`)."
+        },
+        "cast.resourcesPath": {
+          "type": "string",
+          "default": "resources",
+          "markdownDescription": "Folder with `css/` and `js/` (for `__modules('app.app', 'js')`)."
+        },
+        "cast.extension": {
+          "type": "string",
+          "default": ".cast.php",
+          "markdownDescription": "The extension of view and component files that use the engine syntax."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "node --test \"test/*.test.js\"",
+    "package": "npx @vscode/vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "vscode-oniguruma": "^2.0.1",
+    "vscode-textmate": "^9.1.0"
+  }
+}

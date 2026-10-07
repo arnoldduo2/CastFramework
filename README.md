@@ -19,7 +19,7 @@ Requires PHP 8.1 or newer and `ext-pdo`, `ext-mbstring`, `ext-json`.
 ## Contents
 
 [Install](#install) · [A first app](#a-first-app) · [Configuration](#configuration) · [Routing](#routing) · [Request and Response](#request-and-response) · [CSRF](#csrf) ·
-[Controllers](#controllers) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Views](#views) ·
+[Controllers](#controllers) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Views](#views) · [Editor support](#editor-support) ·
 [SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api) ·
 [Helpers](#helpers) · [Static files](#static-files) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Console](#console) · [Contracts](#contracts) ·
 [Security notes](#security-notes) · [Testing](#testing) · [Versioning](#versioning)
@@ -659,6 +659,26 @@ session cookie at all; it **is** required (419) for writes from a browser that s
 Apply it to a route with `->use([...])`, to a group with `Router::middleware([...])`, or to the whole API with `'middleware' => [[Throttle::class, 60, 1]]` in `config/api.php`. Behind a proxy make sure `REMOTE_ADDR` is the client address.
 CORS: only exact origins in `CORS_ALLOWED_ORIGINS` get headers (`Authorization`, `X-CSRF-TOKEN` and the verbs including PATCH are allowed; the rate-limit headers are exposed); `OPTIONS` preflight is answered before authentication.
 
+## Editor support
+
+The package ships a VS Code extension (`editor/vscode`) for `.cast.php` views. Install it from your project:
+
+```bash
+php cast editor:install        # VS Code, Insiders, VSCodium, Cursor, Antigravity, Windsurf: every one it finds
+```
+
+Then reload the editor window. It gives you:
+
+- **Colours** for component tags (`<Card>`, `<Btns.Button />`), `<Slot name="...">`, props (`title="Hi <?= $name ?>"`, `total={$qty + 1}`, `{...$data}`) and components inside `{ }` values. The file stays a normal PHP file,
+  so PHP IntelliSense, Emmet and the HTML features keep working.
+- **Ctrl+click** (Cmd+click on macOS), **F12** and **hover** on a component tag, a view name (`__includes('layouts.header')`, `views('home.home')`), a legacy `Component('btns.add')` or a module
+  (`__modules('app.app', 'js')`): the file opens, using the same rules as the engine (`<Form.TextInput>` is `form/text-input`, `form/text_input`, `form/TextInput` or `form/textInput`).
+- **Snippets**: `ccomp`, `cslot`, `cprop`, `cfor`, `cif`, `cpage`, `cinc`, `cmod`, and `cpagejs` in JavaScript.
+
+`--editor=code|insiders|vscodium|cursor|antigravity|windsurf` picks one editor, `--dir=PATH` installs into any extensions folder, `--uninstall` removes it. The folders it searches for components
+come from the `cast.componentsPath`, `cast.viewsPath` and `cast.resourcesPath` settings (and `config/view.php`). Details: [editor/vscode/README.md](editor/vscode/README.md).
+A Marketplace extension (with prop completion, diagnostics and rename) will follow as the framework grows.
+
 ## Helpers
 
 Installing the package loads these global functions (each wrapped in `function_exists`, so you can define your own first). Names are unchanged from the apps they came from.
@@ -733,6 +753,7 @@ php cast            # list commands
 | `init [--demo] [--no-migrate] [--force]` | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded) |
 | `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations) |
 | `make:seeder`, `db:seed [--class=]` | Seeders |
+| `editor:install [--editor=] [--dir=] [--uninstall]` | Install the VS Code extension for `.cast.php` views |
 | `version` | Framework and PHP versions |
 
 Your own commands extend `Cast\Console\Command` and are listed in `config/console.php`: `return ['commands' => [App\Console\Commands\SyncStockCommand::class]];`.

@@ -1,0 +1,77 @@
+{
+  "Cast component": {
+    "prefix": "ccomp",
+    "scope": "php",
+    "body": [
+      "<${1:Card} ${2:title=\"$3\"}>",
+      "\t$0",
+      "</${1:Card}>"
+    ],
+    "description": "A component with children"
+  },
+  "Cast self-closing component": {
+    "prefix": "ccomp1",
+    "scope": "php",
+    "body": "<${1:Btns.Button} ${2:label=\"$3\"} />",
+    "description": "A self-closing component"
+  },
+  "Cast slot": {
+    "prefix": "cslot",
+    "scope": "php",
+    "body": [
+      "<Slot name=\"${1:left}\">",
+      "\t$0",
+      "</Slot>"
+    ],
+    "description": "A named slot inside a component"
+  },
+  "Cast prop expression": {
+    "prefix": "cprop",
+    "scope": "php",
+    "body": "${1:total}={${2:\\$value}}",
+    "description": "A prop whose value is a PHP expression"
+  },
+  "Cast foreach": {
+    "prefix": "cfor",
+    "scope": "php",
+    "body": [
+      "<?php foreach (${1:\\$items} as ${2:\\$item}) : ?>",
+      "\t$0",
+      "<?php endforeach ?>"
+    ],
+    "description": "foreach with the template alternative syntax"
+  },
+  "Cast if": {
+    "prefix": "cif",
+    "scope": "php",
+    "body": [
+      "<?php if (${1:\\$condition}) : ?>",
+      "\t$0",
+      "<?php endif ?>"
+    ],
+    "description": "if with the template alternative syntax"
+  },
+  "Cast page shell": {
+    "prefix": "cpage",
+    "scope": "php",
+    "body": [
+      "<?php",
+      "__includes('layouts.header', \\$data);",
+      "__includes('${1:parent}.partials.' . \\$data['pageName'], \\$data);",
+      "__includes('layouts.footer', \\$data);"
+    ],
+    "description": "The shell of a page: header, content partial, footer"
+  },
+  "Cast include": {
+    "prefix": "cinc",
+    "scope": "php",
+    "body": "<?php __includes('${1:layouts.header}', \\$data); ?>",
+    "description": "Include a partial or layout"
+  },
+  "Cast modules": {
+    "prefix": "cmod",
+    "scope": "php",
+    "body": "<?= __modules(\"\\$parentName.\\$pageName\", '${1|css,js|}') ?>",
+    "description": "Link the page's css or js module"
+  }
+}

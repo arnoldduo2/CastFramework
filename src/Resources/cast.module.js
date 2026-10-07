@@ -60,9 +60,12 @@
       return false;
     }
   };
+  // The identity of an asset: its address without the #hash and without the ?v= cache-busting version (a development
+  // server gives every request a new one, and the same file must not be loaded twice because of it).
   const normalise = (url) => {
     const u = abs(url);
     u.hash = "";
+    u.searchParams.delete("v");
     return u.href;
   };
 
@@ -595,7 +598,7 @@
   }
 
   window.Cast = {
-    version: "0.2.2",
+    version: "0.3.0",
     load,
     http: (options) => http(options),
     page,

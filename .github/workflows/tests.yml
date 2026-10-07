@@ -126,3 +126,23 @@ jobs:
           CAST_TEST_DB_USER: ${{ matrix.db == 'mysql' && 'root' || 'postgres' }}
           CAST_TEST_DB_PASS: root
         run: php tests/run.php
+
+  editor:
+    # the VS Code extension: tokenisation against VS Code's own grammars, the navigation logic, and a .vsix build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: editor/vscode
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-audit --no-fund
+      - run: node test/fetch-grammars.js
+      - run: npm test
+      - run: npx --yes @vscode/vsce package --no-dependencies -o cast-framework.vsix
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cast-framework-vscode
+          path: editor/vscode/cast-framework.vsix

@@ -40,11 +40,12 @@ final class Plugin implements PluginInterface, EventSubscriberInterface
         $target = $root . DIRECTORY_SEPARATOR . 'cast';
         $stub = dirname(__DIR__) . '/Stubs/init/cast.stub';
 
-        if (is_file($target) || !is_file($stub)) return;
-
-        if (@file_put_contents($target, (string) file_get_contents($stub)) !== false) {
+        $io = $event->getIO();
+        if (!is_file($target) && is_file($stub) && @file_put_contents($target, (string) file_get_contents($stub)) !== false) {
             @chmod($target, 0755);
-            $event->getIO()->write('<info>CastFramework:</info> created the <comment>cast</comment> console launcher. Try:  php cast list');
+            $io->write('<info>CastFramework:</info> created the <comment>cast</comment> console launcher. Try:  php cast list');
+            // said once, with the launcher (nothing is installed outside the project unless you run the command)
+            $io->write('<info>CastFramework:</info> VS Code highlighting and Ctrl+click for .cast.php views:  <comment>php cast editor:install</comment>');
         }
     }
 }

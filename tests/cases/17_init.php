@@ -192,3 +192,75 @@ test('init --demo: the starter has the cast launcher too', function () {
     exec(sprintf('cd %s && php cast route:list 2>&1', escapeshellarg($dir)), $lines);
     has('/api/items', implode("\n", $lines));
 });
+
+// ------------------------------------------------------------ editor:install
+
+/** @return array{int, string} */
+function editor_install(string $home, string $args): array
+{
+    $dir = init_dir();
+    exec(sprintf('cd %s && CAST_HOME=%s php %s editor:install %s 2>&1', escapeshellarg($dir), escapeshellarg($home), escapeshellarg(dirname(__DIR__, 2) . '/bin/cast'), $args), $lines, $code);
+    return [$code, implode("\n", array_filter($lines, fn($l) => !str_starts_with($l, 'fatal:')))];
+}
+
+function fake_home(array $editors): string
+{
+    $home = app_dir();
+    foreach ($editors as $dir) mkdir("$home/$dir", 0777, true);
+    return $home;
+}
+
+test('editor:install copies the extension into every VS Code style editor found, without tests or node_modules', function () {
+    $home = fake_home(['.vscode/extensions', '.cursor/extensions']);
+    [$code, $out] = editor_install($home, '');
+    eq(0, $code, $out);
+    has('installed code', $out);
+    has('installed cursor', $out);
+    lacks('insiders', $out);
+
+    $version = json_decode(file_get_contents(dirname(__DIR__, 2) . '/editor/vscode/package.json'), true)['version'];
+    foreach (['.vscode', '.cursor'] as $editor) {
+        $ext = "$home/$editor/extensions/anode.cast-framework-$version";
+        foreach (['package.json', 'extension.js', 'lib/scan.js', 'lib/resolve.js', 'syntaxes/cast-injection.tmLanguage.json', 'snippets/cast.code-snippets', 'README.md'] as $file) {
+            ok(is_file("$ext/$file"), "$editor: $file");
+        }
+        ok(!is_dir("$ext/test") && !is_dir("$ext/node_modules") && !is_file("$ext/package-lock.json"), "$editor: no dev files");
+    }
+});
+
+test('editor:install replaces an older version, and --uninstall removes it', function () {
+    $home = fake_home(['.vscode/extensions']);
+    mkdir("$home/.vscode/extensions/anode.cast-framework-0.0.1");
+    file_put_contents("$home/.vscode/extensions/anode.cast-framework-0.0.1/old.txt", 'old');
+    mkdir("$home/.vscode/extensions/someone.else-1.0.0");
+
+    editor_install($home, '');
+    ok(!is_dir("$home/.vscode/extensions/anode.cast-framework-0.0.1"), 'the old version is gone');
+    ok(is_dir("$home/.vscode/extensions/someone.else-1.0.0"), 'other extensions are untouched');
+    eq(1, count(glob("$home/.vscode/extensions/anode.cast-framework-*")));
+
+    [$code, $out] = editor_install($home, '--uninstall');
+    eq(0, $code, $out);
+    eq([], glob("$home/.vscode/extensions/anode.cast-framework-*"));
+    ok(is_dir("$home/.vscode/extensions/someone.else-1.0.0"));
+});
+
+test('editor:install: --editor creates the folder, --dir installs anywhere, and problems are explained', function () {
+    $home = fake_home([]);
+    [$code, $out] = editor_install($home, '');
+    eq(1, $code);
+    has('No VS Code style editor was found', $out);
+
+    [$code] = editor_install($home, '--editor=insiders');
+    eq(0, $code);
+    eq(1, count(glob("$home/.vscode-insiders/extensions/anode.cast-framework-*")));
+
+    $custom = app_dir() . '/ext';
+    [$code] = editor_install($home, '--dir=' . escapeshellarg($custom));
+    eq(0, $code);
+    eq(1, count(glob("$custom/anode.cast-framework-*")));
+
+    [$code, $out] = editor_install($home, '--editor=notepad');
+    eq(1, $code);
+    has('Unknown editor', $out);
+});

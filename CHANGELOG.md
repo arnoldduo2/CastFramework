@@ -9,6 +9,8 @@ This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 mino
 - **Another ORM:** `Cast\Contracts\Migrator` (bind your own as `migrator`), `config('database.connection')` (a callable that returns your PDO), [docs/ORM-ADAPTERS.md](docs/ORM-ADAPTERS.md).
 - `cast init --demo` now creates the starter's tables with real migrations and seeds the demo user (`--no-migrate` to skip); the starter's `AppServiceProvider` no longer creates tables.
 - Fix: `QueryBuilder::insert()` on PostgreSQL for a table without a generated key (such as the API tokens table) no longer throws; it returns 0.
+- **Editor support:** a VS Code extension in `editor/vscode` (highlighting for component tags, props, slots and `{ }` expressions; Ctrl+click / F12 / hover to open components, views, legacy components and modules; snippets) installed with `php cast editor:install`; tokenisation tests against VS Code's own PHP/HTML grammars.
+- Fix (client): an asset is the same asset whatever its `?v=` version, so a script is not loaded twice when a full-body swap brings the same file with a new version.
 - Tests run against real PostgreSQL and MySQL/MariaDB servers too (`CAST_TEST_DB`), and the CI has jobs for them.
 
 ## 0.2.2
