@@ -10,7 +10,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 
 /**
- * `php vendor/bin/cast init [--demo] [--force]`: creates the files of a new app in the current folder
+ * `php vendor/bin/cast init [--demo] [--force]` (later: `php cast <command>`): creates the files of a new app in the current folder
  * (`composer require anode/cast-framework` is the only install step). `--demo` copies the full starter app instead
  * (login, items with an edit modal, stats, and a JSON API).
  */
@@ -56,6 +56,9 @@ final class InitCommand extends Command
         }
 
         $this->write($base . '/storage/.gitkeep', '', $force, 'storage/.gitkeep');
+        // `php cast <command>`: the launcher is always (re)checked, also for apps made before it existed
+        $this->write($base . '/cast', (string) file_get_contents(dirname(__DIR__, 2) . '/Stubs/init/cast.stub'), $force, 'cast');
+        @chmod($base . '/cast', 0755);
         $this->ignoreFile($base, $output);
         $autoload = $this->registerAutoload($base);
 
@@ -68,7 +71,7 @@ final class InitCommand extends Command
         } elseif ($autoload === 'missing') {
             $output->warn('No composer.json found here. Add  "autoload": {"psr-4": {"App\\\\": "app/"}}  to yours, then run composer dump-autoload');
         }
-        $output->line('Start it:  php vendor/bin/cast serve   (then open http://127.0.0.1:8000)');
+        $output->line('Start it:  php cast serve   (then open http://127.0.0.1:8000). See all commands:  php cast list');
         if ($demo) $output->line('Demo login:  admin@example.com / password');
         return 0;
     }

@@ -30,11 +30,11 @@ Requires PHP 8.1 or newer and `ext-pdo`, `ext-mbstring`, `ext-json`.
 mkdir my-app && cd my-app
 composer init --name=me/my-app --no-interaction
 composer require anode/cast-framework
-php vendor/bin/cast init            # creates the app files here (add --demo for the full starter app)
-php vendor/bin/cast serve           # http://127.0.0.1:8000
+php vendor/bin/cast init            # creates the app files here (add --demo for the full starter app), and the `cast` launcher
+php cast serve                      # http://127.0.0.1:8000
 ```
 
-`cast init` writes `public/`, `bootstrap/`, `config/`, `routes/`, a home page, `.env` (named after the folder), `storage/` and the `.gitignore` lines, and adds the `App\` namespace to
+`cast init` writes `cast` (the console launcher), `public/`, `bootstrap/`, `config/`, `routes/`, a home page, `.env` (named after the folder), `storage/` and the `.gitignore` lines, and adds the `App\` namespace to
 your `composer.json` (then run `composer dump-autoload`). It never overwrites a file you already have unless you pass `--force`.
 
 `php vendor/bin/cast init --demo` copies the [`starter/`](starter) app instead: login (`admin@example.com` / `password`), an items page with `PUT`/`DELETE` and an edit modal, a stats page, and a
@@ -83,7 +83,7 @@ Router::get('/', fn() => 'Hello');
 Router::get('/hello/{name}', [App\Controllers\HelloController::class, 'show']);
 ```
 
-`app/Controllers/HelloController.php` (create it with `php vendor/bin/cast make:controller Hello`):
+`app/Controllers/HelloController.php` (create it with `php cast make:controller Hello`):
 
 ```php
 namespace App\Controllers;
@@ -206,7 +206,7 @@ Router::any('/ping', fn() => 'pong');
 - **Middleware:** a class implementing `Cast\Contracts\Middleware`. The spec `[Class::class, ...$args]` calls `handle(Request $request, ...$args)`. Return `null`
   to continue, a `Response` to stop, or throw `HttpException`. Group middleware runs in the order registered, then the CSRF check, then permission slugs, then the handler.
 
-`php vendor/bin/cast route:list` prints the table of routes with handlers and middleware.
+`php cast route:list` prints the table of routes with handlers and middleware.
 
 ## Request and Response
 
@@ -315,7 +315,7 @@ Fields that are empty and not `required` skip their other rules. `sometimes` ski
 Override per rule (`['required' => '...']`), per field and rule (`['email.required' => '...']`), and set labels with the fourth argument.
 
 **Custom rules:** a class implementing `Cast\Contracts\Rule` (`passes()`, `message()`), a closure, or `Validator::extend('even', fn($value, $params, $data, $field) => ..., ':field must be even.')`.
-`php vendor/bin/cast make:rule Uppercase` creates one.
+`php cast make:rule Uppercase` creates one.
 
 **What happens on failure:** `validate()` throws `ValidationException`. The Kernel answers **422 JSON** `{status:'error', msg, data:{errors:{field:'message'}}}` for ajax/JSON
 requests, and for browser forms it flashes `input_errors` and `old` (without passwords or the token) and redirects back to the referrer.
@@ -410,7 +410,7 @@ a legacy `.php` component receives `$data`. A view that is not found in your fol
 
 ## Running on Windows / XAMPP, or in a sub-folder
 
-Quick try (no Apache needed): `php vendor/bin/cast serve` serves `public/` on http://127.0.0.1:8000.
+Quick try (no Apache needed): `php cast serve` serves `public/` on http://127.0.0.1:8000.
 
 Under XAMPP (`C:\xampp\htdocs\my-app`):
 
@@ -560,7 +560,7 @@ app('tokens')->revoke($issued['id']);   // or ->revokeAllFor($user['id'])
 Abilities are strings you choose: `*` (everything), `items:*` (a group) or `items:read` (one). A token can only do what its **user** may do **and** what its abilities allow.
 `app('auth')->verify($email, $password)` checks credentials without starting a session, for the login route.
 
-Setup: create the table once (`php vendor/bin/cast token:schema --run`, or run `ApiTokenSchema::sql($driver)`), and make your user store also implement
+Setup: create the table once (`php cast token:schema --run`, or run `ApiTokenSchema::sql($driver)`), and make your user store also implement
 `Cast\Contracts\FindsUsersById` (`findById($id): ?array`), because a token only holds the user's id. Keep tokens elsewhere by binding your own `Cast\Contracts\TokenStore` as `token_store`.
 Console: `token:create <login> [--name=] [--abilities=a,b] [--days=N]`, `token:revoke <id>`, `token:schema [--run]`.
 
@@ -632,9 +632,9 @@ or per code with `errors/404.cast.php`, `errors/419.cast.php`, ... The view gets
 **Maintenance mode.**
 
 ```bash
-php vendor/bin/cast down --message="Back at noon" --secret=letmein --retry=120   # 503 page for everyone except...
-php vendor/bin/cast down --in=60                                                  # or schedule: down automatically in 60 seconds
-php vendor/bin/cast up
+php cast down --message="Back at noon" --secret=letmein --retry=120   # 503 page for everyone except...
+php cast down --in=60                                                  # or schedule: down automatically in 60 seconds
+php cast up
 ```
 
 State is a JSON file (`storage/framework/maintenance.json`). A request passes with the header `X-Maintenance-Secret`, the query `?maintenance_secret=`, or the
@@ -648,7 +648,7 @@ reports a pending update the app shows `views/updating.cast.php` (503, `Retry-Af
 ## Console
 
 ```bash
-php vendor/bin/cast            # list commands
+php cast            # list commands
 ```
 
 | Command | Purpose |
@@ -690,7 +690,7 @@ Interfaces in `Cast\Contracts` where an app plugs in its own behaviour:
 - Every value in the query builder is bound; identifiers are validated. Raw SQL goes through `raw()` with bound parameters.
 - Escape output: `<?= htchars($value) ?>`. `<?= ?>` prints raw, and `Request` input is raw too.
 - Compiled views are PHP code: keep `storage/` outside the web root, or deny web access to it. Only render templates you trust.
-- Set `APP_DEBUG=false` in production (`php vendor/bin/cast env:check` warns when it is not).
+- Set `APP_DEBUG=false` in production (`php cast env:check` warns when it is not).
 - Passwords: `Auth::hash()` uses `password_hash`; the session never stores the hash; a new session id and CSRF token are issued at login.
 - Keep `.env` out of git. The starter ships `.env.example` only.
 - API tokens: only a SHA-256 of the secret is stored; give each client its own token with the fewest abilities it needs, set an expiry, and revoke tokens that leak.

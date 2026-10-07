@@ -58,6 +58,8 @@ test('init: creates a working minimal app, adds the App\\ autoload and names it 
         has($file, $out);
     }
     ok(!str_contains(file_get_contents("$dir/public/index.php"), '.stub'));
+    ok(is_file("$dir/cast") && is_executable("$dir/cast"), 'the cast launcher exists and is executable');
+    has('cast', $out);
     has('APP_NAME="', file_get_contents("$dir/.env"));
     has('composer dump-autoload', $out);
     eq('app/', json_decode(file_get_contents("$dir/composer.json"), true)['autoload']['psr-4']['App\\']);
@@ -136,4 +138,40 @@ test('init --demo: copies the starter app (login, items, API) without per-instal
     [$status] = app_get($dir, '/items');
     eq(302, $status, 'guests are sent to the login page');
     ok(is_file("$dir/storage/database.sqlite"), 'the database was created in storage/');
+});
+
+test('php cast <command>: the launcher runs the console of its own app, from any folder', function () {
+    $dir = init_dir();
+    cast_in($dir, 'init');
+
+    exec(sprintf('cd %s && php cast route:list 2>&1', escapeshellarg($dir)), $lines);
+    $out = implode("\n", $lines);
+    has('App\\Controllers\\HomeController@index', $out);
+
+    // from another folder, it still uses the app that contains it
+    exec(sprintf('cd / && php %s version 2>&1', escapeshellarg("$dir/cast")), $lines2);
+    has('CastFramework', implode("\n", $lines2));
+
+    exec(sprintf('cd %s && php cast nope 2>&1', escapeshellarg($dir)), $lines3, $code);
+    eq(1, $code);
+    has('not defined', implode("\n", $lines3));
+});
+
+test('init: an app made before the launcher existed gets `cast` on the next init, without touching its other files', function () {
+    $dir = init_dir();
+    cast_in($dir, 'init');
+    unlink("$dir/cast");
+    file_put_contents("$dir/routes/web.php", "<?php // mine\n");
+    [$code, $out] = cast_in($dir, 'init');
+    eq(0, $code);
+    ok(is_file("$dir/cast"));
+    eq("<?php // mine\n", file_get_contents("$dir/routes/web.php"));
+});
+
+test('init --demo: the starter has the cast launcher too', function () {
+    $dir = init_dir();
+    cast_in($dir, 'init --demo');
+    ok(is_executable("$dir/cast"));
+    exec(sprintf('cd %s && php cast route:list 2>&1', escapeshellarg($dir)), $lines);
+    has('/api/items', implode("\n", $lines));
 });

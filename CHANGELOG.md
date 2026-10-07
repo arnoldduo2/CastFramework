@@ -2,6 +2,11 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.2.2
+
+- **`php cast <command>`**: `cast init` creates (and the starter ships) a `cast` launcher in the app root (works from any folder); `php vendor/bin/cast` keeps working.
+- Docs, stubs and the starter use `php cast ...`.
+
 ## 0.2.1
 
 Found by installing the app from GitHub and using it.

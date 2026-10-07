@@ -1,0 +1,18 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * The console of this app:  php cast <command>      (php cast list  shows the commands)
+ * Works from any folder; it always runs against the app that contains this file.
+ */
+
+declare(strict_types=1);
+
+require __DIR__ . '/vendor/autoload.php';
+
+$bootstrap = __DIR__ . '/bootstrap/app.php';
+$app = is_file($bootstrap) ? require $bootstrap : new \Cast\App\Application(__DIR__);
+
+$argv = $_SERVER['argv'];
+array_shift($argv);
+exit((new \Cast\Console\Kernel($app))->run($argv));
