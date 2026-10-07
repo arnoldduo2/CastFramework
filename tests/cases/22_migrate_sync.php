@@ -73,7 +73,7 @@ test('migrate:sync (sqlite): legacy tables become migrations that rebuild the sa
     $customers = (string) file_get_contents(glob("$dir/*create_customers_table.php")[0]);
     has("\$table->id('id');", $customers);
     has("\$table->string('email', 120)", $customers);
-    has("$table->unique('email')", $customers);
+    has('$table->unique(\'email\')', $customers);
     has("->useCurrent()", $customers);
 });
 
