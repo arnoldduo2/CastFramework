@@ -51,7 +51,7 @@ test('init: creates a working minimal app, adds the App\\ autoload and names it 
     $dir = init_dir();
     [$code, $out] = cast_in($dir, 'init');
     eq(0, $code, $out);
-    foreach (['public/index.php', 'public/.htaccess', 'bootstrap/app.php', 'config/app.php', 'routes/web.php', 'app/Controllers/HomeController.php',
+    foreach (['public/index.php', 'public/.htaccess', 'bootstrap/app.php', 'config/app.php', 'routes/web.php', 'src/Controllers/HomeController.php',
         'resources/views/layouts/header.cast.php', 'resources/views/home/partials/home.cast.php', 'resources/css/app.css', '.env', 'storage/.gitkeep'] as $file) {
         ok(is_file("$dir/$file"), "$file was created");
         has($file, $out);
@@ -61,7 +61,7 @@ test('init: creates a working minimal app, adds the App\\ autoload and names it 
     has('cast', $out);
     has('APP_NAME="', file_get_contents("$dir/.env"));
     has('composer.json', $out);
-    eq('app/', json_decode(file_get_contents("$dir/composer.json"), true)['autoload']['psr-4']['App\\']);
+    eq('src/', json_decode(file_get_contents("$dir/composer.json"), true)['autoload']['psr-4']['App\\']);
 
     $ignore = file_get_contents("$dir/.gitignore");
     foreach (['/vendor/', '.env', '/storage/*', '!/storage/.gitkeep'] as $line) has($line, $ignore);
@@ -124,7 +124,7 @@ test('init --demo: copies the starter app (login, items, API) without per-instal
     $dir = init_dir();
     [$code, $out] = cast_in($dir, 'init --demo');
     eq(0, $code, $out);
-    foreach (['app/Controllers/ItemsController.php', 'app/Controllers/Api/ItemsController.php', 'routes/api.php', 'resources/views/items/items.cast.php',
+    foreach (['src/Controllers/ItemsController.php', 'src/Controllers/Api/ItemsController.php', 'routes/api.php', 'resources/views/items/items.cast.php',
         'resources/js/items/items.module.js', 'config/auth.php', '.env', '.env.example'] as $file) ok(is_file("$dir/$file"), "$file copied");
     ok(!is_file("$dir/composer.lock"));
     eq(1, preg_match('/"name"\s*:\s*"me\/my-shop"/', file_get_contents("$dir/composer.json")), 'composer.json is the app\'s own');

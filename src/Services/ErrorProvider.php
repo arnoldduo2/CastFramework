@@ -17,7 +17,9 @@ final class ErrorProvider extends ServiceProvider
 {
     public function register(): void
     {
-        if (PHP_SAPI === 'cli' || !Config::get('app.error_handler', true) || !class_exists(ErrorHandler::class)) return;
+        $setting = Config::get('app.error_handler', true);
+        // `false` turns it off; `true` uses the defaults; an array is the package's options (`enabled => false` also turns it off)
+        if (PHP_SAPI === 'cli' || $setting === false || (is_array($setting) && ($setting['enabled'] ?? true) === false) || !class_exists(ErrorHandler::class)) return;
 
         $this->app->set('error_handler', new ErrorHandler(self::options($this->app)));
     }
@@ -29,7 +31,15 @@ final class ErrorProvider extends ServiceProvider
      */
     public static function options(Application $app): array
     {
-        return [
+        $given = Config::get('app.error_handler', true);
+        $given = is_array($given) ? array_diff_key($given, ['enabled' => 1]) : [];
+        // folders are written relative to the app
+        foreach (['log_directory', 'dev_logs_directory', 'error_view'] as $key) {
+            if (isset($given[$key]) && is_string($given[$key]) && $given[$key] !== '' && !preg_match('#^([a-z]:)?[\\/]#i', $given[$key])) {
+                $given[$key] = rtrim($app->basePath($given[$key]), '/\\') . (str_ends_with($key, 'directory') ? DIRECTORY_SEPARATOR : '');
+            }
+        }
+        return $given + [
             'app_name' => (string) Config::get('app.name', 'App'),
             'app_debug' => (bool) Config::get('app.debug', false),
             'app_enviroment' => (string) Config::get('app.env', 'production'),

@@ -3,7 +3,7 @@
     <p>Your CastFramework app is running. The path of every page is the same:</p>
     <ol>
         <li><code>routes/web.php</code>: the URL and verb</li>
-        <li><code>app/Controllers</code>: what happens (<code>php cast make:controller Orders</code>)</li>
+        <li><code>{source}/Controllers</code>: what happens (<code>php cast make:controller Orders</code>)</li>
         <li><code>resources/views/&lt;page&gt;/</code>: the page, with <code>partials/</code> and <code>components/</code></li>
         <li><code>resources/css/&lt;page&gt;/&lt;page&gt;.css</code> and <code>resources/js/&lt;page&gt;/&lt;page&gt;.module.js</code> load by themselves</li>
     </ol>

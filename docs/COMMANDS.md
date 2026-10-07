@@ -152,6 +152,12 @@ php cast init [options]
 | `--demo` | Copy the full starter app (login, items, API), then migrate and seed it |
 | `--no-migrate` | With --demo: skip the migrate and seed step |
 | `--force` | Overwrite files that already exist (.env and AGENTS.md are never overwritten) |
+| `--source=DIR` | Folder for your app source code (default src) |
+| `--frontend=NAME` | spa (server pages + the built-in SPA client, default), php (server pages, normal loads), external (API for a React/Vue/Next front end), api (API only) |
+| `--cors=ORIGIN` | With --frontend=external: the front end's address, allowed to call the API (default http://localhost:5173) |
+| `--error-handler=yes|no` | Use the Anode error handler (default yes; the defaults are listed when you run init interactively) |
+| `--error-pages=NAME` | default (the framework's pages) or custom (empty views in resources/views/errors for you to build) |
+| `--no-interaction` | Ask nothing: use the defaults and the options above (also the case when input is not a terminal) |
 
 ```bash
 php cast init   # a minimal app

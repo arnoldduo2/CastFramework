@@ -36,7 +36,7 @@ New here? Read **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)** first: the
 mkdir my-app && cd my-app
 composer init --name=me/my-app --no-interaction
 composer require anode/cast-framework     # answer "y" when Composer asks to trust the plugin (see below)
-php cast init                       # creates the app files here (add --demo for the full starter app)
+php cast init                       # asks a few questions, then creates the app here (add --demo for the full starter app)
 php cast serve                      # http://127.0.0.1:8000
 ```
 
@@ -60,7 +60,7 @@ my-app/
   config/                   app.php, auth.php, ...  (only list what you change)
   routes/web.php            routes (every *.php in this folder is loaded)
   routes/api.php            optional: the JSON API, registered under /api
-  app/                      Controllers/, Models/, Services/, Providers/, helpers/
+  src/                      Controllers/, Models/, Services/, Providers/, helpers/   (`php cast init` asks for the folder; config `app.source_path`)
   resources/views/          layouts, pages, components/
   resources/css, resources/js    auto-loaded per page
   storage/                  logs, compiled views, maintenance state (must be writable)

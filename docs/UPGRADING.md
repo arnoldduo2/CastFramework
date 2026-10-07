@@ -46,3 +46,8 @@ See [CHANGELOG.md](CHANGELOG.md) for what each release changed.
 
 From 0.4.0, tables that were never created by a migration can be turned into migrations: run `php cast migrate:sync --init` to test the relationships, then `php cast migrate:sync`.
 The files are recorded as run, so nothing is executed against your data. See [Legacy databases](../README.md#legacy-databases-migratesync).
+
+## The default source folder is now `src`
+
+From 0.5.0 `php cast init` creates new apps with their classes in `src/` (it asks). An app made earlier keeps working untouched: its `config/app.php` says `'source_path' => 'app'`. If an old app has no `source_path` line the framework still assumes `app/`.
+To move an old app to `src/`: move the folder, set `'source_path' => 'src'` in `config/app.php` and `"App\\": "src/"` in `composer.json`, then `composer dump-autoload`.

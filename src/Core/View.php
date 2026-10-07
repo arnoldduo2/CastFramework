@@ -302,23 +302,64 @@ final class View implements ViewRenderer
         return Config::get('app.base_path', '') . $url . app_version();
     }
 
-    /** The HTML of an error page (`errors.{code}`, then `errors.error`; or a named view such as 'maintenance'). */
+    /**
+     * The HTML of an error page (`errors.{code}`, then `errors.error`; or a named view such as 'maintenance').
+     *
+     * An app view that exists but is empty is a placeholder (`php cast init` can create them) and is skipped, so the framework's page is
+     * shown. With `app.error_pages = 'custom'` the page says so in development: you chose your own pages and have not built this one yet.
+     */
     public function errorPage(int $code, string $message = '', ?string $view = null, array $data = []): string
     {
         $title = Response::PHRASES[$code] ?? 'Error';
         $candidates = $view !== null ? [$view] : ["errors.$code", 'errors.error'];
+        $notice = '';
+        if ($view === null && Config::get('app.error_pages', 'framework') === 'custom' && !$this->builtByApp($candidates)) {
+            $notice = $this->unbuiltNotice("errors.$code");
+        }
+
         foreach ($candidates as $candidate) {
-            if ($this->exists($candidate)) {
-                return $this->render($candidate, [
-                    ...$data,
-                    'code' => $code,
-                    'title' => $title,
-                    'message' => $message !== '' ? $message : $title,
-                    'appName' => (string) Config::get('app.name', 'App'),
-                    'homeUrl' => route('/'),
-                ]);
-            }
+            if ($this->emptyAppView($candidate) || !$this->exists($candidate)) continue;
+            return $this->render($candidate, [
+                ...$data,
+                'notice' => $notice,
+                'code' => $code,
+                'title' => $title,
+                'message' => $message !== '' ? $message : $title,
+                'appName' => (string) Config::get('app.name', 'App'),
+                'homeUrl' => route('/'),
+            ]);
         }
         return "<h1>$code $title</h1><p>" . htmlspecialchars($message, ENT_QUOTES) . '</p>';
+    }
+
+    private function appViewFile(string $view): string
+    {
+        return $this->viewsDir . DIRECTORY_SEPARATOR . str_replace('.', DIRECTORY_SEPARATOR, $view) . $this->ext;
+    }
+
+    /** An app view with this name exists but has no content: a placeholder the developer has not written yet. */
+    private function emptyAppView(string $view): bool
+    {
+        $file = $this->appViewFile($view);
+        return is_file($file) && trim((string) file_get_contents($file)) === '';
+    }
+
+    /** @param list<string> $views */
+    private function builtByApp(array $views): bool
+    {
+        foreach ($views as $view) {
+            if (is_file($this->appViewFile($view)) && !$this->emptyAppView($view)) return true;
+        }
+        return false;
+    }
+
+    /** Development only (not in production): why the framework's page is shown although custom pages are configured. */
+    private function unbuiltNotice(string $view): string
+    {
+        if (Config::get('app.env', 'production') === 'production' && !Config::get('app.debug', false)) return '';
+        $file = $this->appViewFile($view);
+        $where = str_replace(str_replace('\\', '/', $this->app->basePath()) . '/', '', str_replace('\\', '/', $file));
+        return "You configured the framework to use your own error pages, but $where " . (is_file($file) ? 'is empty' : 'does not exist')
+            . ' yet, so the framework\'s page is shown instead. Build that view to replace it.';
     }
 }

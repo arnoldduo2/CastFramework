@@ -8,9 +8,20 @@ How a CastFramework app is wired, where every kind of file goes, and how to turn
 mkdir my-app && cd my-app
 composer init --name=me/my-app --no-interaction
 composer require anode/cast-framework
-php cast init              # a minimal app   (php cast init --demo : the full demo)
+php cast init              # asks a few questions, then creates the app   (php cast init --demo : the full demo)
 php cast serve             # http://127.0.0.1:8000
 ```
+
+`php cast init` asks (press Enter for the [default] each time; `-n` asks nothing and uses the defaults):
+
+| Question | Default | What it changes |
+| --- | --- | --- |
+| Folder for your app source code | `src` | where controllers, models, services live (`--source=app` for the classic layout); the `App\` namespace is mapped to it in `composer.json` and `config/app.php` (`source_path`) |
+| How will the front end work? | the built-in SPA | **spa**: server pages + the Cast client (no full reloads); **php**: server pages, normal page loads, no client script; **external**: an API for a React/Vue/Next.js front end (asks its address for CORS); **api**: JSON only. (`--frontend=spa|php|external|api`) |
+| Use the Anode error handler? | yes | logs errors and shows a developer page. Answer yes to see every setting with its default, then choose to configure it (log folder, developer logs, `display_errors`, email) or keep the defaults. (`--error-handler=yes|no`) |
+| Error pages | the framework's | **custom** creates empty views in `resources/views/errors` for you to build; until you do, the framework's page is shown, with a note in development. (`--error-pages=default|custom`) |
+
+All answers end up in `config/app.php` (and `.env` for the CORS origin) and can be edited later.
 
 Then, once: `php cast editor:install` (VS Code highlighting, Ctrl+click on components, prop hints) and `php cast ide:helpers` (so the editor knows `htchars()`, `views()` and the other helpers).
 `php cast list` shows every command; `php cast help <command>` shows its arguments and flags ([COMMANDS.md](COMMANDS.md)).
@@ -20,16 +31,16 @@ Then, once: `php cast editor:install` (VS Code highlighting, Ctrl+click on compo
 ```
 browser ──► public/index.php ──► routes ──► controller ──► view ──► response
                                    │            │           │
-                          routes/web.php   app/Controllers  resources/views
-                          routes/api.php   + app/Models     + css/js loaded by name
+                          routes/web.php   src/Controllers  resources/views
+                          routes/api.php   + src/Models     + css/js loaded by name
 ```
 
 1. **Route** (`routes/web.php`): `Router::get('/orders', [OrdersController::class, 'index']);` Every verb exists (`get post put patch delete`), plus `group`, `middleware`, `{param}`.
-2. **Controller** (`app/Controllers/OrdersController.php`, `php cast make:controller Orders`): validate with `$this->validate([...])`, use a model, return `$this->view('orders.orders', $data)` or `$this->success(...)`.
+2. **Controller** (`src/Controllers/OrdersController.php`, `php cast make:controller Orders`): validate with `$this->validate([...])`, use a model, return `$this->view('orders.orders', $data)` or `$this->success(...)`.
 3. **View** (`resources/views/orders/orders.cast.php`): includes the layout header, the page's partial, the layout footer. Pieces you reuse are **components**, used as tags: `<Btns.Button label="Save" />`.
 4. **CSS and JS load by name.** A page with `parentName = 'orders'` and `pageName = 'orders'` gets `resources/css/orders/orders.css` and `resources/js/orders/orders.module.js` when those files exist. `resources/css/app.css` and `resources/js/app/app.module.js` load on every page. You never write `<link>` or `<script>` for them.
 5. **SPA or normal page:** add `'spa' => true` to the page data and the first visit loads the shell, then links swap only the content. The controller is the same either way ([SPA in the README](../README.md#spa-pages-without-full-reloads)).
-6. **Data:** models in `app/Models`, tables as migrations in `database/migrations` (`php cast make:migration create_orders_table`, `php cast migrate`). Demo rows go in `database/seeders`.
+6. **Data:** models in `src/Models`, tables as migrations in `database/migrations` (`php cast make:migration create_orders_table`, `php cast migrate`). Demo rows go in `database/seeders`.
 7. **JSON API:** `routes/api.php` is served under `/api`, always answers JSON, and accepts bearer tokens (`php cast token:create <login>`).
 
 ## 3. Where everything goes
@@ -37,19 +48,19 @@ browser ──► public/index.php ──► routes ──► controller ──�
 | I want to... | File or folder |
 | --- | --- |
 | add a URL | `routes/web.php` (pages), `routes/api.php` (JSON) |
-| handle that URL | `app/Controllers/` |
+| handle that URL | `src/Controllers/` |
 | change a page's HTML | `resources/views/<page>/partials/<page>.cast.php` |
 | change the header, menu, footer | `resources/views/layouts/header.cast.php`, `footer.cast.php` |
 | make a reusable piece | `resources/views/components/` (`php cast make:component Btns.AddNew`) |
 | make a popup form | `resources/views/<page>/modals/` |
 | style the app / one page | `resources/css/app.css` / `resources/css/<page>/<page>.css` |
 | script the app / one page | `resources/js/app/app.module.js` / `resources/js/<page>/<page>.module.js` |
-| talk to the database | `app/Models/`, `database/migrations/`, `database/seeders/` |
+| talk to the database | `src/Models/`, `database/migrations/`, `database/seeders/` |
 | add a rule to forms | `php cast make:rule`, or string rules in `$this->validate()` |
-| write business logic | `app/Services/` |
-| add a helper function | a `*.php` file in `app/helpers/` (listed in `config/helpers.php`) |
+| write business logic | `src/Services/` |
+| add a helper function | a `*.php` file in `src/helpers/` (listed in `config/helpers.php`) |
 | change settings | `config/*.php`; secrets and per-machine values in `.env` |
-| change the error pages | `resources/views/errors/` |
+| change the error pages | `resources/views/errors/` (`404.cast.php`...; an empty file means "not built yet": the framework's page is used) |
 | add a console command | `php cast make:command`, then list it in `config/console.php` |
 
 ## 4. Wiring a new feature, end to end
@@ -76,8 +87,8 @@ If you started with `php cast init --demo`, delete what belongs to the demo and 
 | --- | --- |
 | `resources/views/items`, `stats` (and `auth` if you do not want the login) | `layouts/`, `components/`, `home/`, `errors/` |
 | `resources/css/items`, `stats`, `resources/js/items`, `stats` | `resources/css/app.css`, `resources/js/app/app.module.js` |
-| `app/Controllers/ItemsController.php`, `StatsController.php`, `Api/` | `HomeController.php` (and `AuthController.php` with the login) |
-| `app/Models/Items.php` | `Users.php` if you keep the login |
+| `src/Controllers/ItemsController.php`, `StatsController.php`, `Api/` | `HomeController.php` (and `AuthController.php` with the login) |
+| `src/Models/Items.php` | `Users.php` if you keep the login |
 | the demo routes in `routes/web.php` and `routes/api.php` | the home route |
 | `database/migrations/…create_items_table.php` | `users`, `api_tokens` if you keep the login / API |
 
@@ -94,6 +105,7 @@ Upgrading an app made on an older version: [UPGRADING.md](UPGRADING.md).
 | Symptom | Do |
 | --- | --- |
 | "Undefined function 'htchars'" in the editor (the app runs) | restart the editor window, or `php cast ide:helpers` |
+| an API-only app (`--frontend=external` or `api`) has no views | `routes/api.php` and `src/Controllers/`; it answers JSON under `/api` |
 | a page loads forever / a 500 with no detail | set `APP_DEBUG=true` in `.env`; the message names the template. `php cast views:check` finds views that start with `declare(strict_types=1);` |
 | old compiled views | `php cast views:clear` |
 | the environment looks off | `php cast env:check` |

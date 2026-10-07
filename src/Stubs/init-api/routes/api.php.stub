@@ -1,0 +1,9 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Controllers\StatusController;
+use Cast\Core\Router;
+
+// Served under /api (config api.prefix). Every answer, including errors, is JSON: {status, msg, data}.
+Router::get('/status', StatusController::class);

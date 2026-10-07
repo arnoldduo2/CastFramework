@@ -2,17 +2,26 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
-## 0.4.1
+## 0.5.0
 
-- **Command help:** `php cast help <command>` (or `<command> --help` / `-h`) prints usage, arguments, every option and examples; `php cast help --markdown [--write=PATH]` writes the whole reference ([docs/COMMANDS.md](docs/COMMANDS.md)). Custom commands document themselves with `$arguments`, `$options`, `$examples`. A test fails when a command reads an option it does not document.
+- **`php cast init` asks questions** (or takes options; `-n` uses the defaults): the **source folder** (new default `src`, was `app`; existing apps are not affected, their `config/app.php` says `app`), **web or API**, **how the front end works** (the built-in SPA client, server pages with normal loads, or an API for a front-end framework with CORS), whether to use the **Anode error handler** (all its settings and defaults are listed and can be configured), and **default or custom error pages**. Options: `--source`, `--frontend=spa|php|external|api`, `--cors`, `--error-handler=yes|no`, `--error-pages=default|custom`.
+- `config/app.php`: `error_handler` can be `true`, `false` or an array of the package's options (folders relative to the app); `error_pages => 'custom'`: an **empty** view in `resources/views/errors` counts as "not built yet", the framework's page is shown, and in development the page says which view you still have to build.
+- API-only apps (`--frontend=external|api`) get `routes/api.php`, a `StatusController` and no views.
 
-- **Fatal errors no longer loop.** A PHP fatal error (for example a view that starts with `declare(strict_types=1);`, which fails because the engine puts a line before every template) is now logged and answered as a normal 500: JSON for Cast and API clients (with the template's name in debug), the error page for browsers, never raw PHP output. The Cast client shows an HTTP error that has no Cast body instead of reloading the page, which looped; a page that fell back to a normal load within 5 seconds is not retried.
-- `php cast views:check [--fix]` finds the views that start with `declare(strict_types=1);` and removes the line.
-
-- **`php cast ide:helpers`** writes `_ide_helpers.php`, the signatures of every global helper (`htchars()`, `views()`...), so editors that do not index `vendor/` stop reporting "Undefined function". `php cast init` creates it and git-ignores it. (Reproduced with the Intelephense language server: with `vendor/` unindexed every helper was undefined; with the file, none.)
+## 0.4.3
 
 - **Docs:** [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) (the workflow, where every file goes, wiring a feature, turning the demo into your own project, troubleshooting) and an index [docs/README.md](docs/README.md); the README contents are grouped by topic.
 - The starter's home page explains the workflow, where everything is, and how to delete the demo; the minimal app's home page lists the path of a page. Both layouts use a fixed footer (`position: fixed; bottom: 0; border-top`, 12px, centred, `padding: 5px`) and `body { height: 100dvh }` with a scrolling page area.
+
+## 0.4.2
+
+- **`php cast ide:helpers`** writes `_ide_helpers.php`, the signatures of every global helper (`htchars()`, `views()`...), so editors that do not index `vendor/` stop reporting "Undefined function". `php cast init` creates it and git-ignores it. (Reproduced with the Intelephense language server: with `vendor/` unindexed every helper was undefined; with the file, none.)
+
+## 0.4.1
+
+- **Command help:** `php cast help <command>` (or `<command> --help` / `-h`) prints usage, arguments, every option and examples; `php cast help --markdown [--write=PATH]` writes the whole reference ([docs/COMMANDS.md](docs/COMMANDS.md)). Custom commands document themselves with `$arguments`, `$options`, `$examples`. A test fails when a command reads an option it does not document.
+- **Fatal errors no longer loop.** A PHP fatal error (for example a view that starts with `declare(strict_types=1);`, which fails because the engine puts a line before every template) is now logged and answered as a normal 500: JSON for Cast and API clients (with the template's name in debug), the error page for browsers, never raw PHP output. The Cast client shows an HTTP error that has no Cast body instead of reloading the page, which looped; a page that fell back to a normal load within 5 seconds is not retried.
+- `php cast views:check [--fix]` finds the views that start with `declare(strict_types=1);` and removes the line.
 
 ## 0.4.0
 

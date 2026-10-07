@@ -82,7 +82,7 @@ jobs:
           composer config allow-plugins.anode/cast-framework true
           composer require anode/cast-framework:@dev --no-interaction
           test -x cast          # the Composer plugin created the launcher
-          php cast init --demo
+          php cast init --demo -n
           composer dump-autoload
       - name: The app answers
         working-directory: my-app

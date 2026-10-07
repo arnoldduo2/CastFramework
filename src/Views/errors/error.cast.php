@@ -29,6 +29,7 @@ $hint = $hints[$code] ?? '';
         <h1><?= htchars($title) ?></h1>
         <?php if ($message !== $title) : ?><p><?= htchars($message) ?></p><?php endif ?>
         <?php if ($hint && $hint !== $message) : ?><p class="hint"><?= htchars($hint) ?></p><?php endif ?>
+        <?php if (!empty($notice)) : ?><p class="hint" role="note"><strong>Development note:</strong> <?= htchars($notice) ?></p><?php endif ?>
         <a class="btn" href="<?= htchars($homeUrl) ?>">Back to <?= htchars($appName) ?></a>
     </main>
 </body>
