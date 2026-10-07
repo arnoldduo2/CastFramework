@@ -87,6 +87,18 @@ const step = async (name, fn) => {
     assert.match(await page.locator("#cast-view .cast-error-text").first().innerText(), /at least 2/i);
   });
 
+  await step("adding an item loads the page once (no second refresh after the redirect)", async () => {
+    requests.length = 0;
+    await page.fill("#cast-view input[name=name]", "Washer");
+    await page.fill("#cast-view input[name=qty]", "3");
+    await page.fill("#cast-view input[name=price]", "1");
+    await page.click("#cast-view button[type=submit]");
+    await page.waitForSelector("#items-table td:text('Washer')");
+    await page.waitForTimeout(400);
+    const loads = requests.filter((r) => r.method === "GET" && r.url.endsWith("/items") && r.headers["x-cast-request"] === "1");
+    assert.equal(loads.length, 1, "page loads after the submit: " + JSON.stringify(requests.map((r) => r.method + " " + r.url + " " + (r.headers["x-cast-type"] || ""))));
+  });
+
   await step("adding an item through a Cast form refreshes the list", async () => {
     await page.fill("#cast-view input[name=name]", "Widget");
     await page.fill("#cast-view input[name=qty]", "5");
@@ -128,6 +140,19 @@ const step = async (name, fn) => {
     assert.ok(await page.locator("header.topbar").count(), "the header was kept (partial swap)");
   });
 
+  await step("the content container does not change the layout (cards keep their gap)", async () => {
+    const gaps = await page.evaluate(() => {
+      const cards = [...document.querySelectorAll("#cast-view .card")];
+      return cards.slice(1).map((c, i) => c.getBoundingClientRect().top - cards[i].getBoundingClientRect().bottom);
+    });
+    assert.ok(gaps.length >= 0 && gaps.every((g) => g >= 8), "gaps between cards: " + gaps);
+  });
+
+  await step("after a navigation focus moves to the new content and the change is announced", async () => {
+    assert.ok(await page.evaluate(() => !!document.activeElement.closest("#cast-view")), "focus is inside the new content");
+    await page.waitForFunction(() => document.getElementById("cast-announcer").textContent.includes("Stats"));
+  });
+
   await step("back and forward restore pages (no reload)", async () => {
     await page.goBack();
     await page.waitForSelector("#items-table");
@@ -145,6 +170,7 @@ const step = async (name, fn) => {
     await page.evaluate(() => Cast.load("/definitely-missing"));
     await page.waitForSelector("#cast-view .cast-error");
     assert.equal(await page.locator("#cast-view .cast-error h2").innerText(), "404");
+    assert.ok(await page.locator("#cast-view .cast-retry").count(), "a Try again button");
     assert.match(page.url(), /\/stats$/, "the address did not change");
   });
 
@@ -160,7 +186,7 @@ const step = async (name, fn) => {
     await page.evaluate(() => {
       const a = document.createElement("a");
       a.id = "plain-link";
-      a.href = "/";
+      a.href = Cast.url("/");
       a.setAttribute("data-cast", "off");
       a.textContent = "plain";
       document.querySelector("header").append(a);

@@ -28,6 +28,12 @@ final class ApiAuth implements Middleware
 {
     public function handle(Request $request, mixed ...$abilities): ?Response
     {
+        // already authenticated by an outer ApiAuth: only check the abilities this one asks for
+        if ($request->usesToken()) {
+            $this->requireAbilities((array) $request->token()['abilities'], $abilities);
+            return null;
+        }
+
         $bearer = $request->bearerToken();
 
         if ($bearer !== null) {
@@ -45,11 +51,7 @@ final class ApiAuth implements Middleware
             }
             $request->setUser($user, $record);
 
-            foreach ($abilities as $needed) {
-                if (!ApiTokens::allows((array) $record['abilities'], (string) $needed)) {
-                    throw new HttpException(403, 'This API token is not allowed to do that (needs "' . $needed . '").');
-                }
-            }
+            $this->requireAbilities((array) $record['abilities'], $abilities);
             return null;
         }
 
@@ -58,6 +60,15 @@ final class ApiAuth implements Middleware
         if ($guard instanceof Guard && $guard->check('private')) return null;
 
         throw new HttpException(401, 'Authentication is required. Send "Authorization: Bearer <token>".', ['WWW-Authenticate' => 'Bearer realm="api"']);
+    }
+
+    private function requireAbilities(array $have, array $needed): void
+    {
+        foreach ($needed as $ability) {
+            if (!ApiTokens::allows($have, (string) $ability)) {
+                throw new HttpException(403, 'This API token is not allowed to do that (needs "' . $ability . '").');
+            }
+        }
     }
 
     private function userFor(Application $app, string $id): ?array

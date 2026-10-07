@@ -12,7 +12,7 @@ use Cast\Services\ApiTokenSchema;
 use Cast\Services\DatabaseTokenStore;
 
 /** An in-memory token store, to test the service on its own. */
-final class MemoryTokenStore implements \Cast\Contracts\TokenStore
+class MemoryTokenStore implements \Cast\Contracts\TokenStore
 {
     public array $rows = [];
     public function create(array $record): void { $this->rows[$record['id']] = $record; }
@@ -415,4 +415,18 @@ test('Request: bearerToken() reads the Authorization header', function () {
     ok((new Request('GET', '/api/x'))->isApi());
     ok((new Request('GET', '/api'))->isApi());
     ok(!(new Request('GET', '/apiary'))->isApi(), 'prefix must end at a path boundary');
+});
+
+test('API: nested ApiAuth checks the token once and only adds ability checks', function () {
+    api_app();
+    $lookups = 0;
+    $store = new class($lookups) extends MemoryTokenStore {
+        public function __construct(public int &$finds) {}
+        public function find(string $id): ?array { $this->finds++; return parent::find($id); }
+    };
+    app()->singleton('tokens', fn() => new ApiTokens($store));
+    $issued = app('tokens')->issue(1, 'nested', ['things:write']);
+    $lookups = 0;
+    eq(200, handle(bearer('PUT', '/api/things/4', $issued['token'], ['x' => 1]))->statusCode());
+    eq(1, $lookups, 'the token record was loaded once, not once per ApiAuth in the group');
 });

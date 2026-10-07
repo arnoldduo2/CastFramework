@@ -15,7 +15,11 @@
   if (window.Cast) return;
 
   const script = document.currentScript;
-  const settings = Object.assign({ castRoot: "body", castView: "#cast-view", castGuard: "" }, script ? script.dataset : {});
+  const settings = Object.assign({ castRoot: "body", castView: "#cast-view", castGuard: "", castBase: "" }, script ? script.dataset : {});
+  const base = String(settings.castBase || "").replace(/\/+$/, ""); // the folder the app lives in (APP_BASE_PATH), "" at the web root
+
+  /** A root-relative app path ("/items") with the app's base folder in front. Other URLs are returned as they are. */
+  const url = (path) => (typeof path === "string" && path.startsWith("/") && !path.startsWith("//") && base && path !== base && !path.startsWith(base + "/") ? base + path : path);
 
   const config = {
     root: settings.castRoot,
@@ -107,13 +111,13 @@
       options.headers || {}
     );
 
-    let url = options.url;
+    let target = url(options.url);
     let body;
     if (options.data != null) {
       if (method === "GET" || method === "HEAD") {
-        const u = abs(url);
+        const u = abs(target);
         Object.entries(options.data).forEach(([k, v]) => u.searchParams.set(k, v));
-        url = u.pathname + u.search;
+        target = u.pathname + u.search;
       } else if (options.isform || options.data instanceof FormData) {
         body = options.data instanceof FormData ? options.data : new FormData(options.data);
         if (method !== "POST") {
@@ -128,7 +132,7 @@
     if (options.busy !== false) busy(true);
     let res;
     try {
-      const response = await fetch(url, {
+      const response = await fetch(target, {
         method: body instanceof FormData && method !== "POST" ? "POST" : method,
         credentials: "same-origin",
         headers,
@@ -297,7 +301,7 @@
 
   // --------------------------------------------------------------------- swap
 
-  function showError(target, env) {
+  function showError(target, env, retryUrl) {
     const data = env.data || {};
     const box = document.createElement("div");
     box.className = "cast-error";
@@ -307,9 +311,40 @@
     const text = document.createElement("p");
     text.textContent = env.msg || "Something went wrong.";
     box.append(title, text);
+    if (retryUrl) {
+      const retry = document.createElement("button");
+      retry.type = "button";
+      retry.className = "cast-retry";
+      retry.textContent = "Try again";
+      retry.addEventListener("click", () => load(retryUrl, { push: false }));
+      box.append(retry);
+    }
     if (target) target.replaceChildren(box);
     emit(target || document, "cast:error", env);
     if (typeof config.onError === "function") config.onError(env);
+  }
+
+  /** After a navigation: tell screen readers the page changed, and move focus to the new content (keyboard users start there). */
+  function announce(container, title) {
+    let live = document.getElementById("cast-announcer");
+    if (!live) {
+      live = document.createElement("div");
+      live.id = "cast-announcer";
+      live.className = "cast-sr-only";
+      live.setAttribute("role", "status");
+      live.setAttribute("aria-live", "polite");
+      document.body.appendChild(live);
+    }
+    live.textContent = "";
+    setTimeout(() => (live.textContent = title || document.title), 50);
+
+    // the container itself has no box (display: contents), so focus the first heading, or the first element, inside it
+    const start = container && container.isConnected ? container.querySelector("[autofocus], h1, h2, h3") || container.firstElementChild : null;
+    if (start) {
+      if (!start.hasAttribute("tabindex")) start.setAttribute("tabindex", "-1");
+      start.setAttribute("data-cast-focus", "");
+      start.focus({ preventScroll: true });
+    }
   }
 
   async function swap(env, opts) {
@@ -342,6 +377,7 @@
     // for a whole page, the content container is inside the new body
     const container = isPage ? $(config.view) || target : target;
     mount(data.page || (container && container.getAttribute("data-cast-page")) || "", container, data.type);
+    if (opts.push !== false || opts.scroll != null) announce(container, data.title); // a navigation, not a refresh
     emit(document, "cast:navigate", { url: data.url, page: data.page, type: data.type });
   }
 
@@ -387,7 +423,8 @@
    *   target: CSS selector of the container for a partial
    *   push: false to skip the history entry; replace: true to replace the current one
    */
-  async function load(url, opts = {}) {
+  async function load(path, opts = {}) {
+    const url = window.Cast.url(path);
     if (!sameOrigin(url)) return void location.assign(url);
 
     if (state.nav) state.nav.abort();
@@ -429,7 +466,7 @@
     const data = res.data || {};
     if (res.status === "error") {
       if (data.type === "reload") return void location.assign(data.url || url);
-      return showError(type === "page" ? $(config.root) : $(target), res);
+      return showError(type === "page" ? $(config.root) : $(target), res, url);
     }
 
     switch (data.type) {
@@ -558,11 +595,12 @@
   }
 
   window.Cast = {
-    version: "0.2.0",
+    version: "0.2.1",
     load,
     http: (options) => http(options),
     page,
     token,
+    url,
     configure(options) {
       Object.assign(config, options || {});
       return window.Cast;

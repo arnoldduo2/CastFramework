@@ -149,7 +149,8 @@ if (!function_exists('__cast')) {
         return "<link rel='stylesheet' href='$base/cast.css$v'/>"
             . "<script src='$base/cast.module.js$v' data-cast-root='" . htmlspecialchars((string) Config::get('spa.root', 'body'), ENT_QUOTES)
             . "' data-cast-view='" . htmlspecialchars((string) Config::get('spa.view', '#cast-view'), ENT_QUOTES)
-            . "' data-cast-guard='" . htmlspecialchars($guard, ENT_QUOTES) . "'></script>";
+            . "' data-cast-guard='" . htmlspecialchars($guard, ENT_QUOTES)
+            . "' data-cast-base='" . htmlspecialchars((string) Config::get('app.base_path', ''), ENT_QUOTES) . "'></script>";
     }
 }
 

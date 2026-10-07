@@ -66,3 +66,20 @@ html.cast-busy { cursor: progress; }
   position: absolute; top: .5rem; right: .75rem; border: 0; background: transparent;
   font-size: 1.5rem; line-height: 1; cursor: pointer; color: inherit;
 }
+
+/* the content container must not change the page's layout (a parent grid or flex gap still applies to its children) */
+[data-cast-url] { display: contents; }
+
+.cast-retry {
+  margin-top: 1rem; padding: .5rem 1rem; border-radius: .375rem; cursor: pointer; font: inherit;
+  border: 1px solid var(--cast-accent); background: transparent; color: var(--cast-accent);
+}
+
+/* the element that receives focus after a navigation is not a control: no focus ring */
+[data-cast-focus]:focus { outline: none; }
+
+/* text for screen readers only */
+.cast-sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden;
+  clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}

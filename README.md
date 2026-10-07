@@ -413,6 +413,18 @@ app('view')->share('appName', 'My App');             // data every view receives
 Inside a view the data is available as variables and as `$data`. Components: a `.cast.php` component receives camelCased props and `$children`;
 a legacy `.php` component receives `$data`. A view that is not found in your folder falls back to the framework's own (error pages).
 
+## Running on Windows / XAMPP, or in a sub-folder
+
+Quick try (no Apache needed): `php vendor/bin/cast serve` serves `public/` on http://127.0.0.1:8000.
+
+Under XAMPP (`C:\xampp\htdocs\my-app`):
+
+1. Use PHP 8.1+ and enable `extension=pdo_sqlite`, `extension=mbstring` (and `pdo_mysql` for MySQL) in `php.ini`; restart Apache. Install [Composer](https://getcomposer.org).
+2. In `my-app`: `composer install`, copy `.env.example` to `.env`. `storage/` must be writable.
+3. Either point a virtual host's `DocumentRoot` at `my-app/public` (then nothing else to configure), or browse to `http://localhost/my-app/public/` and set `APP_BASE_PATH=/my-app/public` in `.env`.
+   `public/.htaccess` sends every request that is not a real file to `index.php`, so `mod_rewrite` must be on and `AllowOverride All` set for the folder.
+4. The app's URLs, assets and the SPA client all use `APP_BASE_PATH`; use `route('/items')` in views instead of hand-written paths.
+
 ## SPA: pages without full reloads
 
 Opt a page in with `'spa' => true`. The first visit loads the layout and a placeholder; a small JavaScript client then fetches the content, and
@@ -496,6 +508,8 @@ Cast.page({
 
 - `Cast.http` accepts `url, data, type|method, isform, busy, follow, headers`; it always resolves (network and server errors become `{status: 'error', msg}`), follows redirect envelopes, and updates the CSRF token.
   Replace it with `Cast.configure({ http: yourAxiosWrapper })`, and open modals your own way with `Cast.configure({ modal: (envelope) => ... })`.
+- Under a sub-folder (`APP_BASE_PATH=/my-app/public`) root-relative URLs given to `Cast.http` and `Cast.load` get the folder put in front automatically; `Cast.url("/items")` does the same by hand (for `fetch`, `<img src>`).
+- **Accessibility:** after each navigation the client moves focus to the first heading of the new content and announces the page title in a polite live region (`#cast-announcer`); a failed load shows an alert block with a **Try again** button.
 - **Events** (bubbling, native `CustomEvent`s; `event.detail` has the data, in jQuery use `event.originalEvent.detail`): `cast:mounted` (every container that was filled, also modals), `cast:destroy`, `cast:navigate`,
   `cast:saved` (a `data-cast-form` succeeded), `cast:invalid` (422), `cast:error`. Initialise widgets (date pickers, selects) on `cast:mounted` instead of on `DOM ready`.
 - History: `pushState` / `popstate` with scroll restore, one request in flight at a time (a new click cancels the old one), a normal page load as the fallback for anything that is not a Cast answer.

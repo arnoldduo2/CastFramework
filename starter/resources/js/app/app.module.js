@@ -6,6 +6,7 @@ document.addEventListener("cast:mounted", (event) => {
 
 // A Cast form was saved (the add form, or the form inside a modal): close the modal and show the new data.
 document.addEventListener("cast:saved", (event) => {
+  if (event.detail.data && event.detail.data.type === "redirect") return; // the redirect already loaded the page
   const dialog = event.target.closest && event.target.closest("dialog");
   if (dialog) dialog.close();
   Cast.load(location.pathname + location.search, { push: false });

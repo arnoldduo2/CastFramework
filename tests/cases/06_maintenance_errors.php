@@ -221,3 +221,11 @@ test('ErrorProvider: does nothing in the CLI, so tests and console commands keep
     $app = boot_app();
     ok(!$app->has('error_handler'));
 });
+
+test('Error pages: the message line is left out when it repeats the title', function () {
+    boot_app();
+    $same = app('view')->errorPage(404, 'Page Not Found');
+    eq(1, substr_count($same, 'Page Not Found') - substr_count($same, '<title>'), 'only the heading carries the text (title tag aside)');
+    $other = app('view')->errorPage(404, 'No such invoice');
+    has('<p>No such invoice</p>', $other);
+});

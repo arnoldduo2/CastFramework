@@ -27,7 +27,7 @@ $hint = $hints[$code] ?? '';
     <main class="card" role="main">
         <div class="code"><?= (int) $code ?></div>
         <h1><?= htchars($title) ?></h1>
-        <p><?= htchars($message) ?></p>
+        <?php if ($message !== $title) : ?><p><?= htchars($message) ?></p><?php endif ?>
         <?php if ($hint && $hint !== $message) : ?><p class="hint"><?= htchars($hint) ?></p><?php endif ?>
         <a class="btn" href="<?= htchars($homeUrl) ?>">Back to <?= htchars($appName) ?></a>
     </main>
