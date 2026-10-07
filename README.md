@@ -18,11 +18,17 @@ Requires PHP 8.1 or newer and `ext-pdo`, `ext-mbstring`, `ext-json`.
 
 ## Contents
 
-[Install](#install) · [A first app](#a-first-app) · [Configuration](#configuration) · [Routing](#routing) · [Request and Response](#request-and-response) · [CSRF](#csrf) ·
-[Controllers](#controllers) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Views](#views) · [Editor support](#editor-support) ·
-[SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api) ·
-[Helpers](#helpers) · [Static files](#static-files) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Console](#console) · [Contracts](#contracts) ·
-[Security notes](#security-notes) · [Testing](#testing) · [Versioning](#versioning)
+New here? Read **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)** first: the workflow of a page, where every file goes, and how to wire a feature. The full index of guides is [docs/README.md](docs/README.md).
+
+| | |
+| --- | --- |
+| **Start** | [Install](#install) · [A first app](#a-first-app) · [Configuration](#configuration) |
+| **Build pages** | [Routing](#routing) · [Controllers](#controllers) · [Views](#views) · [Helpers](#helpers) · [Static files](#static-files) |
+| **Requests and safety** | [Request and Response](#request-and-response) · [CSRF](#csrf) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Security notes](#security-notes) |
+| **Data** | [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Legacy databases](#legacy-databases-migratesync) · [Another ORM](#using-another-orm) |
+| **Front end and API** | [SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api) |
+| **Tooling** | [Console](#console) ([all commands](docs/COMMANDS.md)) · [Editor support](#editor-support) · [Testing](#testing) |
+| **Running it** | [Windows / XAMPP](#running-on-windows--xampp-or-in-a-sub-folder) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Contracts](#contracts) · [Upgrading](#upgrading) · [Versioning](#versioning) |
 
 ## Install
 

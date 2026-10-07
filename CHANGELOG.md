@@ -11,6 +11,9 @@ This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 mino
 
 - **`php cast ide:helpers`** writes `_ide_helpers.php`, the signatures of every global helper (`htchars()`, `views()`...), so editors that do not index `vendor/` stop reporting "Undefined function". `php cast init` creates it and git-ignores it. (Reproduced with the Intelephense language server: with `vendor/` unindexed every helper was undefined; with the file, none.)
 
+- **Docs:** [docs/GETTING-STARTED.md](docs/GETTING-STARTED.md) (the workflow, where every file goes, wiring a feature, turning the demo into your own project, troubleshooting) and an index [docs/README.md](docs/README.md); the README contents are grouped by topic.
+- The starter's home page explains the workflow, where everything is, and how to delete the demo; the minimal app's home page lists the path of a page. Both layouts use a fixed footer (`position: fixed; bottom: 0; border-top`, 12px, centred, `padding: 5px`) and `body { height: 100dvh }` with a scrolling page area.
+
 ## 0.4.0
 
 - **`php cast migrate:sync`**: writes migrations for tables that already exist (MySQL/MariaDB, PostgreSQL, SQLite), all tables or `[table]` / `--table=` / `--except=`, with columns, defaults, indexes, foreign keys (tables ordered by their dependencies) and collations, recorded as run. `--pretend`, `--no-record`, `--collation=`, `--auto-increment`.

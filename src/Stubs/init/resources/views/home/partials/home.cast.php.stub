@@ -1,6 +1,13 @@
 <section class="card">
     <h1>It works</h1>
-    <p>Your CastFramework app is running. Edit <code>resources/views/home/partials/home.cast.php</code> to change this page,
-        <code>routes/web.php</code> to add routes, and run <code>php cast make:controller Orders</code> to start a controller.</p>
-    <p><a href="https://github.com/arnoldduo2/CastFramework#readme">Read the docs</a></p>
+    <p>Your CastFramework app is running. The path of every page is the same:</p>
+    <ol>
+        <li><code>routes/web.php</code>: the URL and verb</li>
+        <li><code>app/Controllers</code>: what happens (<code>php cast make:controller Orders</code>)</li>
+        <li><code>resources/views/&lt;page&gt;/</code>: the page, with <code>partials/</code> and <code>components/</code></li>
+        <li><code>resources/css/&lt;page&gt;/&lt;page&gt;.css</code> and <code>resources/js/&lt;page&gt;/&lt;page&gt;.module.js</code> load by themselves</li>
+    </ol>
+    <p>This page is <code>resources/views/home/partials/home.cast.php</code>: replace it. Start with
+        <code>php cast list</code> and <code>php cast help &lt;command&gt;</code>; the full guide is
+        <a href="https://github.com/arnoldduo2/CastFramework/blob/main/docs/GETTING-STARTED.md">docs/GETTING-STARTED.md</a>.</p>
 </section>

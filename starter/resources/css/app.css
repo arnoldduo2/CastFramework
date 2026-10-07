@@ -12,16 +12,20 @@
   :root { --main-bg: #15171a; --card-bg: #1f2226; --text-color: #e6e6e6; --text-off-light: #9aa0a6; --border-color: #343a40; --link-color: #4ade80; }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--main-bg); color: var(--text-color); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { margin: 0; height: 100dvh; display: flex; flex-direction: column; background: var(--main-bg); color: var(--text-color); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 .topbar { flex-wrap: wrap; gap: 8px 16px; display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; background: var(--card-bg); border-bottom: 1px solid var(--border-color); }
 .topbar nav { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
 .brand { font-weight: 700; color: var(--link-color); text-decoration: none; }
 a { color: var(--link-color); }
-.page { max-width: 760px; margin: 24px auto; padding: 0 16px; display: grid; gap: 16px; }
+/* the page scrolls inside the body (100dvh); the bottom padding keeps its last card clear of the fixed footer */
+.page { flex: 1 1 auto; min-height: 0; overflow-y: auto; width: 100%; padding: 24px max(16px, calc((100% - 760px) / 2)) 48px; display: grid; gap: 16px; align-content: start; }
 .card { background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 10px; padding: 20px; }
 .card h2 { margin: 0 0 12px; font-size: 18px; }
+.guide table td:first-child, .guide table th:first-child { white-space: nowrap; }
+.guide ol, .guide ul { margin: 8px 0; padding-left: 22px; }
+code { background: var(--main-bg); padding: 1px 5px; border-radius: 4px; font-size: 13px; }
 .muted { color: var(--text-off-light); }
-.foot { text-align: center; color: var(--text-off-light); font-size: 12px; padding: 24px; }
+.foot { position: fixed; bottom: 0; left: 0; width: 100%; border-top: 1px solid var(--border-color); background: var(--card-bg); text-align: center; color: var(--text-off-light); font-size: 12px; padding: 5px; }
 .btn { display: inline-block; padding: 8px 16px; border-radius: 5px; border: 1px solid var(--primary-color); background: var(--primary-color); color: #fff; text-decoration: none; cursor: pointer; font: inherit; }
 .btn-ghost { background: transparent; color: var(--primary-color); }
 .row { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; }

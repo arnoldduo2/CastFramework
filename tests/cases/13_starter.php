@@ -63,7 +63,7 @@ test('Starter: the home page renders with the layout, components, and auto-loade
     has('<h2>Welcome</h2>', $html);
     has('class="btn btn-primary" href="/items"', $html, 'component props from {expressions}');
     has("href='/css/app.css", $html, 'app.css is found by __modules()');
-    lacks('items.css', $html);
+    lacks("href='/css/items/items.css", $html);
     has('name="csrf-token"', $html);
     has('Log in', $html);
 });
