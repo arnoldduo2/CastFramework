@@ -81,12 +81,22 @@ abstract class Grammar
             return $sql . $this->incrementing($column) . $this->commentClause($column);
         }
 
-        $sql .= $this->type($column) . $this->unsignedClause($column);
+        $sql .= $this->type($column) . $this->unsignedClause($column) . $this->collationClause($column);
         $sql .= $column->nullable ? ' NULL' : ' NOT NULL';
         $sql .= $this->defaultClause($column);
         $sql .= $this->extra($column);
         if ($column->primary) $sql .= ' PRIMARY KEY';
         return $sql . $this->commentClause($column);
+    }
+
+    protected function collationClause(Column $column): string
+    {
+        return $column->collation !== null ? ' COLLATE ' . $this->collationName($column->collation) : '';
+    }
+
+    protected function collationName(string $name): string
+    {
+        return $name;
     }
 
     protected function unsignedClause(Column $column): string
@@ -133,7 +143,7 @@ abstract class Grammar
         }
         if (!$lines) throw new MigrationException("Table \"{$bp->table}\" has no columns.");
 
-        $statements = ["CREATE TABLE $table (\n    " . implode(",\n    ", $lines) . "\n)" . $this->tableOptions()];
+        $statements = ["CREATE TABLE $table (\n    " . implode(",\n    ", $lines) . "\n)" . $this->tableOptions($bp)];
         foreach ($this->createIndexes($bp) as $sql) $statements[] = $sql;
         foreach ($this->afterCreate($bp) as $sql) $statements[] = $sql;
         return $statements;
@@ -198,7 +208,7 @@ abstract class Grammar
         return $sql;
     }
 
-    protected function tableOptions(): string
+    protected function tableOptions(Blueprint $bp): string
     {
         return '';
     }

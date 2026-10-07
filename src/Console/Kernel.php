@@ -23,6 +23,8 @@ final class Kernel
         Commands\VersionCommand::class,
         Commands\InitCommand::class,
         Commands\EditorInstallCommand::class,
+        Commands\MigrateSyncCommand::class,
+        Commands\DbSequenceCommand::class,
         Commands\ComponentsCommand::class,
         Commands\MakeComponentCommand::class,
         Commands\MigrateCommand::class,

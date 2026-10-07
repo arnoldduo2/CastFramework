@@ -41,3 +41,8 @@ An app of your own that never used `init --demo`: step 1 is all that is needed. 
 ## Versions
 
 See [CHANGELOG.md](CHANGELOG.md) for what each release changed.
+
+## Legacy tables: `migrate:sync`
+
+From 0.4.0, tables that were never created by a migration can be turned into migrations: run `php cast migrate:sync --init` to test the relationships, then `php cast migrate:sync`.
+The files are recorded as run, so nothing is executed against your data. See [Legacy databases](../README.md#legacy-databases-migratesync).

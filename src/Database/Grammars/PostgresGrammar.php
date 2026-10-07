@@ -53,6 +53,11 @@ final class PostgresGrammar extends Grammar
         return $value ? 'TRUE' : 'FALSE';
     }
 
+    protected function collationName(string $name): string
+    {
+        return $this->id($name);
+    }
+
     protected function extra(Column $c): string
     {
         return $c->type === 'enum' ? $this->enumCheck($c) : '';

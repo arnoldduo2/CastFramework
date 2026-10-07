@@ -437,6 +437,29 @@ return new class extends Migration
 **Seeders:** `php cast make:seeder UserSeeder` creates `database/seeders/UserSeeder.php` (`namespace Database\Seeders; class UserSeeder extends Cast\Database\Seeder { public function run(): void {...} }`).
 `php cast db:seed` runs `DatabaseSeeder` (change it with `config('database.seeder')`), `--class=UserSeeder` runs one, `migrate --seed` migrates and seeds. A seeder calls others with `$this->call(OtherSeeder::class)`.
 
+### Legacy databases: `migrate:sync`
+
+A database that already has tables can join the migration system without retyping them. `migrate:sync` reads the tables (MySQL/MariaDB, PostgreSQL, SQLite) and writes one create-table migration per table, with columns, defaults, indexes, **foreign keys** and collations,
+ordered so that referenced tables come first. The files are recorded as run, because the tables exist: `php cast migrate` leaves them alone, and a fresh database built from the files gets the same structure.
+
+```
+php cast migrate:sync --init                 FIRST: test every relationship; PASS / WARN / BROKEN; writes nothing; exit 1 when something is broken
+php cast migrate:sync                        every table that has no migration yet
+php cast migrate:sync users                  one table (also  --table=users,orders  and  --except=logs,cache)
+php cast migrate:sync --pretend              print the files instead of writing them
+php cast migrate:sync --collation=utf8mb4_unicode_ci    write every table with this collation (MySQL)
+php cast migrate:sync --auto-increment       also write each table's next auto-increment value
+php cast migrate:sync --no-record            write the files but leave them pending (then  migrate:baseline  records them)
+```
+
+- **`--init`** checks each declared foreign key (the target exists, the columns exist, the types can be joined, the columns are indexed, and **every row has its parent**, with sample values for the orphans) and also the `customer_id`-style columns that have no constraint, reporting where they would point and whether the data agrees.
+  Rows that point to nothing are `BROKEN`; a missing constraint, a type mismatch or a missing index is a `WARN`.
+- Types the migration builder has no equivalent for (`GEOMETRY`, `YEAR`, `MEDIUMINT`, `JSONB`...) are written as the closest match and listed as `NOTE:` comments in the file and on screen: read the files before you commit them.
+- A table that already has a migration (`->create('table'`) is skipped. Foreign keys to a table that is not synced yet are flagged. Cycles between tables get a separate `add_foreign_keys_to_...` migration (SQLite accepts forward references, so it keeps them in place).
+- **Collations:** the builder has `$table->charset('latin1')`, `$table->collation('utf8mb4_bin')` (MySQL, table level) and `->collation('...')` on a column (MySQL, PostgreSQL, SQLite). `migrate:sync` reads them and only writes what differs from the default.
+- **Auto-increment:** `$schema->autoIncrement('orders', 5000)` sets the next value, `$schema->nextAutoIncrement('orders')` reads it. `php cast db:sequence` lists every counter with the highest id, flags the ones that are **behind** the data (the next insert would collide: this happens on PostgreSQL after imports with explicit ids), `--sync` moves them to `MAX(id)+1`, and `db:sequence orders --set=5000` sets one.
+- It needs the built-in migrator; with another ORM use its own "generate from database".
+
 **API tokens table:** `php cast token:schema --migration` writes the migration for it.
 
 ### Using another ORM
@@ -755,7 +778,7 @@ php cast            # list commands
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
 | `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--migration|--run]` | API tokens |
 | `init [--demo] [--no-migrate] [--force]` | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded) |
-| `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:baseline`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations) |
+| `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:baseline`, `migrate:sync`, `db:sequence`, `components`, `make:component`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations) |
 | `make:seeder`, `db:seed [--class=]` | Seeders |
 | `editor:install [--editor=] [--dir=] [--uninstall]` | Install the VS Code extension for `.cast.php` views |
 | `version` | Framework and PHP versions |

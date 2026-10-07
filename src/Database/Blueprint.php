@@ -23,7 +23,32 @@ final class Blueprint
     /** @var list<string> */
     public array $droppedForeignKeys = [];
 
+    /** MySQL table character set and collation (ignored elsewhere); null = the grammar's default. */
+    public ?string $charset = null;
+    public ?string $collation = null;
+
     public function __construct(public readonly string $table, public readonly bool $creating) {}
+
+    public function charset(string $charset): self
+    {
+        $this->charset = self::collationName($charset);
+        return $this;
+    }
+
+    /** Also sets the character set when it was not given (utf8mb4_unicode_ci => utf8mb4). */
+    public function collation(string $collation): self
+    {
+        $this->collation = self::collationName($collation);
+        $this->charset ??= strtok($this->collation, '_') ?: null;
+        return $this;
+    }
+
+    /** @internal */
+    public static function collationName(string $name): string
+    {
+        if (!preg_match('/^[A-Za-z0-9_.\-]+$/', $name)) throw new \InvalidArgumentException("\"$name\" is not a valid charset or collation name.");
+        return $name;
+    }
 
     // ---------------------------------------------------------------- columns
 

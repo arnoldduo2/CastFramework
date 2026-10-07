@@ -16,6 +16,7 @@ final class Column
     public bool $primary = false;
     public ?string $after = null;
     public ?string $comment = null;
+    public ?string $collation = null;
 
     /** @param array<string, mixed> $attributes length, precision, scale, values */
     public function __construct(
@@ -63,6 +64,14 @@ final class Column
         return $this;
     }
 
+    /** An auto-incrementing primary key of this column's integer type (`id()` and `increments()` are the usual way). */
+    public function autoIncrement(): self
+    {
+        $this->autoIncrement = true;
+        $this->primary = true;
+        return $this;
+    }
+
     public function primary(): self
     {
         $this->primary = true;
@@ -76,6 +85,13 @@ final class Column
         return $this;
     }
 
+    /** The collation of this column (text columns): `utf8mb4_bin`, `NOCASE`, `"C"` ... */
+    public function collation(string $name): self
+    {
+        $this->collation = Blueprint::collationName($name);
+        return $this;
+    }
+
     public function comment(string $text): self
     {
         $this->comment = $text;
@@ -85,11 +101,12 @@ final class Column
     /** For `foreignId()`: add the foreign key to `$table` (default: the plural of the column name without `_id`) and `id`. */
     public function constrained(?string $table = null, string $column = 'id'): ForeignKey
     {
-        $table ??= self::pluralTable($this->name);
+        $table ??= self::tableFor($this->name);
         return $this->table->foreign($this->name)->references($column)->on($table);
     }
 
-    private static function pluralTable(string $column): string
+    /** The table a `thing_id` column usually points to: `things`. */
+    public static function tableFor(string $column): string
     {
         $base = preg_replace('/_id$/', '', $column);
         if (str_ends_with($base, 'y') && !preg_match('/[aeiou]y$/', $base)) return substr($base, 0, -1) . 'ies';

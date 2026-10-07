@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Cast\Database\Grammars;
 
+use Cast\Database\Blueprint;
 use Cast\Database\Column;
 
 final class MySqlGrammar extends Grammar
@@ -79,9 +80,11 @@ final class MySqlGrammar extends Grammar
         return $c->after !== null ? ' AFTER ' . $this->id($c->after) : '';
     }
 
-    protected function tableOptions(): string
+    protected function tableOptions(Blueprint $bp): string
     {
-        return ' ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci';
+        $charset = $bp->charset ?? 'utf8mb4';
+        $collation = $bp->collation ?? ($bp->charset === null || $bp->charset === 'utf8mb4' ? 'utf8mb4_unicode_ci' : $charset . '_general_ci');
+        return " ENGINE=InnoDB DEFAULT CHARSET=$charset COLLATE=$collation";
     }
 
     protected function dropIndex(string $table, string $name): string

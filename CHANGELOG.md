@@ -2,7 +2,12 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
-## Unreleased
+## 0.4.0
+
+- **`php cast migrate:sync`**: writes migrations for tables that already exist (MySQL/MariaDB, PostgreSQL, SQLite), all tables or `[table]` / `--table=` / `--except=`, with columns, defaults, indexes, foreign keys (tables ordered by their dependencies) and collations, recorded as run. `--pretend`, `--no-record`, `--collation=`, `--auto-increment`.
+- **`migrate:sync --init`** tests every relationship (declared foreign keys and `x_id` columns without one, including orphan rows) and reports PASS / WARN / BROKEN.
+- Builder: `$table->charset()`, `$table->collation()`, `->collation()` on columns, `->autoIncrement()` on columns, `Schema::autoIncrement()`, `nextAutoIncrement()`, `autoIncrementColumn()`.
+- **`php cast db:sequence [table] [--set=N] [--sync]`** shows auto-increment positions and fixes counters that are behind the data.
 
 - **Component docs:** a component's docblock (`@var type $prop description`, `@slot`, `@example`, `@deprecated`) and its `??=` defaults are read as the component's spec, by the VS Code extension and by `Cast\Support\ComponentDocs`; both readers give identical JSON (shared fixtures in `tests/fixtures/components`).
 - `php cast components [Tag] [--json|--markdown] [--write=PATH] [--check]` and `php cast make:component Name --props=...`; `cast init` writes an `AGENTS.md` for AI tools when none exists. The starter's Button and Card are documented. See [docs/COMPONENTS.md](docs/COMPONENTS.md).

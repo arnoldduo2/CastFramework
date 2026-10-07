@@ -9,6 +9,7 @@ use Cast\Contracts\Migrator as MigratorContract;
 use Cast\Core\Config;
 use Cast\Core\Database;
 use Cast\Core\QueryBuilder;
+use Cast\Database\Reverse\{Auditor, Reader, Writer};
 use PDO;
 use Throwable;
 
@@ -141,6 +142,127 @@ final class Migrator implements MigratorContract
             if (!isset($this->files()[$name])) $rows[] = ['migration' => $name, 'ran' => true, 'batch' => $batch];
         }
         return $rows;
+    }
+
+    // ---------------------------------------------------------------- sync
+
+    /**
+     * Write migration files for tables that already exist (legacy databases), and record them as run so `migrate` leaves the tables alone.
+     *
+     * @param array{tables?: ?list<string>, except?: list<string>, record?: bool, pretend?: bool, collation?: ?string, autoIncrement?: bool} $options
+     * @return list<array{table: string, file: ?string, status: string, reason: ?string, code: ?string, notes: list<string>}>
+     */
+    public function sync(array $options = []): array
+    {
+        return $this->locked(function () use ($options) {
+            $pdo = $this->pdo();
+            $schema = $this->schema();
+            $reader = new Reader($pdo, $schema->grammar());
+            $existing = $reader->tables();
+            $requested = $options['tables'] ?? null;
+            $pretend = !empty($options['pretend']);
+            $record = ($options['record'] ?? true) && !$pretend;
+
+            foreach ($requested ?? [] as $t) {
+                if (!in_array($t, $existing, true)) throw new MigrationException("Table \"$t\" does not exist in the database.");
+            }
+
+            $results = [];
+            $skip = function (string $table, string $reason) use (&$results) { $results[] = ['table' => $table, 'file' => null, 'status' => 'skipped', 'reason' => $reason, 'code' => null, 'notes' => []]; };
+            $covered = $this->createdTables();
+            $todo = [];
+            foreach ($requested ?? $existing as $table) {
+                if ($table === $this->table()) {
+                    if ($requested !== null) $skip($table, 'this is the table that records migrations');
+                } elseif (in_array($table, $options['except'] ?? [], true)) {
+                    $skip($table, 'excluded');
+                } elseif (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $table)) {
+                    $skip($table, 'the name is not usable in a migration file name');
+                } elseif (isset($covered[$table])) {
+                    $skip($table, 'already created by ' . $covered[$table]);
+                } else {
+                    $todo[] = $table;
+                }
+            }
+            if (!$todo) return $results;
+
+            $writer = new Writer();
+            $definitions = array_map(fn($t) => $reader->read($t), $todo);
+            $collation = $options['collation'] ?? null;
+            foreach ($definitions as &$def) {
+                if ($collation !== null) {
+                    // a new collation for the whole table (MySQL); per-column collations are dropped so the table's applies
+                    $def['collation'] = Blueprint::collationName($collation);
+                    $def['charset'] = strtok($def['collation'], '_') ?: null;
+                    foreach ($def['columns'] as &$c) $c['collation'] = null;
+                    unset($c);
+                }
+                foreach ($def['foreign'] as $fk) {
+                    $target = $fk['table'];
+                    if (!in_array($target, $existing, true)) {
+                        $def['notes'][] = "foreign key to \"$target\", which does not exist in the database";
+                    } elseif (!in_array($target, $todo, true) && !isset($covered[$target]) && $target !== $def['name']) {
+                        $def['notes'][] = "foreign key to \"$target\", which has no migration yet: sync it too (a migration for it must run first)";
+                    }
+                }
+            }
+            unset($def);
+            $ordered = $writer->order($definitions, $schema->grammar()->driver() !== 'sqlite');
+
+            $files = [];   // name => [table, code, notes]
+            foreach ($ordered['tables'] as $def) $files['create_' . $def['name'] . '_table'] = [$def['name'], $writer->create($def, !empty($options['autoIncrement'])), $def['notes']];
+            foreach ($ordered['deferred'] as $table => $keys) $files['add_foreign_keys_to_' . $table . '_table'] = [$table, $writer->foreignKeys($table, $keys), []];
+
+            $dir = $this->path();
+            if (!$pretend && !is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) throw new MigrationException("Cannot create $dir.");
+
+            $stamp = time();
+            $names = [];
+            foreach ($files as $name => [$table, $code, $notes]) {
+                do {
+                    $base = date('Y_m_d_His', $stamp++) . '_' . $name;
+                } while (is_file($dir . DIRECTORY_SEPARATOR . $base . '.php'));
+                if (!$pretend) file_put_contents($dir . DIRECTORY_SEPARATOR . $base . '.php', $code);
+                $names[] = $base;
+                $results[] = ['table' => $table, 'file' => $base, 'status' => $pretend ? 'pretended' : 'written', 'reason' => null, 'code' => $pretend ? $code : null, 'notes' => $notes];
+                $this->say(($pretend ? 'Would write:  ' : 'Written:  ') . $base);
+            }
+
+            if ($record && $names) {
+                $this->ensureTable();
+                $batch = $this->lastBatch() + 1;
+                foreach ($names as $base) QueryBuilder::table($this->table())->insert(['migration' => $base, 'batch' => $batch, 'ran_at' => date('c')]);
+            }
+            return $results;
+        });
+    }
+
+    /**
+     * Test the relationships of the whole database (declared foreign keys, and `x_id` columns without one): pass, warn or broken.
+     * @param ?list<string> $tables only relationships that start in these tables
+     * @return list<array<string, mixed>>
+     */
+    public function relationships(?array $tables = null): array
+    {
+        $reader = new Reader($this->pdo(), $this->schema()->grammar());
+        $definitions = [];
+        foreach ($reader->tables() as $t) {
+            if ($t !== $this->table()) $definitions[] = $reader->read($t);
+        }
+        $results = (new Auditor($this->pdo(), $this->schema()->grammar()))->run($definitions);
+        return $tables === null ? $results : array_values(array_filter($results, fn($r) => in_array($r['table'], $tables, true)));
+    }
+
+    /** @return array<string, string> table => migration file that creates it */
+    private function createdTables(): array
+    {
+        $found = [];
+        foreach ($this->files() as $name => $path) {
+            if (preg_match_all('/->create\(\s*[\'"]([A-Za-z_][A-Za-z0-9_]*)[\'"]/', (string) file_get_contents($path), $m)) {
+                foreach ($m[1] as $table) $found[$table] ??= $name;
+            }
+        }
+        return $found;
     }
 
     // ---------------------------------------------------------------- make
