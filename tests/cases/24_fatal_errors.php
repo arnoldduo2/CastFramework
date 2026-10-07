@@ -51,19 +51,21 @@ test('client: an HTTP error without a Cast body is shown as an error, never relo
 
 test('a PHP fatal error in a view is answered as an error: JSON for Cast clients, no raw PHP output, details only in debug', function () {
     $dir = fatal_app();
+    // a real compile-time fatal that does not depend on the template engine's version (newer engines accept a leading declare)
+    file_put_contents("$dir/resources/views/home/partials/home.cast.php", "<?php\nfunction twice() {}\nfunction twice() {}\n?>\n<p>never shown</p>\n");
     file_put_contents("$dir/.env", preg_replace('/APP_DEBUG=.*/', 'APP_DEBUG=true', (string) file_get_contents("$dir/.env")));
     [$status, $body] = dev_server_get($dir, ['X-Cast-Request: 1']);
     eq(500, $status, $body);
     $json = json_decode($body, true);
     eq('error', $json['status'] ?? null, $body);
-    has('strict_types declaration must be the very first statement', $json['msg']);
+    has('Cannot redeclare twice()', $json['msg']);
     has('home.cast.php', $json['msg'], 'names the template, not the cache file');
     lacks('Fatal error:', $body);
 
     file_put_contents("$dir/.env", preg_replace('/APP_DEBUG=.*/', 'APP_DEBUG=false', (string) file_get_contents("$dir/.env")));
     [$status, $body] = dev_server_get($dir, ['X-Cast-Request: 1']);
     eq(500, $status);
-    lacks('strict_types', $body);
+    lacks('twice', $body);
     has('Something went wrong', $body);
 });
 
