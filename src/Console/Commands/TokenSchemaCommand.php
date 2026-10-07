@@ -12,7 +12,15 @@ use Cast\Services\ApiTokenSchema;
 final class TokenSchemaCommand extends Command
 {
     protected string $name = 'token:schema';
-    protected string $description = 'The api_tokens table: print the SQL, write a migration (--migration), or create it now (--run)';
+    protected string $description = 'The api_tokens table: print its SQL, write a migration, or create it';
+    protected array $options = [
+        '--migration' => 'Write a migration for it into database/migrations',
+        '--run' => 'Create the table now',
+    ];
+    protected array $examples = [
+        'php cast token:schema' => 'print the SQL',
+        'php cast token:schema --migration' => 'a migration file',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

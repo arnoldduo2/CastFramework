@@ -17,7 +17,17 @@ use RecursiveIteratorIterator;
 final class InitCommand extends Command
 {
     protected string $name = 'init';
-    protected string $description = 'Create the files of a new app here (--demo: the full starter app, migrated and seeded; --force: overwrite)';
+    protected string $description = 'Create the files of a new app in the current folder';
+    protected array $options = [
+        '--demo' => 'Copy the full starter app (login, items, API), then migrate and seed it',
+        '--no-migrate' => 'With --demo: skip the migrate and seed step',
+        '--force' => 'Overwrite files that already exist (.env and AGENTS.md are never overwritten)',
+    ];
+    protected array $examples = [
+        'php cast init' => 'a minimal app',
+        'php cast init --demo' => 'the full starter; login admin@example.com / password',
+        'php cast init --demo --force --no-migrate' => 'refresh the demo files',
+    ];
 
     /** Starter paths that are not copied by --demo (they are per install, or built by Composer). */
     private const DEMO_SKIP = ['composer.json', 'composer.lock', 'vendor', '.env', 'storage/database.sqlite'];

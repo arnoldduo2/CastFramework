@@ -10,6 +10,9 @@ final class ViewsClearCommand extends Command
 {
     protected string $name = 'views:clear';
     protected string $description = 'Delete the compiled view cache';
+    protected array $examples = [
+        'php cast views:clear' => '',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

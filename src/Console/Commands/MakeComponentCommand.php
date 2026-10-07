@@ -14,7 +14,18 @@ use Cast\Core\Config;
 final class MakeComponentCommand extends Command
 {
     protected string $name = 'make:component';
-    protected string $description = 'Create a documented component: make:component Btns.Button [--props=name:type[=default],...] [--force]';
+    protected string $description = 'Create a documented component file with a docblock and defaults';
+    protected array $arguments = [
+        'Name' => 'The tag, capitalised; dots are folders: Btns.AddNew -> components/btns/add-new.cast.php',
+    ];
+    protected array $options = [
+        '--props=LIST' => 'Comma separated name:type[=default], e.g. label:string=Add,variant:\'primary\'|\'ghost\'=\'primary\',href:?string,block:bool',
+        '--force' => 'Overwrite an existing file',
+    ];
+    protected array $examples = [
+        'php cast make:component Card' => 'an empty documented component',
+        'php cast make:component Btns.AddNew --props=label:string=Add,href:?string,block:bool' => 'with props',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

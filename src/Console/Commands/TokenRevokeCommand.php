@@ -10,7 +10,13 @@ use Cast\Services\ApiTokens;
 final class TokenRevokeCommand extends Command
 {
     protected string $name = 'token:revoke';
-    protected string $description = 'Revoke an API token by its id (the part before the "|")';
+    protected string $description = 'Revoke an API token';
+    protected array $arguments = [
+        'id' => 'The id: the part of the token before the "|"',
+    ];
+    protected array $examples = [
+        'php cast token:revoke 12' => '',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

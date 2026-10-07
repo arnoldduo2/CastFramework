@@ -10,7 +10,14 @@ use Cast\Contracts\Migrator;
 final class MigrateFreshCommand extends MigrationCommand
 {
     protected string $name = 'migrate:fresh';
-    protected string $description = 'Drop ALL tables, then run every migration (--seed --force)';
+    protected string $description = 'Drop ALL tables, then run every migration (destroys data)';
+    protected array $options = [
+        '--seed' => 'Run the seeders afterwards (config database.seeder)',
+        '--force' => 'Allow it when APP_ENV=production (changing the database in production is refused without it)',
+    ];
+    protected array $examples = [
+        'php cast migrate:fresh --seed' => 'a clean database with demo data',
+    ];
 
     protected function seeds(): bool
     {

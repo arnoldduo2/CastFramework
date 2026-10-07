@@ -2,6 +2,13 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.4.1
+
+- **Command help:** `php cast help <command>` (or `<command> --help` / `-h`) prints usage, arguments, every option and examples; `php cast help --markdown [--write=PATH]` writes the whole reference ([docs/COMMANDS.md](docs/COMMANDS.md)). Custom commands document themselves with `$arguments`, `$options`, `$examples`. A test fails when a command reads an option it does not document.
+
+- **Fatal errors no longer loop.** A PHP fatal error (for example a view that starts with `declare(strict_types=1);`, which fails because the engine puts a line before every template) is now logged and answered as a normal 500: JSON for Cast and API clients (with the template's name in debug), the error page for browsers, never raw PHP output. The Cast client shows an HTTP error that has no Cast body instead of reloading the page, which looped; a page that fell back to a normal load within 5 seconds is not retried.
+- `php cast views:check [--fix]` finds the views that start with `declare(strict_types=1);` and removes the line.
+
 ## 0.4.0
 
 - **`php cast migrate:sync`**: writes migrations for tables that already exist (MySQL/MariaDB, PostgreSQL, SQLite), all tables or `[table]` / `--table=` / `--except=`, with columns, defaults, indexes, foreign keys (tables ordered by their dependencies) and collations, recorded as run. `--pretend`, `--no-record`, `--collation=`, `--auto-increment`.

@@ -26,7 +26,27 @@ use Cast\Database\Migrator as BuiltIn;
 final class MigrateSyncCommand extends MigrationCommand
 {
     protected string $name = 'migrate:sync';
-    protected string $description = 'Write migrations for tables that already exist: [table] [--table=a,b] [--except=a,b] [--pretend] [--no-record] [--collation=X] [--auto-increment] [--init] (--force in production)';
+    protected string $description = 'Write migrations for tables that already exist (a legacy database)';
+    protected array $arguments = [
+        'table?' => 'Only this table (several: use --table=)',
+    ];
+    protected array $options = [
+        '--init' => 'Test every relationship (foreign keys, and x_id columns without one, including orphan rows): PASS / WARN / BROKEN. Writes nothing; exit 1 when something is broken',
+        '--table=A,B' => 'Only these tables',
+        '--except=A,B' => 'Leave these tables out',
+        '--pretend' => 'Print the migration files instead of writing them',
+        '--no-record' => 'Write the files but leave them pending (then run migrate:baseline)',
+        '--collation=NAME' => 'Write every table with this collation, e.g. utf8mb4_unicode_ci (MySQL)',
+        '--auto-increment' => 'Also write each table\'s next auto-increment value',
+        '--force' => 'Allow it when APP_ENV=production (changing the database in production is refused without it)',
+    ];
+    protected array $examples = [
+        'php cast migrate:sync --init' => 'FIRST: test the relationships',
+        'php cast migrate:sync' => 'every table without a migration',
+        'php cast migrate:sync users' => 'one table',
+        'php cast migrate:sync --except=logs,cache' => 'skip some',
+        'php cast migrate:sync --pretend' => 'look before writing',
+    ];
 
     protected function execute(Migrator $migrator, Input $input, Output $output): int
     {

@@ -16,7 +16,17 @@ use RecursiveIteratorIterator;
 final class EditorInstallCommand extends Command
 {
     protected string $name = 'editor:install';
-    protected string $description = 'Install the VS Code extension for .cast.php views (--editor=code|insiders|vscodium|cursor|antigravity|windsurf, --dir=PATH, --uninstall)';
+    protected string $description = 'Install the VS Code extension for .cast.php views (highlighting, Ctrl+click, props)';
+    protected array $options = [
+        '--editor=NAME' => 'Only this editor: code, insiders, vscodium, cursor, antigravity or windsurf (default: every editor found)',
+        '--dir=PATH' => 'Install into this extensions folder instead',
+        '--uninstall' => 'Remove the extension',
+    ];
+    protected array $examples = [
+        'php cast editor:install' => 'every editor found',
+        'php cast editor:install --editor=code' => 'VS Code only',
+        'php cast editor:install --uninstall' => 'remove it',
+    ];
 
     /** editor => folder below the home directory */
     private const EDITORS = [

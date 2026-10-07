@@ -17,6 +17,7 @@ final class Kernel
         Commands\ServeCommand::class,
         Commands\RouteListCommand::class,
         Commands\ViewsClearCommand::class,
+        Commands\ViewsCheckCommand::class,
         Commands\DownCommand::class,
         Commands\UpCommand::class,
         Commands\EnvCheckCommand::class,
@@ -68,7 +69,8 @@ final class Kernel
         $input = new Input($argv);
         $name = $input->command();
 
-        if ($name === '' || $name === 'list' || $name === 'help' || $name === '--help') {
+        if ($name === 'help') return $this->help($input);
+        if ($name === '' || $name === 'list' || $name === '--help' || $name === '-h') {
             return $this->list();
         }
         if (!isset($this->commands[$name])) {
@@ -77,9 +79,41 @@ final class Kernel
             if ($suggest) $this->output->line('Did you mean: ' . implode(', ', $suggest) . '?');
             return 1;
         }
+        if ($input->hasOption('help') || $input->hasOption('h')) {
+            Help::render($this->commands[$name], $this->output);
+            return 0;
+        }
 
         $this->app->boot();
         return $this->commands[$name]->handle($input, $this->output);
+    }
+
+    /** `php cast help`, `php cast help migrate:sync`, `php cast help --markdown [--write=PATH]` */
+    private function help(Input $input): int
+    {
+        $target = $input->argument(0);
+        if ($target === null || $target === '') {
+            if (!$input->hasOption('markdown')) return $this->list();
+            $md = Help::markdown($this->commands);
+            $path = $input->option('write');
+            if (is_string($path) && $path !== '') {
+                $file = preg_match('#^([a-z]:)?[\\/]#i', $path) ? $path : $this->app->basePath($path);
+                if (!is_dir(dirname($file))) mkdir(dirname($file), 0775, true);
+                file_put_contents($file, $md);
+                $this->output->info('Wrote ' . $path);
+            } else {
+                $this->output->line($md);
+            }
+            return 0;
+        }
+        if (!isset($this->commands[$target])) {
+            $this->output->error("Command \"$target\" is not defined.");
+            $near = array_filter(array_keys($this->commands), fn($c) => str_contains($c, $target) || str_starts_with($c, explode(':', $target)[0]));
+            if ($near) $this->output->line('Did you mean: ' . implode(', ', $near) . '?');
+            return 1;
+        }
+        Help::render($this->commands[$target], $this->output);
+        return 0;
     }
 
     private function list(): int
@@ -87,6 +121,7 @@ final class Kernel
         $this->output->line('CastFramework ' . Application::VERSION);
         $this->output->line();
         $this->output->line('Usage: php cast <command> [arguments] [--options]');
+        $this->output->line('Help:  php cast help <command>   (or  php cast <command> --help)');
         $this->output->line();
 
         $rows = [];

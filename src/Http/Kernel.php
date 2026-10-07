@@ -26,6 +26,7 @@ final class Kernel
     {
         $request = Request::capture();
         $bootstrap = new Bootstrap($this->app);
+        $this->catchFatals($request);
 
         $early = $bootstrap->handle($request);
         if ($early !== null) {
@@ -35,6 +36,48 @@ final class Kernel
 
         $this->app->boot();
         $bootstrap->decorate($this->handle($request), $request)->send();
+    }
+
+    /**
+     * A PHP fatal error (a compile error in a view, memory exhausted...) cannot be caught as an exception. PHP would print it
+     * into the page, or leave an empty 500 that a Cast client can only retry. Instead: log it, and answer with the same error
+     * response as any other failure (JSON for API and Cast clients, the error page for browsers).
+     */
+    private function catchFatals(Request $request): void
+    {
+        if (PHP_SAPI === 'cli') return;
+        ini_set('display_errors', '0');
+        register_shutdown_function(function () use ($request) {
+            $error = error_get_last();
+            if ($error === null || !in_array($error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR, E_RECOVERABLE_ERROR], true)) return;
+            error_log(sprintf('Fatal error: %s in %s:%d', $error['message'], $error['file'], $error['line']));
+            if (headers_sent()) return;
+            while (ob_get_level() > 0) @ob_end_clean();
+
+            $debug = (bool) Config::get('app.debug', false);
+            $file = (string) $error['file'];
+            // a compiled view says which template it came from on its first line
+            if (is_file($file) && preg_match('#^<\?php /\* (.+?) \*/ \?>#', (string) file_get_contents($file, false, null, 0, 1000), $m)) $file = $m[1];
+            $file = str_replace($this->app->basePath() . DIRECTORY_SEPARATOR, '', $file);
+            $message = $debug ? sprintf('%s (%s:%d)', $error['message'], $file, $error['line']) : '';
+            try {
+                $response = $this->fatalResponse($request, $message);
+            } catch (\Throwable) {
+                $response = Response::html('<h1>500</h1><p>' . htmlspecialchars($message !== '' ? $message : 'Something went wrong on our side.', ENT_QUOTES) . '</p>', 500);
+            }
+            $response->send();
+        });
+    }
+
+    private function fatalResponse(Request $request, string $message): Response
+    {
+        if ($request->isCast() || $request->isApi() || $request->expectsJson()) {
+            $text = $message !== '' ? $message : 'Something went wrong on our side. Please try again shortly.';
+            return $request->isCast()
+                ? Response::json(['status' => 'error', 'msg' => $text, 'data' => ['type' => 'error', 'code' => 500]], 500)
+                : Response::error($text, 500);
+        }
+        return $this->httpError(new HttpException(500, $message), $request);
     }
 
     /** Turn a request into a response (no output, no exit): this is what tests call. */

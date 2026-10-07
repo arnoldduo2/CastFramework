@@ -10,7 +10,10 @@ use Cast\Contracts\Migrator;
 final class MigrateStatusCommand extends MigrationCommand
 {
     protected string $name = 'migrate:status';
-    protected string $description = 'Show which migrations have run';
+    protected string $description = 'Show which migrations have run, and in which batch';
+    protected array $examples = [
+        'php cast migrate:status' => '',
+    ];
 
     protected function allowed(Input $input, Output $output): bool
     {

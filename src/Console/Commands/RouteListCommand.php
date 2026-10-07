@@ -10,7 +10,10 @@ use Cast\Core\Router;
 final class RouteListCommand extends Command
 {
     protected string $name = 'route:list';
-    protected string $description = 'List every registered route';
+    protected string $description = 'List every registered route with its verbs and middleware';
+    protected array $examples = [
+        'php cast route:list' => '',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

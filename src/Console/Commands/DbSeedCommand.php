@@ -12,7 +12,15 @@ use Cast\Database\SeederRunner;
 final class DbSeedCommand extends Command
 {
     protected string $name = 'db:seed';
-    protected string $description = 'Run the database seeders (--class=UserSeeder for one; --force in production)';
+    protected string $description = 'Run the database seeders';
+    protected array $options = [
+        '--class=NAME' => 'Run only this seeder (a class in database/seeders)',
+        '--force' => 'Allow it when APP_ENV=production (changing the database in production is refused without it)',
+    ];
+    protected array $examples = [
+        'php cast db:seed' => 'run DatabaseSeeder',
+        'php cast db:seed --class=UserSeeder' => 'one seeder',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

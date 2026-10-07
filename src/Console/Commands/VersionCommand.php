@@ -11,6 +11,9 @@ final class VersionCommand extends Command
 {
     protected string $name = 'version';
     protected string $description = 'Show the framework version';
+    protected array $examples = [
+        'php cast version' => '',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

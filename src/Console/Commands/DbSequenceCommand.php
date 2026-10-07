@@ -20,7 +20,20 @@ use Cast\Database\Schema;
 final class DbSequenceCommand extends MigrationCommand
 {
     protected string $name = 'db:sequence';
-    protected string $description = 'Show or fix auto-increment positions: [table] [--set=N] [--sync] (--force in production)';
+    protected string $description = 'Show or fix auto-increment positions';
+    protected array $arguments = [
+        'table?' => 'Only this table (required with --set)',
+    ];
+    protected array $options = [
+        '--set=N' => 'Make the next row of the table get N',
+        '--sync' => 'Move every counter that is behind its data to MAX(id)+1 (never lowers one that is ahead)',
+        '--force' => 'Allow it when APP_ENV=production (changing the database in production is refused without it)',
+    ];
+    protected array $examples = [
+        'php cast db:sequence' => 'every counter, highest id, and whether it is behind (exit 1 if so)',
+        'php cast db:sequence --sync' => 'fix the ones that are behind',
+        'php cast db:sequence orders --set=5000' => 'set one table',
+    ];
 
     protected function allowed(Input $input, Output $output): bool
     {

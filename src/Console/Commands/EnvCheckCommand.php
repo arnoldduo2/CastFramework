@@ -12,6 +12,9 @@ final class EnvCheckCommand extends Command
 {
     protected string $name = 'env:check';
     protected string $description = 'Check the environment, configuration and folders for common problems';
+    protected array $examples = [
+        'php cast env:check' => '',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

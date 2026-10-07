@@ -12,7 +12,19 @@ use Cast\Services\Auth;
 final class TokenCreateCommand extends Command
 {
     protected string $name = 'token:create';
-    protected string $description = 'Create an API token for a user: token:create <login> [--name=] [--abilities=a,b] [--days=N]';
+    protected string $description = 'Create an API token for a user (shown once)';
+    protected array $arguments = [
+        'login' => 'The user\'s login (email); the user must exist',
+    ];
+    protected array $options = [
+        '--name=TEXT' => 'A label for the token (default cli)',
+        '--abilities=A,B' => 'What the token may do (default *, everything)',
+        '--days=N' => 'Expire after N days (default: never)',
+    ];
+    protected array $examples = [
+        'php cast token:create admin@example.com' => 'a token that never expires',
+        'php cast token:create admin@example.com --abilities=items:read --days=30' => 'read-only for a month',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

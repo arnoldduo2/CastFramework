@@ -10,7 +10,19 @@ use Cast\Contracts\Migrator;
 final class MakeMigrationCommand extends MigrationCommand
 {
     protected string $name = 'make:migration';
-    protected string $description = 'Create a migration: make:migration create_orders_table  (--create=orders | --table=orders)';
+    protected string $description = 'Create a migration file in database/migrations';
+    protected array $arguments = [
+        'name' => 'snake_case name; create_orders_table and add_x_to_orders_table pick the right stub',
+    ];
+    protected array $options = [
+        '--create=TABLE' => 'Use the create-table stub for this table',
+        '--table=TABLE' => 'Use the change-table stub for this table',
+    ];
+    protected array $examples = [
+        'php cast make:migration create_orders_table' => 'create stub',
+        'php cast make:migration add_status_to_orders_table' => 'change stub',
+        'php cast make:migration fix_data --table=orders' => 'explicit table',
+    ];
 
     protected function allowed(Input $input, Output $output): bool
     {

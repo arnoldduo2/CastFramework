@@ -20,7 +20,23 @@ use Cast\Support\ComponentDocs;
 final class ComponentsCommand extends Command
 {
     protected string $name = 'components';
-    protected string $description = 'List the components with their props and types: [Tag] [--json|--markdown] [--write=PATH] [--check]';
+    protected string $description = 'List the components with their props, types and descriptions';
+    protected array $arguments = [
+        'Tag?' => 'Show only this component, e.g. Btns.Button',
+    ];
+    protected array $options = [
+        '--json' => 'Print a machine-readable index (for editors and AI tools)',
+        '--markdown' => 'Print a Markdown reference page',
+        '--write=PATH' => 'Write the Markdown (or --json) output to this file, relative to the app folder',
+        '--check' => 'Exit 1 when a docblock and its code disagree: no description, a documented prop the file never uses, a ??= default without @var, undocumented props',
+    ];
+    protected array $examples = [
+        'php cast components' => 'a table of every component',
+        'php cast components Btns.Button' => 'one component in full',
+        'php cast components --json' => 'index for tools',
+        'php cast components --markdown --write=docs/components.md' => 'write the reference page',
+        'php cast components --check' => 'for CI',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

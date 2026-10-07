@@ -53,6 +53,19 @@
     }
   };
   const abs = (url) => new URL(url, location.href);
+
+  // remembers (per tab) that a normal page load was tried for this address a moment ago, so a broken answer cannot reload forever
+  const recentFallback = (url) => {
+    try {
+      const key = "cast:fallback";
+      const last = JSON.parse(sessionStorage.getItem(key) || "null");
+      const now = Date.now();
+      sessionStorage.setItem(key, JSON.stringify({ url: String(url), at: now }));
+      return !!last && last.url === String(url) && now - last.at < 5000;
+    } catch (e) {
+      return false;
+    }
+  };
   const sameOrigin = (url) => {
     try {
       return abs(url).origin === location.origin;
@@ -165,7 +178,14 @@
     } catch (e) {
       /* not JSON: handled below */
     }
-    return { status: "error", msg: response.statusText || "Unexpected response from the server.", data: { type: "error", code: response.status }, http: response.status, raw: true };
+    const failed = response.status >= 400;
+    return {
+      status: "error",
+      msg: failed ? "The server could not complete the request (error " + response.status + "). Check the application log." : "Unexpected response from the server.",
+      data: { type: "error", code: response.status },
+      http: response.status,
+      raw: true,
+    };
   }
 
   async function follow(res) {
@@ -464,7 +484,9 @@
     if (res.data && res.data.csrf) setToken(res.data.csrf);
 
     // not a Cast answer (a proxy page, an old server): fall back to a normal page load
-    if (res.raw && opts.type !== "modal") return void location.assign(url);
+    // (an HTTP error without a Cast body is shown as an error: reloading it would fail the same way, and loop; a page that loaded the shell
+    // and fell back within the last few seconds is not retried either)
+    if (res.raw && opts.type !== "modal" && !(res.http >= 400) && !recentFallback(url)) return void location.assign(url);
 
     const data = res.data || {};
     if (res.status === "error") {
@@ -598,7 +620,7 @@
   }
 
   window.Cast = {
-    version: "0.4.0",
+    version: "0.4.1",
     load,
     http: (options) => http(options),
     page,

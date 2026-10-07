@@ -10,7 +10,13 @@ use Cast\Contracts\Migrator;
 final class MigrateBaselineCommand extends MigrationCommand
 {
     protected string $name = 'migrate:baseline';
-    protected string $description = 'Mark the pending migrations as run WITHOUT running them (for tables that already exist) (--force in production)';
+    protected string $description = 'Mark the pending migrations as run WITHOUT running them (the tables already exist)';
+    protected array $options = [
+        '--force' => 'Allow it when APP_ENV=production (changing the database in production is refused without it)',
+    ];
+    protected array $examples = [
+        'php cast migrate:baseline' => 'adopt migrations on an existing database',
+    ];
 
     protected function execute(Migrator $migrator, Input $input, Output $output): int
     {

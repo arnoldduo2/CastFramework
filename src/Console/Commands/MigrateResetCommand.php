@@ -10,7 +10,13 @@ use Cast\Contracts\Migrator;
 final class MigrateResetCommand extends MigrationCommand
 {
     protected string $name = 'migrate:reset';
-    protected string $description = 'Undo every migration (--force in production)';
+    protected string $description = 'Undo every migration';
+    protected array $options = [
+        '--force' => 'Allow it when APP_ENV=production (changing the database in production is refused without it)',
+    ];
+    protected array $examples = [
+        'php cast migrate:reset' => '',
+    ];
 
     protected function execute(Migrator $migrator, Input $input, Output $output): int
     {

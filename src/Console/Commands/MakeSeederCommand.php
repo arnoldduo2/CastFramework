@@ -9,7 +9,16 @@ use Cast\Console\{Command, Input, Output};
 final class MakeSeederCommand extends Command
 {
     protected string $name = 'make:seeder';
-    protected string $description = 'Create a seeder in database/seeders: make:seeder UserSeeder';
+    protected string $description = 'Create a seeder in database/seeders';
+    protected array $arguments = [
+        'Name' => 'The class name, e.g. UserSeeder',
+    ];
+    protected array $options = [
+        '--force' => 'Overwrite an existing file',
+    ];
+    protected array $examples = [
+        'php cast make:seeder UserSeeder' => '',
+    ];
 
     public function handle(Input $input, Output $output): int
     {

@@ -122,7 +122,10 @@ PHP],
         $this->kind = $kind;
         if ($kind !== '') {
             $this->name = "make:$kind";
-            $this->description = "Create a new $kind class (--force to overwrite)";
+            $this->description = "Create a new $kind class";
+            $this->arguments = ['Name' => "The class name, e.g. Invoice" . (self::KINDS[$kind][1] !== '' ? ' (the suffix ' . self::KINDS[$kind][1] . ' is added when missing)' : '')];
+            $this->options = ['--force' => 'Overwrite the file if it exists'];
+            $this->examples = ["php cast make:$kind Invoice" => ''];
         }
     }
 

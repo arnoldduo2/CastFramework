@@ -10,6 +10,9 @@ final class UpCommand extends Command
 {
     protected string $name = 'up';
     protected string $description = 'Bring the app out of maintenance mode';
+    protected array $examples = [
+        'php cast up' => '',
+    ];
 
     public function handle(Input $input, Output $output): int
     {
