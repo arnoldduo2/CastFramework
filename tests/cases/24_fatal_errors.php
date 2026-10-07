@@ -58,7 +58,7 @@ test('a PHP fatal error in a view is answered as an error: JSON for Cast clients
     eq(500, $status, $body);
     $json = json_decode($body, true);
     eq('error', $json['status'] ?? null, $body);
-    has('Cannot redeclare twice()', $json['msg']);
+    ok(preg_match('/Cannot redeclare (function )?twice\\(\\)/', $json['msg']) === 1, 'the PHP message (worded differently from 8.4): ' . $json['msg']);
     has('home.cast.php', $json['msg'], 'names the template, not the cache file');
     lacks('Fatal error:', $body);
 
