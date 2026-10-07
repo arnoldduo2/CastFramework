@@ -1,0 +1,139 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * `cast init` is tested in separate PHP processes, because the generated app has its own `App\` classes
+ * that would clash with the starter app's classes loaded by other test files.
+ */
+
+function init_dir(bool $composerJson = true): string
+{
+    $dir = app_dir($composerJson ? ['composer.json' => json_encode(['name' => 'me/my-shop', 'require' => new stdClass()])] : []);
+    $framework = dirname(__DIR__, 2);
+    // the app's autoloader: the framework's own, plus App\ => app/
+    mkdir("$dir/vendor", 0777, true);
+    file_put_contents("$dir/vendor/autoload.php", "<?php\nrequire " . var_export($framework . '/vendor/autoload.php', true) . ";\n"
+        . "spl_autoload_register(function (\$c) { if (str_starts_with(\$c, 'App\\\\')) { \$f = __DIR__ . '/../app/' . str_replace('\\\\', '/', substr(\$c, 4)) . '.php'; if (is_file(\$f)) require \$f; } });\n");
+    return $dir;
+}
+
+/** @return array{int, string} */
+function cast_in(string $dir, string $args): array
+{
+    $cmd = sprintf('cd %s && php %s %s 2>&1', escapeshellarg($dir), escapeshellarg(dirname(__DIR__, 2) . '/bin/cast'), $args);
+    exec($cmd, $lines, $code);
+    return [$code, implode("\n", array_filter($lines, fn($l) => !str_starts_with($l, 'fatal:')))];
+}
+
+/** Run a request against the app in $dir; returns [status, body]. */
+function app_get(string $dir, string $uri, array $headers = []): array
+{
+    $script = <<<'PHP'
+require $argv[1] . '/vendor/autoload.php';
+$app = require $argv[1] . '/bootstrap/app.php';
+$app->boot();
+$server = json_decode($argv[3], true);
+$r = (new Cast\Http\Kernel($app))->handle(new Cast\Http\Request('GET', $argv[2], [], '', $server));
+echo $r->statusCode(), "\n", $r->body();
+PHP;
+    $server = [];
+    foreach ($headers as $name => $value) $server['HTTP_' . strtoupper(str_replace('-', '_', $name))] = $value;
+    $file = $dir . '/_run.php';
+    file_put_contents($file, "<?php\n" . $script);
+    exec(sprintf('php %s %s %s %s 2>&1', escapeshellarg($file), escapeshellarg($dir), escapeshellarg($uri), escapeshellarg(json_encode($server))), $lines);
+    unlink($file);
+    $out = implode("\n", array_filter($lines, fn($l) => !str_starts_with($l, 'fatal:')));
+    $status = (int) strtok($out, "\n");
+    return [$status, (string) substr($out, strlen((string) $status) + 1)];
+}
+
+test('init: creates a working minimal app, adds the App\\ autoload and names it after the folder', function () {
+    $dir = init_dir();
+    [$code, $out] = cast_in($dir, 'init');
+    eq(0, $code, $out);
+    foreach (['public/index.php', 'public/.htaccess', 'bootstrap/app.php', 'config/app.php', 'routes/web.php', 'app/Controllers/HomeController.php',
+        'resources/views/layouts/header.cast.php', 'resources/views/home/partials/home.cast.php', 'resources/css/app.css', '.env', 'storage/.gitkeep'] as $file) {
+        ok(is_file("$dir/$file"), "$file was created");
+        has($file, $out);
+    }
+    ok(!str_contains(file_get_contents("$dir/public/index.php"), '.stub'));
+    has('APP_NAME="', file_get_contents("$dir/.env"));
+    has('composer dump-autoload', $out);
+    eq('app/', json_decode(file_get_contents("$dir/composer.json"), true)['autoload']['psr-4']['App\\']);
+
+    $ignore = file_get_contents("$dir/.gitignore");
+    foreach (['/vendor/', '.env', '/storage/*', '!/storage/.gitkeep'] as $line) has($line, $ignore);
+
+    // the generated app answers: the lazy shell for a browser, the content for the Cast client, 404 for the rest
+    [$status, $html] = app_get($dir, '/');
+    eq(200, $status, $html);
+    has('<title>', $html);
+    has('data-cast-lazy', $html);
+    has('/cast/cast.module.js', $html);
+    [$status, $json] = app_get($dir, '/', ['X-Cast-Request' => '1']);
+    eq(200, $status);
+    has('It works', json_decode($json, true)['data']['html']);
+    eq(404, app_get($dir, '/nope')[0]);
+});
+
+test('init: the app name comes from the folder, and existing files are kept unless --force', function () {
+    $dir = init_dir();
+    $named = dirname($dir) . '/blue-sky_shop';
+    rename($dir, $named);
+    $GLOBALS['tmp_dirs'][] = $named;
+    cast_in($named, 'init');
+    has('APP_NAME="Blue Sky Shop"', file_get_contents("$named/.env"));
+
+    file_put_contents("$named/routes/web.php", "<?php // mine\n");
+    file_put_contents("$named/.env", "APP_NAME=\"Mine\"\n");
+    [$code, $out] = cast_in($named, 'init');
+    eq(0, $code);
+    has('exists   routes/web.php', $out);
+    eq("<?php // mine\n", file_get_contents("$named/routes/web.php"));
+    eq("APP_NAME=\"Mine\"\n", file_get_contents("$named/.env"));
+    lacks('created  routes/web.php', $out);
+
+    [, $out] = cast_in($named, 'init --force');
+    has('created  routes/web.php', $out);
+    has('use Cast\Core\Router;', file_get_contents("$named/routes/web.php"));
+});
+
+test('init: .gitignore lines are added once, and an existing .gitignore is extended', function () {
+    $dir = init_dir();
+    file_put_contents("$dir/.gitignore", "node_modules/\n.env\n");
+    cast_in($dir, 'init');
+    cast_in($dir, 'init');
+    $lines = explode("\n", trim(file_get_contents("$dir/.gitignore")));
+    eq(1, count(array_keys($lines, 'node_modules/')));
+    eq(1, count(array_keys($lines, '.env')), '.env was already listed');
+    eq(1, count(array_keys($lines, '/vendor/')));
+});
+
+test('init: without a composer.json it says how to add the autoload', function () {
+    $dir = init_dir(false);
+    [$code, $out] = cast_in($dir, 'init');
+    eq(0, $code);
+    has('No composer.json found', $out);
+});
+
+test('init --demo: copies the starter app (login, items, API) without per-install files', function () {
+    $dir = init_dir();
+    [$code, $out] = cast_in($dir, 'init --demo');
+    eq(0, $code, $out);
+    foreach (['app/Controllers/ItemsController.php', 'app/Controllers/Api/ItemsController.php', 'routes/api.php', 'resources/views/items/items.cast.php',
+        'resources/js/items/items.module.js', 'config/auth.php', '.env', '.env.example'] as $file) ok(is_file("$dir/$file"), "$file copied");
+    ok(!is_file("$dir/composer.lock"));
+    eq(1, preg_match('/"name"\s*:\s*"me\/my-shop"/', file_get_contents("$dir/composer.json")), 'composer.json is the app\'s own');
+    ok(!is_dir("$dir/node_modules"));
+    has('admin@example.com', $out);
+    has('DB_NAME=storage/database.sqlite', file_get_contents("$dir/.env"));
+
+    // it runs: the demo creates its SQLite database and user on first request
+    [$status, $html] = app_get($dir, '/');
+    eq(200, $status, $html);
+    has('Welcome', json_decode(app_get($dir, '/', ['X-Cast-Request' => '1'])[1], true)['data']['html']);
+    [$status] = app_get($dir, '/items');
+    eq(302, $status, 'guests are sent to the login page');
+    ok(is_file("$dir/storage/database.sqlite"), 'the database was created in storage/');
+});

@@ -1,0 +1,20 @@
+<?php
+$parentName = $data['parentName'] ?? '';
+$pageName = $data['pageName'] ?? '';
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?= htchars(\Cast\Core\Session::csrfToken()) ?>">
+    <title><?= htchars((string) config('app.name', 'App')) ?> | <?= htchars(__ucwords($pageName)) ?></title>
+    <?= __cast($data['authguard'] ?? '') ?>
+    <?= __modules('app', 'css') ?>
+    <?= __modules("$parentName.$pageName", 'css') ?>
+</head>
+
+<body>
+    <header class="topbar"><a class="brand" href="<?= route('/') ?>"><?= htchars((string) config('app.name', 'App')) ?></a></header>
+    <main class="page">

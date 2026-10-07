@@ -27,23 +27,18 @@ Requires PHP 8.1 or newer and `ext-pdo`, `ext-mbstring`, `ext-json`.
 ## Install
 
 ```bash
+mkdir my-app && cd my-app
+composer init --name=me/my-app --no-interaction
 composer require anode/cast-framework
+php vendor/bin/cast init            # creates the app files here (add --demo for the full starter app)
+php vendor/bin/cast serve           # http://127.0.0.1:8000
 ```
 
-Until the package is listed on Packagist, install it from GitHub by adding this to your `composer.json` first:
+`cast init` writes `public/`, `bootstrap/`, `config/`, `routes/`, a home page, `.env` (named after the folder), `storage/` and the `.gitignore` lines, and adds the `App\` namespace to
+your `composer.json` (then run `composer dump-autoload`). It never overwrites a file you already have unless you pass `--force`.
 
-```json
-"repositories": [{ "type": "vcs", "url": "https://github.com/arnoldduo2/CastFramework" }]
-```
-
-The [`starter/`](starter) folder is a small working app (login, a CRUD page with `PUT`/`DELETE`, SQLite). Copy it to start a project:
-
-```bash
-cp -r starter my-app && cd my-app
-cp .env.example .env
-composer install            # edit the "repositories" path in composer.json if the framework is not one folder up
-php vendor/bin/cast serve   # http://127.0.0.1:8000, login admin@example.com / password
-```
+`php vendor/bin/cast init --demo` copies the [`starter/`](starter) app instead: login (`admin@example.com` / `password`), an items page with `PUT`/`DELETE` and an edit modal, a stats page, and a
+JSON API with bearer tokens, on SQLite.
 
 ## A first app
 
@@ -420,9 +415,9 @@ Quick try (no Apache needed): `php vendor/bin/cast serve` serves `public/` on ht
 Under XAMPP (`C:\xampp\htdocs\my-app`):
 
 1. Use PHP 8.1+ and enable `extension=pdo_sqlite`, `extension=mbstring` (and `pdo_mysql` for MySQL) in `php.ini`; restart Apache. Install [Composer](https://getcomposer.org).
-2. In `my-app`: `composer install`, copy `.env.example` to `.env`. `storage/` must be writable.
+2. In `C:\xampp\htdocs`: `mkdir my-app`, `cd my-app`, `composer init --name=me/my-app --no-interaction`, `composer require anode/cast-framework`, `php vendor/bin/cast init --demo`, `composer dump-autoload`.
 3. Either point a virtual host's `DocumentRoot` at `my-app/public` (then nothing else to configure), or browse to `http://localhost/my-app/public/` and set `APP_BASE_PATH=/my-app/public` in `.env`.
-   `public/.htaccess` sends every request that is not a real file to `index.php`, so `mod_rewrite` must be on and `AllowOverride All` set for the folder.
+   `public/.htaccess` sends every request that is not a real file to `index.php`, so `mod_rewrite` must be on and `AllowOverride All` set for the folder. `storage/` must be writable.
 4. The app's URLs, assets and the SPA client all use `APP_BASE_PATH`; use `route('/items')` in views instead of hand-written paths.
 
 ## SPA: pages without full reloads
@@ -665,6 +660,7 @@ php vendor/bin/cast            # list commands
 | `env:check` | Checks PHP, extensions, `.env`, debug in production, writable `storage/`, folders |
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
 | `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--run]` | API tokens |
+| `init [--demo] [--force]` | Create a new app's files in the current folder |
 | `version` | Framework and PHP versions |
 
 Your own commands extend `Cast\Console\Command` and are listed in `config/console.php`: `return ['commands' => [App\Console\Commands\SyncStockCommand::class]];`.

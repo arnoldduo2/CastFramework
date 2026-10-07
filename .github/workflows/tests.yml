@@ -51,3 +51,35 @@ jobs:
       - name: Server log
         if: failure()
         run: cat server.log
+
+  install:
+    # the install path a user follows: composer require + cast init, then the app answers
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: framework
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: pdo, pdo_sqlite, mbstring, json
+      - name: Require the package from this checkout
+        run: |
+          mkdir my-app && cd my-app
+          composer init --name=ci/app --no-interaction
+          composer config minimum-stability dev
+          composer config repositories.cast path ../framework
+          composer require anode/cast-framework:@dev --no-interaction
+          php vendor/bin/cast init --demo
+          composer dump-autoload
+      - name: The app answers
+        working-directory: my-app
+        run: |
+          php -S 127.0.0.1:8123 -t public public/index.php > ../server.log 2>&1 &
+          sleep 2
+          curl -fsS http://127.0.0.1:8123/ | grep -q "cast-view"
+          curl -fsS -H 'X-Cast-Request: 1' http://127.0.0.1:8123/ | grep -q "Welcome"
+          curl -fsS -X POST http://127.0.0.1:8123/api/auth/token -H 'Content-Type: application/json' -d '{"email":"admin@example.com","password":"password"}' | grep -q '"token"'
+      - name: Server log
+        if: failure()
+        run: cat server.log

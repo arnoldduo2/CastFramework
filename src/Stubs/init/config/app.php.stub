@@ -1,0 +1,8 @@
+<?php
+
+// Only list what differs from the framework defaults (see the README: Configuration).
+return [
+    'namespace' => 'App',
+    'source_path' => 'app',
+    'providers' => [],
+];

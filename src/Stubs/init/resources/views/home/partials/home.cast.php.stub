@@ -1,0 +1,6 @@
+<section class="card">
+    <h1>It works</h1>
+    <p>Your CastFramework app is running. Edit <code>resources/views/home/partials/home.cast.php</code> to change this page,
+        <code>routes/web.php</code> to add routes, and run <code>php vendor/bin/cast make:controller Orders</code> to start a controller.</p>
+    <p><a href="https://github.com/arnoldduo2/CastFramework#readme">Read the docs</a></p>
+</section>

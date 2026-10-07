@@ -9,6 +9,7 @@ Found by installing the app from GitHub and using it.
 - SPA: the content container no longer changes the page layout (`display: contents`; cards inside it kept no gap before).
 - SPA: focus moves to the new content and the page title is announced after a navigation; failed loads show a **Try again** button.
 - SPA: `Cast.url()`, and `Cast.http` / `Cast.load` add the app's base folder (`APP_BASE_PATH`) to root-relative URLs; `__cast()` passes it as `data-cast-base`.
+- **`php vendor/bin/cast init [--demo] [--force]`**: creates a new app's files after `composer require anode/cast-framework` (the starter now ships in the package for `--demo`).
 - Error pages no longer repeat the title as the message.
 - `ApiAuth` can be nested: the token is checked once and inner uses only add ability checks.
 - Starter: dark-mode link contrast, wrapping header on phones, one page load (not two) after a form redirect.

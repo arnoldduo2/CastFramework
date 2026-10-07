@@ -1,0 +1,10 @@
+<?php
+$parentName = $data['parentName'] ?? '';
+$pageName = $data['pageName'] ?? '';
+?>
+    </main>
+    <?= __modules('app.app', 'js') ?>
+    <?= __modules("$parentName.$pageName", 'js') ?>
+</body>
+
+</html>
