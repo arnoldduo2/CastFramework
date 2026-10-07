@@ -176,12 +176,36 @@ final class Application
     public function boot(): void
     {
         if ($this->booted) return;
+        $this->registerAppAutoloader();
         $this->loadCustomHelpers();
         foreach ([...self::CORE_PROVIDERS, ...(array) Config::get('app.providers', [])] as $provider) {
             $this->register($provider);
         }
         $this->booted = true;
         foreach ($this->providers as $provider) $provider->boot();
+    }
+
+    /** @var array<string, true> namespaces whose folder is already mapped (per process) */
+    private static array $mapped = [];
+
+    /**
+     * Map the app's namespace to its source folder (`app.namespace` => `app.source_path`, default `App\` => `app/`) when
+     * Composer's autoloader does not know it yet (a new app before `composer dump-autoload`, or a composer.json without
+     * the `App\` entry). Composer's own mapping, when present, is tried first.
+     */
+    private function registerAppAutoloader(): void
+    {
+        $namespace = trim((string) Config::get('app.namespace', 'App'), '\\') . '\\';
+        $dir = $this->basePath((string) Config::get('app.source_path', 'app'));
+        $key = $namespace . '|' . $dir;
+        if (isset(self::$mapped[$key])) return;
+        self::$mapped[$key] = true;
+
+        spl_autoload_register(static function (string $class) use ($namespace, $dir): void {
+            if (!str_starts_with($class, $namespace)) return;
+            $file = $dir . DIRECTORY_SEPARATOR . str_replace('\\', DIRECTORY_SEPARATOR, substr($class, strlen($namespace))) . '.php';
+            if (is_file($file)) require $file;
+        });
     }
 
     /** Handle the current HTTP request and send the response. */

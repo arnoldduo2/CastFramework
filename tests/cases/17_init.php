@@ -11,10 +11,9 @@ function init_dir(bool $composerJson = true): string
 {
     $dir = app_dir($composerJson ? ['composer.json' => json_encode(['name' => 'me/my-shop', 'require' => new stdClass()])] : []);
     $framework = dirname(__DIR__, 2);
-    // the app's autoloader: the framework's own, plus App\ => app/
+    // the app's autoloader is Composer's with NO `App\` entry (a fresh app before `composer dump-autoload`): the framework maps it itself
     mkdir("$dir/vendor", 0777, true);
-    file_put_contents("$dir/vendor/autoload.php", "<?php\nrequire " . var_export($framework . '/vendor/autoload.php', true) . ";\n"
-        . "spl_autoload_register(function (\$c) { if (str_starts_with(\$c, 'App\\\\')) { \$f = __DIR__ . '/../app/' . str_replace('\\\\', '/', substr(\$c, 4)) . '.php'; if (is_file(\$f)) require \$f; } });\n");
+    file_put_contents("$dir/vendor/autoload.php", "<?php\nrequire " . var_export($framework . '/vendor/autoload.php', true) . ";\n");
     return $dir;
 }
 
@@ -61,7 +60,7 @@ test('init: creates a working minimal app, adds the App\\ autoload and names it 
     ok(is_file("$dir/cast") && is_executable("$dir/cast"), 'the cast launcher exists and is executable');
     has('cast', $out);
     has('APP_NAME="', file_get_contents("$dir/.env"));
-    has('composer dump-autoload', $out);
+    has('composer.json', $out);
     eq('app/', json_decode(file_get_contents("$dir/composer.json"), true)['autoload']['psr-4']['App\\']);
 
     $ignore = file_get_contents("$dir/.gitignore");

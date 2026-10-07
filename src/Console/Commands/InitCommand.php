@@ -67,7 +67,7 @@ final class InitCommand extends Command
 
         $output->line();
         if ($autoload === 'changed') {
-            $output->line('Added the "App\\" namespace to composer.json. Run:  composer dump-autoload');
+            $output->line('Added the "App\\" namespace to composer.json (the app works without it; for production run  composer dump-autoload -o).');
         } elseif ($autoload === 'missing') {
             $output->warn('No composer.json found here. Add  "autoload": {"psr-4": {"App\\\\": "app/"}}  to yours, then run composer dump-autoload');
         }

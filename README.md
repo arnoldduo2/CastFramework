@@ -35,7 +35,7 @@ php cast serve                      # http://127.0.0.1:8000
 ```
 
 `cast init` writes `public/`, `bootstrap/`, `config/`, `routes/`, a home page, `.env` (named after the folder), `storage/` and the `.gitignore` lines, and adds the `App\` namespace to
-your `composer.json` (then run `composer dump-autoload`). It never overwrites a file you already have unless you pass `--force`.
+your `composer.json` (the app works right away: the framework maps `App\` to `app/` itself; `composer dump-autoload -o` is for production). It never overwrites a file you already have unless you pass `--force`.
 
 `php cast init --demo` copies the [`starter/`](starter) app instead: login (`admin@example.com` / `password`), an items page with `PUT`/`DELETE` and an edit modal, a stats page, and a
 JSON API with bearer tokens, on SQLite.
@@ -419,7 +419,7 @@ Quick try (no Apache needed): `php cast serve` serves `public/` on http://127.0.
 Under XAMPP (`C:\xampp\htdocs\my-app`):
 
 1. Use PHP 8.1+ and enable `extension=pdo_sqlite`, `extension=mbstring` (and `pdo_mysql` for MySQL) in `php.ini`; restart Apache. Install [Composer](https://getcomposer.org).
-2. In `C:\xampp\htdocs`: `mkdir my-app`, `cd my-app`, `composer init --name=me/my-app --no-interaction`, `composer require anode/cast-framework` (answer `y` to the plugin question), `php cast init --demo`, `composer dump-autoload`.
+2. In `C:\xampp\htdocs`: `mkdir my-app`, `cd my-app`, `composer init --name=me/my-app --no-interaction`, `composer require anode/cast-framework` (answer `y` to the plugin question), `php cast init --demo`.
 3. Either point a virtual host's `DocumentRoot` at `my-app/public` (then nothing else to configure), or browse to `http://localhost/my-app/public/` and set `APP_BASE_PATH=/my-app/public` in `.env`.
    `public/.htaccess` sends every request that is not a real file to `index.php`, so `mod_rewrite` must be on and `AllowOverride All` set for the folder. `storage/` must be writable.
 4. The app's URLs, assets and the SPA client all use `APP_BASE_PATH`; use `route('/items')` in views instead of hand-written paths.
