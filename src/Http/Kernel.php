@@ -57,7 +57,7 @@ final class Kernel
             $debug = (bool) Config::get('app.debug', false);
             $file = (string) $error['file'];
             // a compiled view says which template it came from on its first line
-            if (is_file($file) && preg_match('#^<\?php /\* (.+?) \*/ \?>#', (string) file_get_contents($file, false, null, 0, 1000), $m)) $file = $m[1];
+            if (is_file($file) && preg_match('#^<\?php (?:declare\(strict_types=[01]\); )?/\* (.+?) \*/ \?>#', (string) file_get_contents($file, false, null, 0, 1000), $m)) $file = $m[1];
             $file = str_replace($this->app->basePath() . DIRECTORY_SEPARATOR, '', $file);
             $message = $debug ? sprintf('%s (%s:%d)', $error['message'], $file, $error['line']) : '';
             try {
