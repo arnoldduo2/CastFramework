@@ -34,6 +34,30 @@ final class Bootstrap
         foreach (self::securityHeaders() + self::corsHeaders($request) as $name => $value) {
             if ($response->getHeader($name) === null) $response->header($name, $value);
         }
+        return $this->dock($response, $request);
+    }
+
+    /**
+     * The Cast dock: a floating button with links to the demo and the docs, added to HTML pages in development so it is
+     * still there when the app's own layout is gone. Never in production, never in Cast/API/JSON answers, off with
+     * `config('dock.enabled')` (env `CAST_DOCK=false`).
+     */
+    private function dock(Response $response, Request $request): Response
+    {
+        if (!Config::get('dock.enabled', true) || Config::get('app.env') === 'production') return $response;
+        if ($request->isCast()) return $response;
+        if (!str_contains(strtolower((string) $response->getHeader('Content-Type')), 'text/html')) return $response;
+        $path = (string) parse_url($request->uri(), PHP_URL_PATH);
+        if (preg_match('#/(cdocs|cast)(/|$)#', $path)) return $response;      // the docs viewer and the framework's own files
+        $body = $response->body();
+        if (!is_string($body) || $body === '' || str_contains($body, 'data-cast-dock-script')) return $response;
+
+        $url = fn(string $p): string => function_exists('route') ? route($p) : $p;
+        $tag = '<script src="' . htmlspecialchars($url('/cast/dock.js'), ENT_QUOTES) . '" data-cast-dock-script data-cast="off"'
+            . ' data-demo="' . htmlspecialchars($url((string) Config::get('dock.demo_url', '/demo')), ENT_QUOTES) . '"'
+            . ' data-docs="' . htmlspecialchars($url('/cdocs/'), ENT_QUOTES) . '" defer></script>';
+        $pos = strripos($body, '</body>');
+        $response->body($pos === false ? $body . $tag : substr($body, 0, $pos) . $tag . substr($body, $pos));
         return $response;
     }
 

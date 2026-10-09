@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Cast\Console\Output;
 use Cast\Core\Config;
+use Cast\Http\Request;
 use Cast\Support\DocsBuilder;
 
 $root = dirname(__DIR__, 2);
@@ -188,4 +189,32 @@ test('docs: "files" in _meta.json adds an outside file (the changelog) as a page
     eq('news', $d['pages'][0]['slug']);
     eq('News', $d['pages'][0]['title']);
     eq([], array_filter($d['pages'], fn($p) => $p['slug'] === 'missing'));
+});
+
+test('the dock: added to HTML pages in development, never in production, Cast/JSON answers or when turned off', function () {
+    $boot = new \Cast\Boot\Bootstrap(boot_app([], boot: false));
+    $page = fn() => new \Cast\Http\Response('<html><body><p>hi</p></body></html>', 200, ['Content-Type' => 'text/html; charset=utf-8']);
+    $req = fn(string $uri = '/', array $headers = []) => new Request('GET', $uri, [], '', $headers);
+    $run = function (callable $make, Request $r) use ($boot): string { return (string) $boot->decorate($make(), $r)->body(); };
+
+    Config::set('app.env', 'development');
+    Config::set('dock.enabled', true);
+    $html = $run($page, $req());
+    ok(str_contains($html, 'cast/dock.js'), 'injected');
+    ok(strpos($html, 'dock.js') < strpos($html, '</body>'), 'before </body>');
+    ok(str_contains($html, 'data-docs="') && str_contains($html, 'cdocs/'), 'links to the docs');
+    eq(1, substr_count($run(fn() => new \Cast\Http\Response($html, 200, ['Content-Type' => 'text/html']), $req()), 'dock.js'), 'once');
+    ok(str_contains($run(fn() => new \Cast\Http\Response('<p>no layout at all</p>', 200, ['Content-Type' => 'text/html']), $req()), 'dock.js'), 'even when the page has no <body>');
+
+    ok(!str_contains($run(fn() => \Cast\Http\Response::json(['status' => 'success']), $req()), 'dock.js'), 'not in JSON');
+    ok(!str_contains($run($page, $req('/cdocs/')), 'dock.js'), 'not in the docs viewer');
+    Config::set('dock.enabled', false);
+    ok(!str_contains($run($page, $req()), 'dock.js'), 'off with dock.enabled');
+    Config::set('dock.enabled', true);
+    Config::set('app.env', 'production');
+    ok(!str_contains($run($page, $req()), 'dock.js'), 'never in production');
+    Config::set('app.env', 'development');
+
+    $js = (string) file_get_contents(dirname(__DIR__, 2) . '/src/Resources/dock.js');
+    ok(str_contains($js, 'attachShadow') && str_contains($js, 'documentElement.appendChild'), 'lives on <html> in a shadow root');
 });

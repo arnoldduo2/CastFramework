@@ -308,6 +308,7 @@ final class Application
                 'cdocs' => ['path' => dirname(__DIR__) . '/Resources/docs', 'keep_prefix' => false, 'index' => 'index.html', 'dev_only' => true],
             ],
             'cdocs' => ['enabled' => false],
+            'dock' => ['enabled' => Env::bool('CAST_DOCK', true), 'demo_url' => '/demo'],
             'cors' => ['allowed_origins' => array_filter(array_map('trim', explode(',', (string) Env::get('CORS_ALLOWED_ORIGINS', ''))))],
             'models' => ['namespace' => 'App\\Models'],
             // `routes/api.php` is loaded under this prefix; `middleware` = specs applied to every API route
