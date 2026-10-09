@@ -1,3 +1,10 @@
+---
+title: Documenting components
+section: Build
+order: 4
+description: Describe a component's props in a docblock so the editor, the CLI and AI tools can use it.
+---
+
 # Documenting components
 
 A component file describes itself in a docblock. The VS Code extension, `php cast components` and AI coding tools all read the same thing.

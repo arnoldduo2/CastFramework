@@ -78,13 +78,26 @@ namespace {namespace};
 
 use Cast\Console\{Command, Input, Output};
 
+/** Run it with:  php cast {command}      Register it in config/console.php:  'commands' => [{class}::class] */
 class {class} extends Command
 {
+    /** The name you type after `php cast`. */
     protected string $name = '{command}';
-    protected string $description = '';
+    /** One line: shown by `php cast list` and at the top of `php cast help {command}`. */
+    protected string $description = 'Describe what {command} does';
+    /** Arguments in order, 'name' => 'what it is'. A trailing ? makes one optional ('id?'). */
+    protected array $arguments = [];
+    /** Options, '--force' => 'what it does'; with a value: '--limit=N' => 'how many'. */
+    protected array $options = [];
+    /** Examples for `php cast help {command}`: 'command line' => 'what it does'. */
+    protected array $examples = [
+        'php cast {command}' => 'runs it',
+    ];
 
     public function handle(Input $input, Output $output): int
     {
+        // Input:  $input->argument(0), $input->option('limit', 10), $input->hasOption('force')
+        // Output: $output->line('text'), ->info() green, ->warn() yellow, ->error() red, ->table($headers, $rows), ->color('text', 'green|blue|orange|grey')
         $output->info('Done.');
         return 0;
     }

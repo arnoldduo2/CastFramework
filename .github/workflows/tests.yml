@@ -90,7 +90,7 @@ jobs:
           php -S 127.0.0.1:8123 -t public public/index.php > ../server.log 2>&1 &
           sleep 2
           curl -fsS http://127.0.0.1:8123/ | grep -q "cast-view"
-          curl -fsS -H 'X-Cast-Request: 1' http://127.0.0.1:8123/ | grep -q "Welcome"
+          curl -fsS -H 'X-Cast-Request: 1' http://127.0.0.1:8123/ | grep -q "build something"
           curl -fsS -X POST http://127.0.0.1:8123/api/auth/token -H 'Content-Type: application/json' -d '{"email":"admin@example.com","password":"password"}' | grep -q '"token"'
       - name: Server log
         if: failure()

@@ -2,7 +2,14 @@
 
 declare(strict_types=1);
 
-// Registered under /api (config('api.prefix')). Every response is JSON: {status, msg, data}.
+/*
+ * The JSON API. Every route here is served under /api (config 'api.prefix'), and every response, errors included, is JSON:
+ * {status, msg, data}. It uses the same Router as routes/web.php:
+ *   Router::get('/things', [ThingsController::class, 'index']);
+ *   ->use([Throttle::class, 10, 1])               limit to 10 requests a minute
+ *   Router::middleware([ApiAuth::class, 'things:read'], fn() => ...)   a bearer token (or a login session) with that ability
+ * Tokens: php cast token:create admin@example.com --abilities=items:read
+ */
 
 use App\Controllers\Api\ItemsController;
 use App\Controllers\Api\TokenController;

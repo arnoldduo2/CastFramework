@@ -11,3 +11,14 @@ document.addEventListener("cast:saved", (event) => {
   if (dialog) dialog.close();
   Cast.load(location.pathname + location.search, { push: false });
 });
+
+// Buttons with data-copy="text" copy that text (the terminal boxes on the welcome page use it).
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-copy]");
+  if (!button || !navigator.clipboard) return;
+  navigator.clipboard.writeText(button.getAttribute("data-copy")).then(() => {
+    const label = button.textContent;
+    button.textContent = "Copied";
+    setTimeout(() => (button.textContent = label), 1400);
+  });
+});

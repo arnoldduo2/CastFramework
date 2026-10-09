@@ -1,54 +1,51 @@
-<Card title="Welcome">
-    <p>This is a small app built with <strong>CastFramework</strong>: routing for every HTTP verb, a global CSRF token,
-        validation, a SQLite model, a JSON API, and views written with component tags.</p>
-    <p>Log in with <code>admin@example.com</code> / <code>password</code>, then manage the demo items.</p>
-    <Btns.Button label="Open the items" href={route('/items')} />
-    <Btns.Button label="See an error page" href={route('/does-not-exist')} variant="ghost" />
-    <Btns.Button label="Read the docs" href="https://github.com/arnoldduo2/CastFramework/blob/main/docs/GETTING-STARTED.md" variant="ghost" />
-</Card>
+<?php
+/**
+ * The welcome page (route "/", HomeController::index). It is only content: the menu and footer come from layouts/header and
+ * layouts/footer. Replace this file with your own home page; nothing else depends on it.
+ */
+$docs = config('app.env') !== 'production' || config('docs.enabled');
+$demo = (bool) config('app.demo');
+$quick = "php cast make:controller Orders\nphp cast make:migration create_orders_table\nphp cast migrate\nphp cast make:component Btns.AddNew --props=label:string=Add";
+?>
+<section class="hero">
+    <span class="chip dot">CastFramework v<?= htchars(\Cast\App\Application::VERSION) ?> &middot; PHP <?= PHP_MAJOR_VERSION . '.' . PHP_MINOR_VERSION ?></span>
+    <h1>Let's build something <em>amazing</em>.</h1>
+    <p class="lead">Server-rendered pages that behave like a single-page app, a JSON API when you want one, and tools that explain themselves. Your app is running: start with the docs, or try the demo.</p>
+    <div class="cta">
+        <?php if ($docs) : ?><a class="btn" href="<?= route('/docs/') ?>" data-cast="off">Read the docs</a><?php endif ?>
+        <a class="btn btn-secondary" href="<?= route('/demo') ?>">Demo the Cast Framework</a>
+    </div>
+</section>
 
-<div class="guide stack">
-    <Card title="How this app works (the workflow)">
-        <p>Every page follows the same path, and each step has one place to live:</p>
-        <ol>
-            <li><strong>Route</strong>: <code>routes/web.php</code> maps a URL and verb to a controller method. <code>routes/api.php</code> does the same for the JSON API under <code>/api</code>.</li>
-            <li><strong>Controller</strong>: <code>app/Controllers</code>. It validates the request, uses a model, and returns <code>$this-&gt;view('items.items', [...])</code>.</li>
-            <li><strong>View</strong>: <code>resources/views/items/items.cast.php</code> includes the layout header and footer and the page's <code>partials/</code>. Reusable pieces are components, written as tags like <code>&lt;Btns.Button /&gt;</code>.</li>
-            <li><strong>CSS and JS load by name</strong>: a page named <code>items</code> in the folder <code>items</code> automatically gets <code>resources/css/items/items.css</code> and <code>resources/js/items/items.module.js</code>. No <code>&lt;link&gt;</code> or <code>&lt;script&gt;</code> to add.</li>
-            <li><strong>SPA</strong>: pages with <code>'spa' =&gt; true</code> load once, then links swap only the page content (no full reload). Other pages are normal page loads. The server decides, the controller does not change.</li>
-            <li><strong>Data</strong>: <code>app/Models</code> for queries, <code>database/migrations</code> for the tables, <code>database/seeders</code> for demo data.</li>
-        </ol>
-    </Card>
-
-    <Card title="Where everything is">
-        <table>
-            <thead><tr><th>You want to change</th><th>Open</th></tr></thead>
-            <tbody>
-                <tr><td>A page's HTML</td><td><code>resources/views/&lt;page&gt;/partials/&lt;page&gt;.cast.php</code></td></tr>
-                <tr><td>The header, footer, menu</td><td><code>resources/views/layouts/header.cast.php</code> and <code>footer.cast.php</code></td></tr>
-                <tr><td>A reusable piece (button, card)</td><td><code>resources/views/components/</code> (see <code>php cast components</code>)</td></tr>
-                <tr><td>A popup form</td><td><code>resources/views/&lt;page&gt;/modals/</code></td></tr>
-                <tr><td>Styles for the whole app / one page</td><td><code>resources/css/app.css</code> / <code>resources/css/&lt;page&gt;/&lt;page&gt;.css</code></td></tr>
-                <tr><td>Scripts for the whole app / one page</td><td><code>resources/js/app/app.module.js</code> / <code>resources/js/&lt;page&gt;/&lt;page&gt;.module.js</code></td></tr>
-                <tr><td>URLs</td><td><code>routes/web.php</code>, <code>routes/api.php</code></td></tr>
-                <tr><td>What happens on a URL</td><td><code>app/Controllers</code></td></tr>
-                <tr><td>Database tables and queries</td><td><code>database/migrations</code>, <code>app/Models</code></td></tr>
-                <tr><td>Settings and secrets</td><td><code>config/*.php</code>, <code>.env</code></td></tr>
-                <tr><td>Your own helper functions</td><td><code>app/helpers/</code></td></tr>
-            </tbody>
-        </table>
-        <p class="muted">Every command and flag: <code>php cast list</code>, then <code>php cast help &lt;command&gt;</code>. Full guide: <a href="https://github.com/arnoldduo2/CastFramework/blob/main/docs/GETTING-STARTED.md">Getting started</a> · <a href="https://github.com/arnoldduo2/CastFramework/blob/main/docs/COMMANDS.md">All commands</a> · <a href="https://github.com/arnoldduo2/CastFramework#readme">Full documentation</a>.</p>
-    </Card>
-
-    <Card title="Start your own project (delete this demo)">
-        <p>This is a demo. When you have seen enough, remove what belongs to it and keep the structure:</p>
-        <ol>
-            <li>Delete the demo pages: <code>resources/views/items</code>, <code>resources/views/stats</code>, <code>resources/views/auth</code> (keep it if you want the login), and their <code>resources/css/items</code>, <code>resources/css/stats</code>, <code>resources/js/items</code>, <code>resources/js/stats</code>.</li>
-            <li>Delete the demo code: <code>app/Controllers/ItemsController.php</code>, <code>StatsController.php</code>, <code>Api/</code>, <code>app/Models/Items.php</code>, and the routes that use them in <code>routes/web.php</code> and <code>routes/api.php</code>.</li>
-            <li>Delete the demo table: <code>database/migrations/…_create_items_table.php</code> (keep <code>users</code> and <code>api_tokens</code> if you keep the login and API), then <code>php cast migrate:fresh --seed</code>.</li>
-            <li>Replace this page: edit <code>resources/views/home/partials/home.cast.php</code>.</li>
-            <li>Start building: <code>php cast make:controller Orders</code>, <code>php cast make:migration create_orders_table</code>, <code>php cast make:component Btns.AddNew</code>.</li>
-        </ol>
-        <p>Or start clean in an empty folder: <code>composer require anode/cast-framework</code> then <code>php cast init</code> (without <code>--demo</code>).</p>
-    </Card>
+<div class="terminal">
+    <div class="bar"><span class="dots"><i></i><i></i><i></i></span><span>your first feature</span><button type="button" data-copy="<?= htchars($quick) ?>">Copy</button></div>
+    <pre><span class="p">$</span> php cast make:controller Orders                 <span class="c"># app/Controllers/OrdersController.php</span>
+<span class="p">$</span> php cast make:migration create_orders_table     <span class="c"># database/migrations/...</span>
+<span class="p">$</span> php cast migrate
+<span class="p">$</span> php cast make:component Btns.AddNew <span class="f">--props=</span>label:string=Add   <span class="c"># a documented component</span></pre>
 </div>
+
+<p class="section-title">What you get</p>
+<div class="grid">
+    <div class="feature"><span class="n">01</span><h3>Routing for every verb</h3><p>GET, POST, PUT, PATCH and DELETE, groups, middleware, one CSRF token checked in one place.</p></div>
+    <div class="feature"><span class="n">02</span><h3>Pages without reloads</h3><p>Mark a page <code>'spa' =&gt; true</code>: links swap only the content. No build step, no framework to learn.</p></div>
+    <div class="feature"><span class="n">03</span><h3>A JSON API</h3><p><code>routes/api.php</code> with bearer tokens, abilities, rate limits and always-JSON errors.</p></div>
+    <div class="feature"><span class="n">04</span><h3>Migrations that read your database</h3><p>Write them, or turn a legacy database into migrations with <code>php cast migrate:sync</code>.</p></div>
+    <div class="feature"><span class="n">05</span><h3>Components and an editor that knows them</h3><p>Tags like <code>&lt;Btns.Button /&gt;</code>, Ctrl+click to the file, props from docblocks.</p></div>
+    <div class="feature"><span class="n">06</span><h3>A console that explains itself</h3><p><code>php cast list</code>, <code>php cast help &lt;command&gt;</code>, colours, and <code>make:*</code> for everything.</p></div>
+</div>
+
+<p class="section-title">Your first five minutes</p>
+<ol class="steps">
+    <li><strong>Open the docs</strong>: <?php if ($docs) : ?><a href="<?= route('/docs/') ?>" data-cast="off">/docs</a><?php else : ?>run <code>php cast serve</code> in development<?php endif ?>, the page called <em>Getting started</em> shows where every file goes.</li>
+    <li><strong>Change this page</strong>: edit <code>resources/views/home/partials/home.cast.php</code>. The menu and footer are <code>resources/views/layouts/</code>.</li>
+    <li><strong>Add a page</strong>: a route in <code>routes/web.php</code>, a controller in <code>app/Controllers</code>, a view in <code>resources/views/&lt;page&gt;/</code>. Its CSS and JS in <code>resources/css/&lt;page&gt;/</code> and <code>resources/js/&lt;page&gt;/</code> load by themselves.</li>
+    <li><strong>Ask the console</strong>: <code>php cast list</code> shows every command, <code>php cast help migrate:sync</code> explains one.</li>
+</ol>
+
+<?php if ($demo) : ?>
+    <div class="card">
+        <h2>You are running the demo</h2>
+        <p class="muted">Log in or register (top right) to try create, edit and delete on <em>Items</em>, a stats page and the JSON API. When you have seen enough, <a href="<?= route('/docs/#/getting-started') ?>" data-cast="off">Getting started</a> lists exactly what to delete to keep the structure and start your own project.</p>
+    </div>
+<?php endif ?>

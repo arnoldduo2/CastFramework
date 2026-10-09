@@ -39,7 +39,9 @@
     ],
     "scripts": {
         "test": "phpunit",
-        "test:plain": "php tests/run.php"
+        "test:plain": "php tests/run.php",
+        "docs": "php bin/cast docs:build --source=docs --readme=README.md --out=src/Resources/docs",
+        "docs:check": "php bin/cast docs:build --source=docs --readme=README.md --out=src/Resources/docs --check"
     },
     "config": {
         "sort-packages": true

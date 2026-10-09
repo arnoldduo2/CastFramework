@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<!--
+  CastFramework documentation viewer. Two static files, no build step:
+    index.html  this page: layout, markdown renderer, search
+    data.js     the pages, made from the .md files by `php cast docs:build`
+  To show your own documentation, put .md files in docs/ (front matter: title, section, order, description) and run
+  `php cast docs:build --out=public/docs`. Colours and fonts are the variables just below.
+-->
+<html lang="en" data-theme="dark">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Documentation</title>
+  <link rel="icon" href="logo.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #131313; --low: #1c1b1b; --card: #201f1f; --high: #2a2a2a; --code: #0e0e0e; --line: #2d2d2d;
+      --text: #e5e2e1; --muted: #a9b3a4; --faint: #727272;
+      --primary: #5de14a; --primary-bg: rgba(93, 225, 74, .12); --on-primary: #003a00;
+      --secondary: #bdc2ff; --secondary-bg: rgba(114, 128, 253, .14); --tertiary: #ffb691; --tertiary-bg: rgba(255, 119, 29, .12);
+      --danger: #ffb4ab;
+      --display: "Space Grotesk", system-ui, sans-serif; --body: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; --mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    }
+    :root[data-theme="light"] {
+      --bg: #e8e8e8; --low: #f2f2f2; --card: #f8f8f8; --high: #ffffff; --code: #f1f1f1; --line: #cecece;
+      --text: #212121; --muted: #5a5a5a; --faint: #8a8a8a;
+      --primary: #007a00; --primary-bg: rgba(0, 160, 0, .12); --on-primary: #fff;
+      --secondary: #3f4bd0; --secondary-bg: rgba(114, 128, 253, .16); --tertiary: #b34700; --tertiary-bg: rgba(255, 119, 29, .14);
+      --danger: #b3261e;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 76px; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.7 var(--body); -webkit-font-smoothing: antialiased; }
+    a { color: var(--secondary); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    kbd { font: 11px var(--mono); background: var(--high); border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--muted); }
+
+    /* top bar */
+    header.top { position: fixed; inset: 0 0 auto 0; height: 56px; z-index: 40; display: flex; align-items: center; gap: 16px; padding: 0 20px; background: color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+    .brand { display: flex; align-items: center; gap: 10px; color: var(--text); font: 700 17px var(--display); letter-spacing: -.01em; }
+    .brand:hover { text-decoration: none; }
+    .brand img { width: 28px; height: 28px; }
+    .badge { font: 600 11px var(--mono); color: var(--primary); background: var(--primary-bg); border-radius: 4px; padding: 2px 7px; text-transform: uppercase; letter-spacing: .04em; }
+    .spacer { flex: 1; }
+    .search { position: relative; width: min(360px, 38vw); }
+    .search input { width: 100%; height: 36px; background: var(--low); border: 1px solid var(--line); border-radius: 6px; color: var(--text); padding: 0 52px 0 12px; font: 14px var(--body); }
+    .search input:focus { outline: none; border-color: var(--secondary); box-shadow: 0 0 0 2px var(--secondary-bg); }
+    .search kbd { position: absolute; right: 8px; top: 8px; }
+    .results { position: absolute; top: 42px; left: 0; right: 0; background: var(--card); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 12px 32px rgba(0, 0, 0, .35); max-height: 70vh; overflow: auto; display: none; }
+    .results.open { display: block; }
+    .results a { display: block; padding: 10px 14px; color: var(--text); border-bottom: 1px solid var(--line); }
+    .results a:last-child { border: 0; }
+    .results a:hover, .results a.hit { background: var(--high); text-decoration: none; }
+    .results small { display: block; color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+    .results b { font-family: var(--display); }
+    .results .sec { font: 600 10px var(--mono); color: var(--tertiary); text-transform: uppercase; letter-spacing: .06em; }
+    .icon-btn { background: var(--low); border: 1px solid var(--line); border-radius: 6px; width: 36px; height: 36px; display: grid; place-items: center; color: var(--muted); }
+    .icon-btn:hover { color: var(--text); background: var(--high); }
+    .menu-btn { display: none; }
+    .btn { background: var(--primary); color: var(--on-primary); font: 600 13px var(--display); border-radius: 6px; padding: 8px 14px; border: 0; }
+    .btn:hover { text-decoration: none; filter: brightness(1.08); }
+
+    /* layout */
+    aside.side { position: fixed; top: 56px; bottom: 0; left: 0; width: 272px; overflow: auto; padding: 22px 16px 40px; background: var(--low); border-right: 1px solid var(--line); z-index: 30; }
+    aside.toc { position: fixed; top: 56px; bottom: 0; right: 0; width: 240px; overflow: auto; padding: 36px 20px; display: none; }
+    main { margin-left: 272px; padding: 88px 40px 40px; min-height: 100vh; }
+    .page { max-width: 780px; margin: 0 auto; }
+    @media (min-width: 1280px) { aside.toc { display: block; } main { margin-right: 240px; } }
+    @media (max-width: 860px) {
+      main { margin-left: 0; padding: 80px 18px 32px; }
+      aside.side { transform: translateX(-100%); transition: transform .2s; width: 82vw; max-width: 320px; box-shadow: 0 0 40px rgba(0,0,0,.5); }
+      body.nav-open aside.side { transform: none; }
+      .menu-btn { display: grid; }
+      .search { width: 100%; }
+      .hide-sm { display: none; }
+    }
+    .side h4 { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; color: var(--text); margin: 22px 8px 6px; }
+    .side h4:first-child { margin-top: 0; }
+    .side a { display: block; padding: 5px 10px; border-radius: 5px; color: var(--muted); font-size: 14px; }
+    .side a:hover { color: var(--text); background: var(--card); text-decoration: none; }
+    .side a.on { color: var(--primary); background: var(--primary-bg); font-weight: 600; }
+    .toc h5 { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .08em; margin: 0 0 10px; }
+    .toc a { display: block; padding: 3px 0 3px 12px; border-left: 2px solid var(--line); color: var(--muted); font-size: 13px; line-height: 1.45; }
+    .toc a.l3 { padding-left: 26px; }
+    .toc a:hover { color: var(--text); text-decoration: none; }
+    .toc a.on { color: var(--primary); border-left-color: var(--primary); }
+
+    /* page */
+    .crumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+    .crumbs span.sep { color: var(--faint); }
+    .eyebrow { font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .1em; color: var(--primary); }
+    h1.title { font: 700 clamp(30px, 4vw, 40px)/1.15 var(--display); letter-spacing: -.02em; margin: 6px 0 12px; }
+    .lead { font-size: 18px; line-height: 1.6; color: var(--muted); margin: 0 0 28px; }
+    .doc h2 { font: 600 26px/1.25 var(--display); letter-spacing: -.01em; margin: 44px 0 14px; padding-top: 6px; }
+    .doc h3 { font: 600 19px/1.3 var(--display); margin: 30px 0 10px; }
+    .doc h4 { font: 600 16px var(--display); margin: 24px 0 8px; }
+    .doc h2 .anchor, .doc h3 .anchor, .doc h4 .anchor { opacity: 0; margin-left: 8px; color: var(--faint); font-weight: 400; }
+    .doc h2:hover .anchor, .doc h3:hover .anchor, .doc h4:hover .anchor { opacity: 1; text-decoration: none; }
+    .doc p { margin: 0 0 16px; }
+    .doc ul, .doc ol { margin: 0 0 16px; padding-left: 24px; }
+    .doc li { margin: 4px 0; }
+    .doc li > ul, .doc li > ol { margin: 4px 0 0; }
+    .doc hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
+    .doc code { font: 13px var(--mono); background: var(--high); color: var(--secondary); border-radius: 4px; padding: 1px 6px; }
+    .doc strong { color: var(--text); font-weight: 600; }
+    .callout { background: var(--card); border-left: 3px solid var(--secondary); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0 0 18px; color: var(--muted); }
+    .callout p:last-child { margin: 0; }
+    .tablewrap { overflow-x: auto; margin: 0 0 20px; border: 1px solid var(--line); border-radius: 8px; background: var(--code); }
+    table { border-collapse: collapse; width: 100%; font-size: 14px; }
+    th { text-align: left; font: 600 11px var(--mono); text-transform: uppercase; letter-spacing: .05em; color: var(--text); background: var(--high); padding: 10px 14px; white-space: nowrap; }
+    td { padding: 9px 14px; border-top: 1px solid var(--line); vertical-align: top; color: var(--muted); }
+    td:first-child { color: var(--text); }
+    tr:hover td { background: color-mix(in srgb, var(--high) 45%, transparent); }
+    /* code blocks (terminal style) */
+    .code { background: var(--code); border: 1px solid var(--line); border-radius: 10px; margin: 0 0 20px; overflow: hidden; }
+    .code .bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; background: var(--high); padding: 6px 12px; font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .06em; }
+    .code .dots { display: flex; gap: 6px; }
+    .code .dots i { width: 9px; height: 9px; border-radius: 50%; background: #ff5f56; }
+    .code .dots i + i { background: #ffbd2e; } .code .dots i + i + i { background: #27c93f; }
+    .code button { background: transparent; border: 1px solid var(--line); color: var(--muted); border-radius: 5px; font: 600 10px var(--mono); padding: 3px 8px; text-transform: uppercase; letter-spacing: .06em; }
+    .code button:hover { color: var(--text); border-color: var(--faint); }
+    .code pre code { background: none; padding: 0; color: inherit; font: inherit; border-radius: 0; }
+    .code pre { margin: 0; padding: 14px 16px; overflow: auto; font: 13px/1.65 var(--mono); color: var(--text); }
+    .tk-c { color: var(--faint); font-style: italic; } .tk-s { color: var(--tertiary); } .tk-k { color: var(--secondary); } .tk-v { color: var(--primary); } .tk-n { color: var(--tertiary); } .tk-f { color: var(--tertiary); } .tk-p { color: var(--primary); }
+    .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 56px; }
+    .pager a { display: block; background: var(--low); border: 1px solid var(--line); border-radius: 10px; padding: 14px 18px; color: var(--text); }
+    .pager a:hover { border-color: var(--primary); text-decoration: none; }
+    .pager small { display: block; font: 600 10px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+    .pager .next { text-align: right; }
+    footer.foot { margin: 56px 0 0; padding-top: 18px; border-top: 1px solid var(--line); color: var(--faint); font-size: 13px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+    .empty { text-align: center; padding: 80px 0; color: var(--muted); }
+  </style>
+</head>
+
+<body>
+  <header class="top">
+    <button class="icon-btn menu-btn" id="menu" aria-label="Menu" type="button">&#9776;</button>
+    <a class="brand" href="#/" id="brand"><img src="logo.svg" alt=""><span id="site-title">Docs</span></a>
+    <span class="badge" id="version"></span>
+    <span class="spacer hide-sm"></span>
+    <div class="search">
+      <input id="q" type="search" placeholder="Search the docs" autocomplete="off" aria-label="Search the docs">
+      <kbd class="hide-sm">/</kbd>
+      <div class="results" id="results"></div>
+    </div>
+    <button class="icon-btn" id="theme" type="button" aria-label="Switch theme">&#9680;</button>
+    <a class="btn hide-sm" href="/" id="app-link">Open the app</a>
+  </header>
+
+  <aside class="side" id="side" aria-label="Documentation"></aside>
+  <aside class="toc" id="toc" aria-label="On this page"></aside>
+  <main><div class="page" id="page"></div></main>
+
+  <script src="data.js"></script>
+  <script>
+    (function () {
+      'use strict';
+      var DOCS = window.CAST_DOCS || { title: 'Documentation', sections: [], pages: [] };
+      var $ = function (id) { return document.getElementById(id); };
+      var REPO = 'https://github.com/arnoldduo2/CastFramework/blob/main/';
+
+      // ---------- helpers
+      function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+      // the same rule as DocsBuilder::slug() in PHP, so links made by the builder match the headings drawn here
+      function slug(t) { return String(t).replace(/[`*_~]/g, '').toLowerCase().trim().replace(/[^a-z0-9 _\-]/g, '').replace(/ /g, '-').replace(/^-+|-+$/g, ''); }
+      function plain(md) { return md.replace(/```[\s\S]*?```/g, ' ').replace(/[`*_>#|]/g, ' ').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\s+/g, ' '); }
+
+      // ---------- syntax colours (small, language-agnostic)
+      var KEYWORDS = /\b(function|return|if|else|elseif|foreach|for|while|switch|case|break|continue|class|extends|implements|interface|namespace|use|new|public|private|protected|static|final|abstract|const|echo|require|require_once|include|try|catch|throw|fn|match|null|true|false|array|string|int|bool|float|void|mixed|self|this|let|var|import|export|from|async|await|SELECT|FROM|WHERE|INSERT|UPDATE|DELETE|CREATE|TABLE|ALTER|DROP|JOIN|ORDER|BY|LIMIT)\b/g;
+      function highlight(code, lang) {
+        lang = (lang || '').toLowerCase();
+        var out = '', i = 0, src = code;
+        var shell = /^(bash|sh|shell|console|cmd|powershell|ps1)$/.test(lang);
+        var rules = shell
+          ? [['c', /#[^\n]*/y], ['s', /"(?:\\.|[^"\\])*"|'[^']*'/y], ['f', /--?[A-Za-z][\w-]*(?:=[^\s]*)?/y], ['p', /\bphp cast [\w:-]+/y], ['v', /\$[A-Za-z_]\w*/y]]
+          : [['c', /\/\*[\s\S]*?\*\/|\/\/[^\n]*|#[^\n]*|--[^\n]*/y], ['s', /"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`[^`\n]*`/y], ['v', /\$[A-Za-z_]\w*/y], ['n', /\b\d+(?:\.\d+)?\b/y], ['k', new RegExp(KEYWORDS.source, 'y')], ['p', /\b[A-Za-z_]\w*(?=\()/y]];
+        if (lang === 'json') rules = [['s', /"(?:\\.|[^"\\\n])*"(?=\s*:)/y], ['v', /"(?:\\.|[^"\\\n])*"/y], ['n', /-?\b\d+(?:\.\d+)?\b/y], ['k', /\b(true|false|null)\b/y]];
+        while (i < src.length) {
+          var hit = false;
+          for (var r = 0; r < rules.length; r++) {
+            rules[r][1].lastIndex = i;
+            var m = rules[r][1].exec(src);
+            if (m && m.index === i && m[0].length) { out += '<span class="tk-' + rules[r][0] + '">' + esc(m[0]) + '</span>'; i += m[0].length; hit = true; break; }
+          }
+          if (!hit) { out += esc(src[i]); i++; }
+        }
+        return out;
+      }
+
+      // ---------- markdown
+      function inline(text) {
+        var codes = [];
+        text = text.replace(/`([^`]+)`/g, function (_, c) { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
+        text = esc(text);
+        text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (_, label, url) {
+          url = url.replace(/&amp;/g, '&');
+          var external = /^https?:/i.test(url);
+          return '<a href="' + esc(url) + '"' + (external ? ' target="_blank" rel="noopener"' : '') + '>' + label + '</a>';
+        });
+        text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s).,;:]|$)/g, '$1<em>$2</em>');
+        return text.replace(/\u0000(\d+)\u0000/g, function (_, n) { return '<code>' + esc(codes[+n]) + '</code>'; });
+      }
+      function codeBlock(code, lang) {
+        var shell = /^(bash|sh|shell|console|cmd|powershell)$/i.test(lang);
+        return '<div class="code"><div class="bar">' + (shell ? '<span class="dots"><i></i><i></i><i></i></span>' : '<span>' + esc(lang || 'text') + '</span>') +
+          '<button type="button" data-copy>Copy</button></div><pre><code>' + highlight(code, lang) + '</code></pre></div>';
+      }
+      function markdown(md) {
+        var lines = md.replace(/\r\n/g, '\n').split('\n'), html = '', i = 0, toc = [];
+        while (i < lines.length) {
+          var line = lines[i], m;
+          if (/^\s*$/.test(line)) { i++; continue; }
+          if (/^<!--/.test(line)) { while (i < lines.length && !/-->/.test(lines[i])) i++; i++; continue; }
+          if ((m = /^```\s*([\w+-]*)/.exec(line))) {            // fenced code
+            var buf = []; i++;
+            while (i < lines.length && !/^```/.test(lines[i])) buf.push(lines[i++]);
+            i++; html += codeBlock(buf.join('\n'), m[1]); continue;
+          }
+          if ((m = /^(#{1,4}) +(.+?) *#*$/.exec(line))) {      // heading
+            var level = m[1].length, id = slug(m[2]);
+            if (level === 1) level = 2;
+            if (level <= 3) toc.push({ level: level, id: id, text: m[2].replace(/[`*]/g, '') });
+            html += '<h' + level + ' id="' + id + '">' + inline(m[2]) + '<a class="anchor" href="#" data-anchor="' + id + '">#</a></h' + level + '>'; i++; continue;
+          }
+          if (/^ {0,3}([-*_])( *\1){2,} *$/.test(line)) { html += '<hr>'; i++; continue; }
+          if (/^\|/.test(line) && i + 1 < lines.length && /^\|?[\s:|-]+\|[\s:|-]*$/.test(lines[i + 1])) {   // table
+            var cells = function (row) { return row.replace(/^\||\|$/g, '').split(/(?<!\\)\|/).map(function (c) { return c.replace(/\\\|/g, '|').trim(); }); };
+            var head = cells(line); i += 2; var rows = [];
+            while (i < lines.length && /^\|/.test(lines[i])) rows.push(cells(lines[i++]));
+            html += '<div class="tablewrap"><table><thead><tr>' + head.map(function (c) { return '<th>' + inline(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+              rows.map(function (r) { return '<tr>' + r.map(function (c) { return '<td>' + inline(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
+            continue;
+          }
+          if (/^>/.test(line)) {                                // callout
+            var q = [];
+            while (i < lines.length && /^>/.test(lines[i])) q.push(lines[i++].replace(/^> ?/, ''));
+            html += '<div class="callout">' + markdown(q.join('\n')).html + '</div>'; continue;
+          }
+          if (/^\s*([-*+]|\d+\.) +/.test(line)) {               // lists (nested by indentation)
+            var res = list(lines, i); html += res.html; i = res.next; continue;
+          }
+          var para = [];                                         // paragraph
+          while (i < lines.length && !/^\s*$/.test(lines[i]) && !/^(```|#{1,4} |>|\|)/.test(lines[i]) && !/^\s*([-*+]|\d+\.) +/.test(lines[i])) para.push(lines[i++]);
+          if (!para.length) { para.push(lines[i++]); }
+          html += '<p>' + inline(para.join(' ')) + '</p>';
+        }
+        return { html: html, toc: toc };
+      }
+      function list(lines, start) {
+        var base = /^\s*/.exec(lines[start])[0].length, ordered = /^\s*\d+\./.test(lines[start]), i = start, out = '<' + (ordered ? 'ol' : 'ul') + '>';
+        while (i < lines.length) {
+          var m = /^(\s*)([-*+]|\d+\.) +(.*)$/.exec(lines[i]);
+          if (!m || m[1].length < base) break;
+          if (m[1].length > base) break;
+          var item = [m[3]]; i++;
+          var nested = '';
+          while (i < lines.length) {
+            if (/^\s*$/.test(lines[i])) { if (i + 1 < lines.length && /^\s+\S/.test(lines[i + 1]) && !/^\s*([-*+]|\d+\.) +/.test(lines[i + 1])) { i++; continue; } break; }
+            var n = /^(\s*)([-*+]|\d+\.) +/.exec(lines[i]);
+            if (n && n[1].length > base) { var sub = list(lines, i); nested += sub.html; i = sub.next; continue; }
+            if (n || /^(```|#|>|\|)/.test(lines[i])) break;
+            if (/^\s+\S/.test(lines[i])) { item.push(lines[i].trim()); i++; continue; }
+            break;
+          }
+          out += '<li>' + inline(item.join(' ')) + nested + '</li>';
+        }
+        return { html: out + '</' + (ordered ? 'ol' : 'ul') + '>', next: i };
+      }
+
+      // ---------- views
+      var pages = DOCS.pages, bySlug = {};
+      pages.forEach(function (p, n) { p.n = n; bySlug[p.slug] = p; });
+
+      function side(current) {
+        var html = '';
+        DOCS.sections.forEach(function (s) {
+          var inSection = pages.filter(function (p) { return p.section === s; });
+          if (!inSection.length) return;
+          html += '<h4>' + esc(s) + '</h4>' + inSection.map(function (p) {
+            return '<a href="#/' + p.slug + '"' + (p.slug === current ? ' class="on" aria-current="page"' : '') + '>' + esc(p.title) + '</a>';
+          }).join('');
+        });
+        $('side').innerHTML = html;
+      }
+      function route() {
+        var parts = location.hash.replace(/^#\/?/, '').split('/');
+        var page = bySlug[parts[0]] || pages[0];
+        return { page: page, anchor: parts[1] || '' };
+      }
+      function render() {
+        if (!pages.length) { $('page').innerHTML = '<div class="empty"><h2>No documentation yet</h2><p>Put .md files in <code>docs/</code> and run <code>php cast docs:build</code>.</p></div>'; return; }
+        var r = route(), p = r.page, doc = markdown(p.md);
+        document.title = p.title + ' | ' + DOCS.title;
+        side(p.slug);
+        var prev = pages[p.n - 1], next = pages[p.n + 1];
+        $('page').innerHTML =
+          '<div class="crumbs"><a href="#/">Docs</a><span class="sep">/</span><span>' + esc(p.section) + '</span><span class="sep">/</span><span>' + esc(p.title) + '</span></div>' +
+          '<div class="eyebrow">' + esc(p.section) + '</div><h1 class="title">' + esc(p.title) + '</h1>' +
+          (p.description ? '<p class="lead">' + esc(p.description) + '</p>' : '') +
+          '<div class="doc">' + doc.html + '</div>' +
+          '<nav class="pager">' + (prev ? '<a href="#/' + prev.slug + '"><small>Previous</small>' + esc(prev.title) + '</a>' : '<span></span>') +
+          (next ? '<a class="next" href="#/' + next.slug + '"><small>Next</small>' + esc(next.title) + '</a>' : '<span></span>') + '</nav>' +
+          '<footer class="foot"><span>' + esc(DOCS.title) + (DOCS.version ? ' ' + esc(DOCS.version) : '') + ' &middot; MIT</span>' +
+          (p.source ? '<a href="' + REPO + esc(p.source.split('#')[0]) + '" target="_blank" rel="noopener">Edit this page on GitHub</a>' : '') + '</footer>';
+        $('toc').innerHTML = doc.toc.length ? '<h5>On this page</h5>' + doc.toc.map(function (t) { return '<a class="l' + t.level + '" href="#/' + p.slug + '/' + t.id + '" data-id="' + t.id + '">' + esc(t.text) + '</a>'; }).join('') : '';
+        document.body.classList.remove('nav-open');
+        if (r.anchor && $(r.anchor)) $(r.anchor).scrollIntoView(); else window.scrollTo(0, 0);
+        spy();
+      }
+      var observer;
+      function spy() {
+        if (observer) observer.disconnect();
+        if (!('IntersectionObserver' in window)) return;
+        observer = new IntersectionObserver(function (entries) {
+          entries.forEach(function (e) {
+            if (!e.isIntersecting) return;
+            document.querySelectorAll('#toc a').forEach(function (a) { a.classList.toggle('on', a.getAttribute('data-id') === e.target.id); });
+          });
+        }, { rootMargin: '-72px 0px -70% 0px' });
+        document.querySelectorAll('.doc h2, .doc h3').forEach(function (h) { observer.observe(h); });
+      }
+
+      // ---------- search
+      var hits = [], active = -1;
+      function search(term) {
+        var box = $('results');
+        term = term.trim().toLowerCase();
+        if (term.length < 2) { box.classList.remove('open'); hits = []; return; }
+        hits = pages.map(function (p) {
+          var text = plain(p.md), at = text.toLowerCase().indexOf(term), inTitle = p.title.toLowerCase().indexOf(term) >= 0;
+          if (at < 0 && !inTitle && p.description.toLowerCase().indexOf(term) < 0) return null;
+          var snippet = at >= 0 ? (at > 40 ? '\u2026' : '') + text.slice(Math.max(0, at - 40), at + 110) + '\u2026' : p.description;
+          return { p: p, score: (inTitle ? 10 : 0) + (at >= 0 ? 1 : 0), snippet: snippet };
+        }).filter(Boolean).sort(function (a, b) { return b.score - a.score; }).slice(0, 8);
+        box.innerHTML = hits.length ? hits.map(function (h, n) {
+          return '<a href="#/' + h.p.slug + '" data-n="' + n + '"><span class="sec">' + esc(h.p.section) + '</span><b>' + esc(h.p.title) + '</b><small>' + esc(h.snippet) + '</small></a>';
+        }).join('') : '<a><small>Nothing found for \u201c' + esc(term) + '\u201d</small></a>';
+        box.classList.add('open'); active = -1;
+      }
+
+      // ---------- events
+      $('q').addEventListener('input', function (e) { search(e.target.value); });
+      $('q').addEventListener('keydown', function (e) {
+        var links = document.querySelectorAll('#results a[data-n]');
+        if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+          e.preventDefault(); active = Math.max(0, Math.min(links.length - 1, active + (e.key === 'ArrowDown' ? 1 : -1)));
+          links.forEach(function (a, n) { a.classList.toggle('hit', n === active); });
+        } else if (e.key === 'Enter' && links.length) { location.hash = links[Math.max(0, active)].getAttribute('href'); $('q').blur(); $('results').classList.remove('open'); }
+        else if (e.key === 'Escape') { $('results').classList.remove('open'); $('q').blur(); }
+      });
+      document.addEventListener('click', function (e) {
+        var t = e.target;
+        if (!t.closest('.search')) $('results').classList.remove('open');
+        if (t.closest('#results a')) { $('results').classList.remove('open'); $('q').value = ''; }
+        var copy = t.closest('[data-copy]');
+        if (copy) {
+          var text = copy.closest('.code').querySelector('code').innerText;
+          (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function () { copy.textContent = 'Copied'; setTimeout(function () { copy.textContent = 'Copy'; }, 1500); }, function () { copy.textContent = 'Press Ctrl+C'; });
+        }
+        var anchor = t.closest('[data-anchor]');
+        if (anchor) { e.preventDefault(); var id = anchor.getAttribute('data-anchor'), cur = route().page.slug; history.replaceState(null, '', '#/' + cur + '/' + id); document.getElementById(id).scrollIntoView(); }
+      });
+      document.addEventListener('keydown', function (e) {
+        if ((e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) || ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k')) { e.preventDefault(); $('q').focus(); }
+      });
+      $('menu').addEventListener('click', function () { document.body.classList.toggle('nav-open'); });
+      $('theme').addEventListener('click', function () {
+        var next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', next);
+        try { localStorage.setItem('cast-docs-theme', next); } catch (e) { }
+      });
+      window.addEventListener('hashchange', render);
+
+      // ---------- start
+      try { var saved = localStorage.getItem('cast-docs-theme'); if (saved) document.documentElement.setAttribute('data-theme', saved); else if (window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches) document.documentElement.setAttribute('data-theme', 'light'); } catch (e) { }
+      $('site-title').textContent = DOCS.title || 'Docs';
+      if (DOCS.version) $('version').textContent = 'v' + DOCS.version; else $('version').style.display = 'none';
+      // "Open the app" goes to the folder above /docs/ (the app's home, wherever it is installed)
+      $('app-link').setAttribute('href', location.pathname.replace(/docs\/(index\.html)?$/, '') || '/');
+      render();
+    })();
+  </script>
+</body>
+
+</html>

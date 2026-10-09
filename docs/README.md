@@ -1,3 +1,11 @@
+---
+title: Docs index
+section: Reference
+order: 0
+description: Index of the guides.
+draft: true
+---
+
 # CastFramework documentation
 
 | I want to... | Read |
@@ -8,6 +16,7 @@
 | **Handle requests safely** | README: [Request and Response](../README.md#request-and-response), [CSRF](../README.md#csrf), [Validation](../README.md#validation), [Auth](../README.md#auth-and-services) |
 | **Work with the database** | README: [Models](../README.md#models-and-the-query-builder), [Migrations](../README.md#migrations), [Legacy databases](../README.md#legacy-databases-migratesync) · [ORM-ADAPTERS.md](ORM-ADAPTERS.md) (use Doctrine, Eloquent, Phinx...) |
 | **Make it a SPA or an API** | README: [SPA](../README.md#spa-pages-without-full-reloads), [JSON API](../README.md#json-api) |
+| **Write docs for your project** | [WRITING-DOCS.md](WRITING-DOCS.md): markdown + front matter -> the `/docs` site (`php cast docs:build`) |
 | **Set up the editor** | README: [Editor support](../README.md#editor-support) · `php cast editor:install`, `php cast ide:helpers` |
 | **Run it in production** | README: [Errors, maintenance and updates](../README.md#errors-maintenance-and-updates), [Security notes](../README.md#security-notes) |
 | **Upgrade an app** | [UPGRADING.md](UPGRADING.md), [CHANGELOG](../CHANGELOG.md) |

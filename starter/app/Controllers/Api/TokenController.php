@@ -8,6 +8,10 @@ use Cast\Http\Controller;
 use Cast\Http\Response;
 use Cast\Services\ApiTokens;
 
+/**
+ * API tokens: log in with an email and password to get a token, then send it as `Authorization: Bearer <token>`.
+ * Only a hash of the token is stored (api_tokens table); the token itself is shown once. Console: php cast token:create <login>
+ */
 class TokenController extends Controller
 {
     /** POST /api/auth/token {email, password, name?, abilities?} => a bearer token (shown once) */

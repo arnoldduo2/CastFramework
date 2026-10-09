@@ -8,7 +8,11 @@ use App\Models\Users;
 use Cast\Contracts\FindsUsersById;
 use Cast\Contracts\UserProvider;
 
-/** Tells the framework's Auth service where users live (the `users` table). */
+/**
+ * Tells the framework's Auth service where users live (the `users` table). A service class holds a piece of the app's logic that
+ * is not a page or a table: here, "how do I find a user". Implementing UserProvider is all Auth needs to log people in, so a different
+ * store (another table, an LDAP server, an existing ERP's users) is a different class with the same methods.
+ */
 final class UserStore implements UserProvider, FindsUsersById
 {
     public function findByCredentials(string $identifier): ?array

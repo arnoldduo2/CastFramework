@@ -1,3 +1,10 @@
+---
+title: Using another ORM
+section: Data
+order: 5
+description: Plug in Doctrine, Eloquent or Phinx for migrations, the connection and models.
+---
+
 # Using another ORM or migration tool
 
 CastFramework's own `Model`, `QueryBuilder` and migrations are small on purpose. Everything the framework needs from the database layer goes through

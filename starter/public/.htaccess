@@ -1,3 +1,6 @@
+# Apache: send every request that is not an existing file or folder to index.php (the front controller).
+# Needs mod_rewrite and AllowOverride All for this folder. Other servers: see the README (Running on Windows / XAMPP, or in a sub-folder).
+# Do not change this file unless you know what you are doing.
 RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteCond %{REQUEST_FILENAME} !-d

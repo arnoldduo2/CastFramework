@@ -74,7 +74,7 @@ test('init: creates a working minimal app, adds the App\\ autoload and names it 
     has('/cast/cast.module.js', $html);
     [$status, $json] = app_get($dir, '/', ['X-Cast-Request' => '1']);
     eq(200, $status);
-    has('It works', json_decode($json, true)['data']['html']);
+    has('Let\'s build something', json_decode($json, true)['data']['html']);
     eq(404, app_get($dir, '/nope')[0]);
 });
 
@@ -141,7 +141,13 @@ test('init --demo: copies the starter app (login, items, API) without per-instal
 
     [$status, $html] = app_get($dir, '/');
     eq(200, $status, $html);
-    has('Welcome', json_decode(app_get($dir, '/', ['X-Cast-Request' => '1'])[1], true)['data']['html']);
+    has('Let\'s build something', json_decode(app_get($dir, '/', ['X-Cast-Request' => '1'])[1], true)['data']['html']);
+    [$status, $login] = app_get($dir, '/login', ['X-Cast-Request' => '1']);
+    eq(200, $status);
+    has('Use the framework for CRUD operations', json_decode($login, true)['data']['html']);
+    [$status, $register] = app_get($dir, '/register', ['X-Cast-Request' => '1']);
+    eq(200, $status, 'the register page exists');
+    has('Create an account', json_decode($register, true)['data']['html']);
     [$status] = app_get($dir, '/items');
     eq(302, $status, 'guests are sent to the login page');
 });

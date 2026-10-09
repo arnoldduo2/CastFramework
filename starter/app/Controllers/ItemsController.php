@@ -8,8 +8,18 @@ use App\Models\Items;
 use Cast\Http\Controller;
 use Cast\Http\Response;
 
+/**
+ * The CRUD pages for the demo's items: list + add form (index, store), an edit popup (edit), update, delete.
+ *
+ * The pattern to copy for any table: one controller per page group, one method per route (see routes/web.php).
+ *   - `$this->validate($rules)` checks the request and stops with the error messages when it fails;
+ *   - `Items::...` is the model (app/Models/Items.php): getAll / getOne / updateColumns / deleteRows / query()->insert();
+ *   - `$this->view('items.items', $data)` renders resources/views/items/items.cast.php; `$this->success()` / `$this->error()` answer JSON.
+ * Create your own with  php cast make:controller Orders  and  php cast make:model Orders.
+ */
 class ItemsController extends Controller
 {
+    /** Validation rules, one string per field: 'required|int|min:0'. Reused by store() and update(). */
     private array $rules = [
         'name' => 'required|string|min:2|max:80',
         'qty' => 'required|int|min:0',

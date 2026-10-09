@@ -2,14 +2,28 @@
 <?php
 
 /**
- * The console of this app:  php cast <command>      (php cast list  shows the commands)
- * Works from any folder; it always runs against the app that contains this file.
+ * The console of this app:  php cast <command>
+ *
+ *   php cast list                 every command, grouped          php cast help <command>   what it does, its arguments and options
+ *   php cast serve                start the development server    php cast docs:build       build your own docs site
+ *
+ * Do not change this file unless you know what you are doing: it loads Composer, finds the app (bootstrap/app.php) and hands the
+ * arguments to the framework's Console\Kernel. It works from any folder and always runs against the app that contains it.
+ * (The Composer plugin of anode/cast-framework re-creates it after an install or update when it is missing.)
+ *
+ * Your own commands:
+ *   1. php cast make:command SyncStock        creates src/Console/Commands/SyncStockCommand.php (the folder follows your source folder)
+ *   2. fill in the generated class: $name, $description, $arguments, $options, $examples and handle()
+ *   3. list it in config/console.php (php cast make:config console writes the file):
+ *          return ['commands' => [App\Console\Commands\SyncStockCommand::class]];
+ *   Now `php cast list` shows it and `php cast help sync:stock` explains it.
  */
 
 declare(strict_types=1);
 
 require __DIR__ . '/vendor/autoload.php';
 
+// bootstrap/app.php returns the Application (it knows where config, routes and views are); without it the folder itself is the app
 $bootstrap = __DIR__ . '/bootstrap/app.php';
 $app = is_file($bootstrap) ? require $bootstrap : new \Cast\App\Application(__DIR__);
 

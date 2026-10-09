@@ -122,8 +122,8 @@ final class InitCommand extends Command
         (new IdeHelpersCommand($this->app))->handle(new Input(['ide:helpers']), new Output(fopen('php://memory', 'w+')));
         $this->created[] = '_ide_helpers.php';
 
-        foreach ($this->created as $file) $output->info('created  ' . $file);
-        foreach ($this->skipped as $file) $output->warn('exists   ' . $file . ($file === '.env' ? ' (kept: init never overwrites .env)' : ' (kept; use --force to overwrite)'));
+        foreach ($this->created as $file) $output->line($output->color('created', 'green') . '  ' . $file);
+        foreach ($this->skipped as $file) $output->line($output->color('exists ', 'yellow') . '  ' . $file . $output->color($file === '.env' ? ' (kept: init never overwrites .env)' : ' (kept; use --force to overwrite)', 'grey'));
 
         $output->line();
         if ($autoload === 'changed') {
@@ -296,35 +296,40 @@ final class InitCommand extends Command
         return str_replace('{source}', $a['source'], $contents);
     }
 
-    /** config/app.php: only what differs from the framework's defaults. @param array<string, mixed> $a */
+    /** config/app.php: only what differs from the framework's defaults, each line explained. @param array<string, mixed> $a */
     private function configCode(array $a, bool $demo): string
     {
-        $lines = ["    'namespace' => 'App',", "    'source_path' => " . var_export($a['source'], true) . ','];
+        $lines = [
+            "    'namespace' => 'App',                // the PSR-4 namespace of your source folder: src/Controllers/X.php is App\\Controllers\\X",
+            "    'source_path' => " . var_export($a['source'], true) . ',' . str_repeat(' ', max(1, 17 - strlen(var_export($a['source'], true)))) . "// where your classes live; `php cast make:controller|model|...` writes here",
+        ];
+        if ($demo) $lines[] = "    'demo' => true,                      // the menu shows Log in / Register (the demo's pages); remove it when you delete the demo";
         if (!$a['errorHandler']) {
-            $lines[] = "    'error_handler' => false,   // the Anode error handler is off";
+            $lines[] = "    'error_handler' => false,            // the Anode error handler is off (PHP's own error output is used); true turns it on";
         } elseif ($a['handlerOptions']) {
-            $lines[] = "    // Anode error handler options (see the package: log_errors, log_directory, dev_logs, display_errors, email_logging...)";
+            $lines[] = "    // Anode error handler options (all of them, with their defaults: php cast make:config error-handler)";
             $lines[] = "    'error_handler' => [";
             foreach ($a['handlerOptions'] as $k => $v) $lines[] = '        ' . var_export($k, true) . ' => ' . var_export($v, true) . ',';
             $lines[] = '    ],';
         }
         if ($a['errorPages'] === 'custom') {
-            $lines[] = "    // 'custom': you build resources/views/errors/{404,403,500,...}.cast.php; an empty one falls back to the framework's page";
+            $lines[] = "    // 'custom': you build resources/views/errors/{404,403,405,419,500,503}.cast.php. An empty file means \"not built yet\": the framework's page is shown,";
+            $lines[] = "    // and in development it says which view to build. 'framework' (the default) always uses the framework's pages.";
             $lines[] = "    'error_pages' => 'custom',";
         }
-        $lines[] = "    'providers' => [" . ($demo ? 'App\\Providers\\AppServiceProvider::class' : '') . '],';
-        return "<?php\n\n// Only list what differs from the framework defaults (see the README: Configuration).\nreturn [\n" . implode("\n", $lines) . "\n];\n";
+        $lines[] = "    'providers' => [" . ($demo ? 'App\\Providers\\AppServiceProvider::class' : '') . "],   // service providers: classes that wire your services in (see the demo's AppServiceProvider)";
+        return "<?php\n\n/*\n * Application settings. Only what differs from the framework's defaults is listed here: the full list, with every default and its\n * meaning, is written by  php cast make:config app  (other sections: php cast make:config --list).\n * Values from .env: APP_NAME, APP_ENV (development | production), APP_DEBUG, APP_KEY, APP_TIMEZONE, APP_BASE_PATH (see .env.example).\n */\nreturn [\n" . implode("\n", $lines) . "\n];\n";
     }
 
     /** @param array<string, mixed> $a */
     private function summary(array $a, Output $output, bool $demo): void
     {
-        $output->line('Your app:  source in ' . $a['source'] . '/ (namespace App\\), ' . ($a['type'] === 'api' ? 'an API (routes/api.php under /api)' : ($a['frontend'] === 'php' ? 'server-rendered pages' : 'server-rendered pages with the built-in SPA client')));
-        $output->line('Files:     views, CSS and JS in ' . ($a['resources'] === 'inside' ? $a['source'] . '/resources/' : 'resources/') . '; settings in .env (APP_KEY was generated; see .env.example for every setting); php cast make:config <name> writes a config file');
-        $output->line('Errors:    ' . ($a['errorHandler'] ? 'Anode error handler on (config/app.php, \'error_handler\')' : 'Anode error handler off') . '; ' . ($a['errorPages'] === 'custom' ? 'your own error pages in resources/views/errors (empty until you build them)' : 'framework error pages'));
+        $output->line($output->color('Your app:', 'orange') . '  source in ' . $a['source'] . '/ (namespace App\\), ' . ($a['type'] === 'api' ? 'an API (routes/api.php under /api)' : ($a['frontend'] === 'php' ? 'server-rendered pages' : 'server-rendered pages with the built-in SPA client')));
+        $output->line($output->color('Files:', 'orange') . '     views, CSS and JS in ' . ($a['resources'] === 'inside' ? $a['source'] . '/resources/' : 'resources/') . '; settings in .env (APP_KEY was generated; see .env.example for every setting); php cast make:config <name> writes a config file');
+        $output->line($output->color('Errors:', 'orange') . '    ' . ($a['errorHandler'] ? 'Anode error handler on (config/app.php, \'error_handler\')' : 'Anode error handler off') . '; ' . ($a['errorPages'] === 'custom' ? 'your own error pages in resources/views/errors (empty until you build them)' : 'framework error pages'));
         if ($a['frontend'] === 'external') $output->line('Front end:  ' . ($a['cors'] ?: 'set CORS_ALLOWED_ORIGINS in .env') . ' may call the API; create a token with  php cast token:create <login>');
-        $output->line('VS Code:   php cast editor:install   (highlighting and Ctrl+click for .cast.php views)');
-        $output->line('Start it:  php cast serve   (then open http://127.0.0.1:8000). See all commands:  php cast list');
+        $output->line($output->color('VS Code:', 'orange') . '   ' . $output->color('php cast editor:install', 'green') . '   (highlighting and Ctrl+click for .cast.php views)');
+        $output->line($output->color('Start it:', 'orange') . '  ' . $output->color('php cast serve', 'green') . '   (then open http://127.0.0.1:8000; the documentation is at /docs). All commands:  ' . $output->color('php cast list', 'green'));
         if ($demo) $output->line('Demo login:  admin@example.com / password');
     }
 

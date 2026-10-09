@@ -61,7 +61,7 @@ test('init asks about the source folder, the front end, the error handler and th
     has("'error_pages' => 'custom'", $config);
     eq('lib/', json_decode((string) file_get_contents("$dir/composer.json"), true)['autoload']['psr-4']['App\\']);
     lacks("'spa'", (string) file_get_contents("$dir/lib/Controllers/HomeController.php"));
-    lacks('__cast(', (string) file_get_contents("$dir/resources/views/layouts/header.cast.php"));
+    lacks('<?= __cast(', (string) file_get_contents("$dir/resources/views/layouts/header.cast.php"));
     foreach ([403, 404, 405, 419, 500, 503] as $code) {
         ok(is_file("$dir/resources/views/errors/$code.cast.php") && filesize("$dir/resources/views/errors/$code.cast.php") === 0, "an empty errors/$code view");
     }
@@ -75,7 +75,7 @@ test('init: pressing Enter on every question gives src, the SPA client, the erro
     lacks('error_handler', $config);
     lacks('error_pages', $config);
     has("'spa' => true", (string) file_get_contents("$dir/src/Controllers/HomeController.php"));
-    has('__cast(', (string) file_get_contents("$dir/src/resources/views/layouts/header.cast.php"));
+    has('<?= __cast(', (string) file_get_contents("$dir/src/resources/views/layouts/header.cast.php"));
     ok(!is_dir("$dir/src/resources/views/errors"));
 });
 
@@ -178,7 +178,7 @@ test('init with src: views, css and js live in src/resources, and the app finds 
     eq(0, $code, $out);
     ok(is_file("$dir/src/resources/views/home/home.cast.php") && is_file("$dir/src/resources/css/app.css"), 'resources are inside src');
     ok(!is_dir("$dir/resources"), 'no resources/ at the root');
-    has("'resources' => 'src/resources'", (string) file_get_contents("$dir/bootstrap/app.php"));
+    has("return new Application(dirname(__DIR__), ['paths' => ['views' => 'src/resources/views', 'resources' => 'src/resources']]);", (string) file_get_contents("$dir/bootstrap/app.php"));
     $vscode = json_decode((string) file_get_contents("$dir/.vscode/settings.json"), true);
     eq('src/resources/views/components', $vscode['cast.componentsPath']);
 
@@ -199,7 +199,7 @@ test('init --resources=root keeps resources/ at the root even with src', functio
     [$code, $out] = cast_in($dir, 'init -n --resources=root');
     eq(0, $code, $out);
     ok(is_file("$dir/resources/views/home/home.cast.php") && !is_dir("$dir/src/resources"));
-    lacks('paths', (string) file_get_contents("$dir/bootstrap/app.php"));
+    eq(1, preg_match('/^return new Application\(dirname\(__DIR__\)\);/m', (string) file_get_contents("$dir/bootstrap/app.php")), 'the plain Application line');
     ok(!is_file("$dir/.vscode/settings.json"));
 });
 

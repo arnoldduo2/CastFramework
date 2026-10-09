@@ -1,0 +1,123 @@
+{
+  "title": "CastFramework",
+  "sections": [
+    "Start",
+    "Build",
+    "Requests and safety",
+    "Data",
+    "Front end and API",
+    "Tooling",
+    "Running it",
+    "Reference"
+  ],
+  "readme": {
+    "Contents": [
+      "_skip",
+      0
+    ],
+    "Install": [
+      "Start",
+      1
+    ],
+    "A first app": [
+      "Start",
+      2
+    ],
+    "Configuration": [
+      "Start",
+      3
+    ],
+    "Routing": [
+      "Build",
+      1
+    ],
+    "Controllers": [
+      "Build",
+      2
+    ],
+    "Views": [
+      "Build",
+      3
+    ],
+    "Helpers": [
+      "Build",
+      5
+    ],
+    "Static files": [
+      "Build",
+      6
+    ],
+    "Request and Response": [
+      "Requests and safety",
+      1
+    ],
+    "CSRF": [
+      "Requests and safety",
+      2
+    ],
+    "Validation": [
+      "Requests and safety",
+      3
+    ],
+    "Auth and services": [
+      "Requests and safety",
+      4
+    ],
+    "Security notes": [
+      "Requests and safety",
+      9
+    ],
+    "Models and the query builder": [
+      "Data",
+      1
+    ],
+    "Migrations": [
+      "Data",
+      2
+    ],
+    "SPA: pages without full reloads": [
+      "Front end and API",
+      1
+    ],
+    "JSON API": [
+      "Front end and API",
+      2
+    ],
+    "Console": [
+      "Tooling",
+      2
+    ],
+    "Editor support": [
+      "Tooling",
+      3
+    ],
+    "Testing": [
+      "Tooling",
+      4
+    ],
+    "Running on Windows / XAMPP, or in a sub-folder": [
+      "Running it",
+      1
+    ],
+    "Errors, maintenance and updates": [
+      "Running it",
+      2
+    ],
+    "Contracts": [
+      "Running it",
+      5
+    ],
+    "Upgrading": [
+      "_skip",
+      0
+    ],
+    "Versioning": [
+      "Running it",
+      9
+    ],
+    "License": [
+      "Reference",
+      99
+    ]
+  }
+}

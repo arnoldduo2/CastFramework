@@ -36,7 +36,7 @@ const step = async (name, fn) => {
   await step("first load: the shell is lazy, then the content is fetched and mounted", async () => {
     await page.goto(BASE + "/");
     await page.waitForSelector("#cast-view:not([data-cast-lazy]) .card");
-    assert.match(await content().innerText(), /Welcome/);
+    assert.match(await content().innerText(), /build something amazing/);
     assert.equal(await page.title(), "Cast Starter | Home");
     assert.equal(await page.evaluate(() => document.documentElement.dataset.lastMounted), "home.home");
     await page.evaluate(() => (window.__marker = "alive"));
@@ -137,7 +137,7 @@ const step = async (name, fn) => {
     assert.equal(await page.locator("link[href*='/css/stats/stats.css']").count(), 1, "the new page's CSS is added once");
     assert.equal(await page.locator("script[src*='items.module.js']").count(), 0);
     assert.equal(await page.locator("#cast-view").getAttribute("data-stats-mounted"), "1");
-    assert.ok(await page.locator("header.topbar").count(), "the header was kept (partial swap)");
+    assert.ok(await page.locator("header.nav").count(), "the header was kept (partial swap)");
   });
 
   await step("the content container does not change the layout (cards keep their gap)", async () => {

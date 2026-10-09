@@ -1,3 +1,10 @@
+---
+title: Upgrading
+section: Running it
+order: 7
+description: Moving an app to a newer version, adopting migrations, keeping the packages current.
+---
+
 # Upgrading
 
 Run the commands in your app's folder (for XAMPP: `cd D:\xampp\htdocs\my-app`).

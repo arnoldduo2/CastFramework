@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '0.6.0';
+    public const VERSION = '0.7.0';
 
     private static ?self $instance = null;
 
@@ -304,7 +304,10 @@ final class Application
                 'images' => ['dir' => 'public/assets/images', 'keep_prefix' => false],
                 'public' => ['dir' => 'public/assets/vendor', 'keep_prefix' => false],
                 'cast' => ['path' => dirname(__DIR__) . '/Resources', 'keep_prefix' => false],   // /cast/cast.module.js, /cast/cast.css
+                // the documentation viewer at /docs (development only; docs.enabled turns it on in production)
+                'docs' => ['path' => dirname(__DIR__) . '/Resources/docs', 'keep_prefix' => false, 'index' => 'index.html', 'dev_only' => true],
             ],
+            'docs' => ['enabled' => false],
             'cors' => ['allowed_origins' => array_filter(array_map('trim', explode(',', (string) Env::get('CORS_ALLOWED_ORIGINS', ''))))],
             'models' => ['namespace' => 'App\\Models'],
             // `routes/api.php` is loaded under this prefix; `middleware` = specs applied to every API route

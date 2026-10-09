@@ -59,13 +59,43 @@ test('Starter: the home page renders with the layout, components, and auto-loade
     eq(200, $r->statusCode());
     $html = $r->body();
     has('<title>Cast Starter | Home</title>', $html);
-    has('<section class="card">', $html, 'Card component');
-    has('<h2>Welcome</h2>', $html);
-    has('class="btn btn-primary" href="/items"', $html, 'component props from {expressions}');
+    has('Let\'s build something', $html, 'the welcome page');
+    has('href="/docs/"', $html, 'a link to the documentation');
+    has('href="/demo"', $html, 'the demo shortcut in the menu');
+    has('Demo the Cast Framework', $html);
     has("href='/css/app.css", $html, 'app.css is found by __modules()');
     lacks("href='/css/items/items.css", $html);
     has('name="csrf-token"', $html);
-    has('Log in', $html);
+    has('href="/login"', $html, 'Log in (top right)');
+    has('href="/register"', $html, 'Register (top right)');
+});
+
+test('Starter: /demo goes to the demo (the login for guests); register creates an account and logs in', function () {
+    starter();
+    $r = handle(new Request('GET', '/demo'));
+    eq(302, $r->statusCode());
+    eq('/items', $r->getHeader('Location'));
+
+    // the login and register pages carry the CRUD banner (a component) with links to the docs, and the form
+    foreach (['/login', '/register'] as $path) {
+        $html = handle(new Request('GET', $path))->body();
+        has($path === '/login' ? 'Use the framework for CRUD operations' : 'Register, then try CRUD on Items', $html, $path);
+        has('href="/docs/#/getting-started"', $html);
+        has("name='_token'", $html);
+    }
+    has('name="password_confirmation"', handle(new Request('GET', '/register'))->body());
+
+    // a weak or mismatched password and a duplicate email are rejected with the messages
+    $bad = handle(form('POST', '/register', ['email' => 'admin@example.com', 'password' => 'short', 'password_confirmation' => 'other']));
+    eq(302, $bad->statusCode());
+    $errors = \Cast\Core\Session::peekFlash('input_errors') ?? [];
+    ok(isset($errors['email']) && isset($errors['password']), 'email is taken, password is too short');
+
+    $ok = handle(form('POST', '/register', ['email' => 'new@example.com', 'password' => 'longenough1', 'password_confirmation' => 'longenough1']));
+    eq(302, $ok->statusCode());
+    eq('/items', $ok->getHeader('Location'));
+    ok(\App\Models\Users::exists('email', 'new@example.com'), 'the user was created');
+    eq('new@example.com', app('auth')->user()['email'] ?? null, 'and is logged in');
 });
 
 test('Starter: guests are sent to /login; the login form carries the CSRF field', function () {

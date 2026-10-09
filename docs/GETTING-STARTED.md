@@ -1,3 +1,10 @@
+---
+title: Getting started
+section: Start
+order: 0
+description: Install, the workflow of a page, where every file goes, wiring a feature, and turning the demo into your own project.
+---
+
 # Getting started
 
 How a CastFramework app is wired, where every kind of file goes, and how to turn the demo into your own project.
@@ -17,9 +24,9 @@ php cast serve             # http://127.0.0.1:8000
 | Question | Default | What it changes |
 | --- | --- | --- |
 | Folder for your app source code | `src` | where controllers, models, services live (`--source=app` for the classic layout); the `App\` namespace is mapped to it in `composer.json` and `config/app.php` (`source_path`) |
-| How will the front end work? | the built-in SPA | **spa**: server pages + the Cast client (no full reloads); **php**: server pages, normal page loads, no client script; **external**: an API for a React/Vue/Next.js front end (asks its address for CORS); **api**: JSON only. (`--frontend=spa|php|external|api`) |
-| Use the Anode error handler? | yes | logs errors and shows a developer page. Answer yes to see every setting with its default, then choose to configure it (log folder, developer logs, `display_errors`, email) or keep the defaults. (`--error-handler=yes|no`) |
-| Error pages | the framework's | **custom** creates empty views in `resources/views/errors` for you to build; until you do, the framework's page is shown, with a note in development. (`--error-pages=default|custom`) |
+| How will the front end work? | the built-in SPA | **spa**: server pages + the Cast client (no full reloads); **php**: server pages, normal page loads, no client script; **external**: an API for a React/Vue/Next.js front end (asks its address for CORS); **api**: JSON only. (`--frontend=spa\|php\|external\|api`) |
+| Use the Anode error handler? | yes | logs errors and shows a developer page. Answer yes to see every setting with its default, then choose to configure it (log folder, developer logs, `display_errors`, email) or keep the defaults. (`--error-handler=yes\|no`) |
+| Error pages | the framework's | **custom** creates empty views in `resources/views/errors` for you to build; until you do, the framework's page is shown, with a note in development. (`--error-pages=default\|custom`) |
 
 | Where do the views, CSS and JS go? | inside the source folder when it is `src` | `inside`: `src/resources/views`, `src/resources/css`, `src/resources/js` (everything of the app in `src/`); `root`: `resources/` next to it. (`--resources=inside\|root`) The paths are set in `bootstrap/app.php`, and `.vscode/settings.json` tells the editor extension |
 

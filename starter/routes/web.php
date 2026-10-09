@@ -9,13 +9,22 @@ use App\Controllers\StatsController;
 use Cast\Core\Router;
 use Cast\Http\Middleware\Authenticate;
 
+/*
+ * The demo's pages. `Router::get(path, handler)`: the handler is a controller class (its index() runs) or [Controller::class, 'method'].
+ * Middleware wraps routes in a rule: Authenticate 'auth' = guests only, 'private' = signed-in users only (otherwise a redirect to /login).
+ * List every route with  php cast route:list
+ */
+
 // Anyone
 Router::get('/', HomeController::class);
+Router::get('/demo', fn() => \Cast\Http\Response::redirect(route('/items')));   // "Demo the Cast Framework": guests are sent on to the login
 
 // Guests only (signed-in users are sent to auth.home_path)
 Router::middleware([Authenticate::class, 'auth'], function () {
     Router::get('/login', [AuthController::class, 'login']);
     Router::post('/login', [AuthController::class, 'attempt']);
+    Router::get('/register', [AuthController::class, 'register']);
+    Router::post('/register', [AuthController::class, 'store']);
 });
 
 // Signed-in users only

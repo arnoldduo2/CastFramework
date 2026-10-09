@@ -1,4 +1,11 @@
-<?php extract($data); ?>
+<?php
+/**
+ * The items page (route GET /items): a form to add one, and a table with edit and delete. $data holds what ItemsController::index passed
+ * (here `items`); extract() makes each key a variable. Tags such as <Card> and <Btns.Button> are components (resources/views/components).
+ * The form posts to /items; `data-cast-form` makes the SPA client submit it without a reload and show validation errors under the fields.
+ */
+extract($data);
+?>
 <Card title="Add an item">
     <form method="post" action="<?= route('/items') ?>" class="row" data-cast-form>
         <?= __csrf() ?>

@@ -1,4 +1,10 @@
-<?php extract($data); ?>
+<?php
+/**
+ * The edit popup. ItemsController::edit() renders it with 'modalClass' and 'form': the SPA client opens it in a dialog when a link asks for
+ * a modal (Cast.load(url, {type: 'modal'})). The hidden _method field makes the browser's POST a PUT; `data-cast-form` submits it without a reload.
+ */
+extract($data);
+?>
 <h2>Edit <?= htchars($item['name']) ?></h2>
 <form method="post" action="<?= route('/items/' . (int) $item['id']) ?>" class="stack" data-cast-form id="edit-item-form">
     <?= __csrf() ?>

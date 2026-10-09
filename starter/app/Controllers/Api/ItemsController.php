@@ -8,7 +8,11 @@ use App\Models\Items;
 use Cast\Http\Controller;
 use Cast\Http\Response;
 
-/** The items as a JSON API: the same data as the pages, for a front-end framework or another server. */
+/**
+ * The items as a JSON API: the same data as the pages, for a front-end framework or another server.
+ * The routes are in routes/api.php (served under /api). Whatever a method returns, errors are always JSON: {status, msg, data}.
+ * `$this->success($message, $data, $status)` and `$this->error($message, $status)` build the answers.
+ */
 class ItemsController extends Controller
 {
     private array $rules = [

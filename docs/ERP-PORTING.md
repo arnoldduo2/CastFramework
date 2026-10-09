@@ -1,3 +1,10 @@
+---
+title: Porting the ERP
+section: Reference
+order: 50
+description: What the framework left out of the ERP, and where each piece would go.
+---
+
 # Porting the ERP to CastFramework: what was left out
 
 Generated from the ERP branch `last-known-erpv4.8` (commit `5a4f421 2026-09-19`) by comparing it with CastFramework.

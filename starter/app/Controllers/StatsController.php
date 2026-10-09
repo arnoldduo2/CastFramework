@@ -8,6 +8,10 @@ use App\Models\Items;
 use Cast\Http\Controller;
 use Cast\Http\Response;
 
+/**
+ * A second signed-in page. Moving between Items and Stats swaps only the content area (the SPA client), because both set 'spa' => true.
+ * A controller with a single index() method can be registered as  Router::get('/stats', StatsController::class);
+ */
 class StatsController extends Controller
 {
     /** GET /stats: a second private page, so moving between Items and Stats swaps only the content area. */

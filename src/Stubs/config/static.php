@@ -10,4 +10,7 @@ return [
     'images' => ['dir' => 'public/assets/images', 'keep_prefix' => false],
     'public' => ['dir' => 'public/assets/vendor', 'keep_prefix' => false],
     'cast' => ['path' => \Cast\App\Application::instance()->frameworkPath('Resources'), 'keep_prefix' => false],   // /cast/cast.module.js and /cast/cast.css (the SPA client)
+    // The documentation viewer at /docs. Development only (docs.enabled = true in config/docs.php turns it on in production).
+    // To show your own documentation instead, point it at a folder built by `php cast docs:build`: ['dir' => 'public/docs', 'keep_prefix' => false, 'index' => 'index.html'].
+    'docs' => ['path' => \Cast\App\Application::instance()->frameworkPath('Resources/docs'), 'keep_prefix' => false, 'index' => 'index.html', 'dev_only' => true],
 ];

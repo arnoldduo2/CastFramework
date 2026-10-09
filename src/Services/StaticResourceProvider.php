@@ -43,6 +43,16 @@ final class StaticResourceProvider
             $options = is_string($options) ? ['dir' => $options, 'keep_prefix' => true] : (array) $options;
             $prefix = trim((string) $prefix, '/');
 
+            // development-only mappings (the documentation at /docs) stay off in production unless config('docs.enabled') says otherwise
+            if (!empty($options['dev_only']) && Config::get('app.env') === 'production' && !Config::get('docs.enabled', false)) continue;
+
+            // `/docs` and `/docs/` open the folder's index file; the first needs the slash so relative links work
+            if (isset($options['index']) && ($path === "/$prefix" || $path === "/$prefix/")) {
+                // Request::path() drops a trailing slash, so look at the address as it was sent
+                if (!str_ends_with((string) parse_url($request->uri(), PHP_URL_PATH), '/')) return Response::redirect(Config::get('app.base_path', '') . "/$prefix/");
+                $path = "/$prefix/" . $options['index'];
+            }
+
             if (!str_starts_with($path, "/$prefix/")) continue;
 
             $relative = substr($path, strlen($prefix) + 2);

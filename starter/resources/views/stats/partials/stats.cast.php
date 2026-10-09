@@ -1,4 +1,7 @@
-<?php extract($data); ?>
+<?php
+/** The stats page content (route GET /stats, StatsController::index): $count, $units and $value are the numbers the controller computed. */
+extract($data);
+?>
 <Card title="Stock summary">
     <div class="stats-grid">
         <div class="stat"><span class="muted">Items</span><strong id="stat-items"><?= (int) $count ?></strong></div>

@@ -1,5 +1,10 @@
 "use strict";
-// Runs once; Cast calls mount() every time the page is shown and destroy() when it is left.
+// This page's script: loaded by itself because it is named after the page (resources/js/<parentName>/<pageName>.module.js).
+// Cast.page({mount, destroy}): the SPA client calls mount() every time the page is shown (also after a swap) and destroy() when it is left.
+//   ctx.el              the page's content element
+//   ctx.on(event, selector, handler)   a delegated listener that is removed for you on destroy
+//   Cast.http({url, type, data})       a request that sends the CSRF token and returns the {status, msg, data} answer
+//   Cast.load(url)                     load a page into the content area (what a link click does)
 Cast.page({
   mount(ctx) {
     const message = (text, ok = true) => {

@@ -21,6 +21,7 @@ final class Kernel
         Commands\IdeHelpersCommand::class,
         Commands\KeyGenerateCommand::class,
         Commands\MakeConfigCommand::class,
+        Commands\DocsBuildCommand::class,
         Commands\DownCommand::class,
         Commands\UpCommand::class,
         Commands\EnvCheckCommand::class,
@@ -121,16 +122,35 @@ final class Kernel
 
     private function list(): int
     {
-        $this->output->line('CastFramework ' . Application::VERSION);
-        $this->output->line();
-        $this->output->line('Usage: php cast <command> [arguments] [--options]');
-        $this->output->line('Help:  php cast help <command>   (or  php cast <command> --help)');
-        $this->output->line();
+        $o = $this->output;
+        $o->line($o->color('CastFramework', 'title') . ' ' . $o->color(Application::VERSION, 'grey'));
+        $o->line();
+        $o->line($o->color('Usage:', 'orange') . ' php cast <command> [arguments] [--options]');
+        $o->line($o->color('Help:', 'orange') . '  php cast help <command>   (or  php cast <command> --help)');
+        $o->line();
 
-        $rows = [];
+        // grouped by the part before the colon (migrate, make, db, token...); commands without one come first
+        $groups = [];
         ksort($this->commands);
-        foreach ($this->commands as $name => $command) $rows[] = [$name, $command->description()];
-        $this->output->table(['Command', 'Description'], $rows);
+        foreach ($this->commands as $name => $command) {
+            $prefix = str_contains($name, ':') ? explode(':', $name)[0] : '';
+            $groups[$prefix][$name] = $command->description();
+        }
+        // a lone command such as `migrate` belongs with `migrate:*`; one with no relatives stays in the general list
+        foreach ($groups[''] ?? [] as $name => $description) {
+            if (isset($groups[$name])) {
+                $groups[$name] = [$name => $description] + $groups[$name];
+                unset($groups[''][$name]);
+            }
+        }
+        ksort($groups);
+        $width = max(array_map('strlen', array_keys($this->commands)));
+        foreach ($groups as $prefix => $commands) {
+            if (!$commands) continue;
+            $o->line($o->color($prefix === '' ? 'General' : ucfirst($prefix), 'orange'));
+            foreach ($commands as $name => $description) $o->line('  ' . $o->color(str_pad($name, $width), 'green') . '  ' . $description);
+            $o->line();
+        }
         return 0;
     }
 }
