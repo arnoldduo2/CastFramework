@@ -11,7 +11,9 @@
 $parentName = $data['parentName'] ?? '';
 $pageName = $data['pageName'] ?? '';
 $demo = (bool) config('app.demo');                       // true when the app was made with  php cast init --demo
-$user = $demo ? __getUser() : null;                      // the logged-in user (the demo has a login)
+$hasAuth = (bool) config('app.auth', $demo);             // the app has a login (the demo, or a pack made with  php cast demo:strip)
+$showcase = (bool) config('app.showcase', true);         // the "Demo the Cast Framework" link (php cast demo:strip removes it)
+$user = $hasAuth ? __getUser() : null;                   // the logged-in user
 $docs = config('app.env') !== 'production' || config('cdocs.enabled');   // the documentation viewer at /cdocs
 ?>
 <!DOCTYPE html>
@@ -38,20 +40,27 @@ $docs = config('app.env') !== 'production' || config('cdocs.enabled');   // the 
         <a class="brand" href="<?= route('/') ?>"><img src="<?= route('/cast/logo.svg') ?>" alt="">CastFramework</a>
         <nav class="nav-links">
             <a href="<?= route('/') ?>">Home</a>
-            <?php if ($demo && $user) : ?>
-                <a href="<?= route('/items') ?>">Items</a>
-                <a href="<?= route('/stats') ?>">Stats</a>
-            <?php endif ?>
             <?php if ($docs) : ?><a href="<?= route('/cdocs/') ?>" data-cast="off">Docs</a><?php endif ?>
-            <a class="nav-demo" href="<?= route('/demo') ?>">Demo the Cast Framework</a>
+            <?php if ($showcase) : ?><a class="nav-demo" href="<?= route('/demo') ?>">Demo the Cast Framework</a><?php endif ?>
         </nav>
         <div class="nav-end">
             <?php if ($demo && $user) : ?>
+                <!-- the demo's own menu: a grayed label, then its pages, then log out (the email is the button's tooltip) -->
+                <nav class="demo-menu" aria-label="Demo app">
+                    <span class="demo-label">Demo App</span>
+                    <a href="<?= route('/items') ?>">Items</a>
+                    <a href="<?= route('/stats') ?>">Stats</a>
+                    <form method="post" action="<?= route('/logout') ?>" class="inline" data-cast-form>
+                        <?= __csrf() ?>
+                        <button type="submit" class="btn-out" title="<?= htchars($user['email']) ?>">Logout</button>
+                    </form>
+                </nav>
+            <?php elseif ($hasAuth && $user) : ?>
                 <form method="post" action="<?= route('/logout') ?>" class="inline" data-cast-form>
                     <?= __csrf() ?>
-                    <button type="submit" class="link"><?= htchars($user['email']) ?> (log out)</button>
+                    <button type="submit" class="btn-out" title="<?= htchars($user['email']) ?>">Logout</button>
                 </form>
-            <?php elseif ($demo) : ?>
+            <?php elseif ($hasAuth) : ?>
                 <a href="<?= route('/login') ?>">Log in</a>
                 <a class="btn" href="<?= route('/register') ?>">Register</a>
             <?php else : ?>

@@ -52,6 +52,12 @@ code { font: 13px var(--font-mono); background: var(--hover-bg); border-radius: 
 .nav-links a:hover { color: var(--text-color); }
 .nav-end { margin-left: auto; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .nav-demo { border: 1px solid color-mix(in srgb, var(--secondary-color) 55%, transparent); background: color-mix(in srgb, var(--secondary-color) 14%, transparent); color: var(--secondary-color) !important; border-radius: 6px; padding: 4px 12px; font-weight: 500; }
+.demo-menu { display: flex; align-items: center; gap: 4px 16px; flex-wrap: wrap; padding: 3px 12px; border: 1px solid var(--border-color); border-radius: 8px; }
+.demo-menu a { color: var(--text-off-light); text-decoration: none; font-size: 14px; }
+.demo-menu a:hover { color: var(--text-color); }
+.demo-label { color: var(--text-off-light); opacity: .55; font-size: 12px; text-transform: uppercase; letter-spacing: .06em; cursor: default; user-select: none; }
+.btn-out { background: none; border: 1px solid var(--border-color); color: var(--text-color); border-radius: 6px; padding: 3px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.btn-out:hover { border-color: var(--primary-color); }
 .nav-demo:hover { background: color-mix(in srgb, var(--secondary-color) 24%, transparent); }
 .chip { display: inline-flex; align-items: center; gap: 6px; font: 600 11px var(--font-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--accent-color); background: color-mix(in srgb, var(--primary-color) 14%, transparent); border: 1px solid color-mix(in srgb, var(--primary-color) 55%, transparent); border-radius: 999px; padding: 3px 10px; }
 .chip.dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-color); }

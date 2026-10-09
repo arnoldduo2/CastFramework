@@ -74,7 +74,7 @@ const step = async (name, fn) => {
     await page.waitForSelector("#cast-view:not([data-cast-lazy]) .card");
     assert.match(page.url(), /\/items$/);
     assert.equal(await marker(), "alive");
-    assert.ok(await page.locator("text=admin@example.com (log out)").count(), "the nav shows the signed-in user");
+    assert.ok(await page.locator("button[title='admin@example.com']").count(), "the nav shows the signed-in user");
     const after = await page.evaluate(() => document.querySelector('meta[name="csrf-token"]').content);
     assert.notEqual(before, after, "token rotated at login");
     assert.equal(after, await page.evaluate(() => Cast.token()));
@@ -128,7 +128,7 @@ const step = async (name, fn) => {
 
   await step("moving between pages of the same guard swaps only the content and its CSS/JS", async () => {
     assert.ok(await page.locator("link[href*='/css/items/items.css'][data-cast-page]").count(), "items.css is marked as page-level");
-    await page.click("nav >> text=Stats");
+    await page.click("nav >> text=Stats >> nth=0");
     await page.waitForSelector("#stat-items");
     assert.equal(await marker(), "alive");
     assert.match(page.url(), /\/stats$/);
@@ -175,11 +175,11 @@ const step = async (name, fn) => {
   });
 
   await step("logging out (a Cast form) returns to the public layout without a reload", async () => {
-    await page.click("text=admin@example.com (log out)");
+    await page.click("button[title='admin@example.com']");
     await page.waitForSelector("text=Log in");
     assert.equal(await marker(), "alive");
     assert.match(page.url(), /\/$/);
-    assert.equal(await page.locator("nav >> text=Stats").count(), 0);
+    assert.equal(await page.locator("nav >> text=Stats >> nth=0").count(), 0);
   });
 
   await step("links can opt out with data-cast=off (a full load)", async () => {

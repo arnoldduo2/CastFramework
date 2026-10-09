@@ -146,7 +146,7 @@ test('Starter: the items page lists items (data in attributes via jsonQuotes) an
     has("href='/css/items/items.css", $html);
     has("src='/js/items/items.module.js", $html);
     has("src='/js/app/app.module.js", $html);
-    has('log out', $html);
+    has('Logout', $html); has('Demo App', $html);
 });
 
 test('Starter: items API over POST, PUT and DELETE (JSON), with validation and permissions', function () {
