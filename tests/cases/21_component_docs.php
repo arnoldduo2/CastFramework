@@ -118,7 +118,7 @@ test('components --check: passes when docs match the code and fails when they do
     [$code, $out] = cast_in($dir, 'components --check');
     eq(0, $code, $out);
 
-    $bad = "$dir/resources/views/components/bad.cast.php";
+    $bad = "$dir/src/resources/views/components/bad.cast.php";
     file_put_contents($bad, "<?php\n/**\n * Bad one\n * @var string \$ghost never used\n */\n\$size ??= 'm';\n?>\n<p><?= \$size ?></p>\n");
     [$code, $out] = cast_in($dir, 'components --check');
     eq(1, $code, $out);
@@ -131,7 +131,7 @@ test('make:component: the generated file is documented and round-trips through t
     cast_in($dir, 'init');
     [$code, $out] = cast_in($dir, "make:component Btns.AddNew --props=\"label:string=Add,variant:'primary'|'ghost'='primary',href:?string,block:bool\"");
     eq(0, $code, $out);
-    $file = "$dir/resources/views/components/btns/add-new.cast.php";
+    $file = "$dir/src/resources/views/components/btns/add-new.cast.php";
     ok(is_file($file), 'file created at the engine\'s kebab path');
 
     $spec = \Cast\Support\ComponentDocs::parseFile($file);

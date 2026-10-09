@@ -28,6 +28,7 @@ test('init asks about the source folder, the front end, the error handler and th
     $answers = implode("\n", [
         'lib',            // source folder
         '2',              // front end: php
+        '',               // views, css and js: the default (root, because the source folder is not src)
         'y',              // use the error handler
         'y',              // configure it
         'n',              // log errors? no
@@ -74,8 +75,8 @@ test('init: pressing Enter on every question gives src, the SPA client, the erro
     lacks('error_handler', $config);
     lacks('error_pages', $config);
     has("'spa' => true", (string) file_get_contents("$dir/src/Controllers/HomeController.php"));
-    has('__cast(', (string) file_get_contents("$dir/resources/views/layouts/header.cast.php"));
-    ok(!is_dir("$dir/resources/views/errors"));
+    has('__cast(', (string) file_get_contents("$dir/src/resources/views/layouts/header.cast.php"));
+    ok(!is_dir("$dir/src/resources/views/errors"));
 });
 
 test('init --frontend=external: an API for a front-end framework, with CORS and no views', function () {
@@ -84,7 +85,7 @@ test('init --frontend=external: an API for a front-end framework, with CORS and 
     eq(0, $code, $out);
     ok(is_file("$dir/src/Controllers/StatusController.php"));
     ok(is_file("$dir/routes/api.php"));
-    ok(!is_file("$dir/routes/web.php") && !is_dir("$dir/resources") && !is_file("$dir/src/Controllers/HomeController.php"), 'no web files');
+    ok(!is_file("$dir/routes/web.php") && !is_dir("$dir/resources") && !is_dir("$dir/src/resources") && !is_file("$dir/src/Controllers/HomeController.php"), 'no web files');
     has('CORS_ALLOWED_ORIGINS=http://localhost:3000', (string) file_get_contents("$dir/.env"));
     has('php cast token:create', $out);
     [$status, $body] = app_get($dir, '/api/status');
@@ -140,7 +141,7 @@ test('custom error pages: empty views fall back to the framework page, with a no
     eq(404, $status);
     has('Page Not Found', $html);
     has('You configured the framework to use your own error pages', $html);
-    has('resources/views/errors/404.cast.php is empty', $html);
+    has('src/resources/views/errors/404.cast.php is empty', $html);
 
     file_put_contents("$dir/.env", preg_replace(['/APP_ENV=.*/', '/APP_DEBUG=.*/'], ['APP_ENV=production', 'APP_DEBUG=false'], $env));
     [$status, $html] = app_get($dir, '/no-such-page');
@@ -148,18 +149,18 @@ test('custom error pages: empty views fall back to the framework page, with a no
     has('Page Not Found', $html);
     lacks('You configured', $html);
 
-    file_put_contents("$dir/resources/views/errors/404.cast.php", '<h1>Nothing here, sorry</h1>');
+    file_put_contents("$dir/src/resources/views/errors/404.cast.php", '<h1>Nothing here, sorry</h1>');
     [$status, $html] = app_get($dir, '/no-such-page');
     eq(404, $status);
     has('Nothing here, sorry', $html);
 
     // a missing file behaves like an empty one
-    unlink("$dir/resources/views/errors/403.cast.php");
+    unlink("$dir/src/resources/views/errors/403.cast.php");
     file_put_contents("$dir/.env", $env);
     file_put_contents("$dir/routes/web.php", (string) file_get_contents("$dir/routes/web.php") . "\nCast\\Core\\Router::get('/secret', fn() => abort(403));\n");
     [$status, $html] = app_get($dir, '/secret');
     eq(403, $status);
-    has('resources/views/errors/403.cast.php does not exist', $html);
+    has('src/resources/views/errors/403.cast.php does not exist', $html);
 });
 
 test('app.error_handler can be true, false or an options array', function () {
@@ -169,4 +170,65 @@ test('app.error_handler can be true, false or an options array', function () {
     ok(str_starts_with($options['log_directory'], $app->basePath()) && str_ends_with($options['log_directory'], 'var/log' . DIRECTORY_SEPARATOR), 'folders are relative to the app: ' . $options['log_directory']);
     ok(!array_key_exists('enabled', $options), 'the switch is not passed to the package');
     eq('Test', $options['app_name'], 'the rest still comes from the app settings');
+});
+
+test('init with src: views, css and js live in src/resources, and the app finds them', function () {
+    $dir = init_dir();
+    [$code, $out] = cast_in($dir, 'init -n');
+    eq(0, $code, $out);
+    ok(is_file("$dir/src/resources/views/home/home.cast.php") && is_file("$dir/src/resources/css/app.css"), 'resources are inside src');
+    ok(!is_dir("$dir/resources"), 'no resources/ at the root');
+    has("'resources' => 'src/resources'", (string) file_get_contents("$dir/bootstrap/app.php"));
+    $vscode = json_decode((string) file_get_contents("$dir/.vscode/settings.json"), true);
+    eq('src/resources/views/components', $vscode['cast.componentsPath']);
+
+    [$status, $html] = app_get($dir, '/');
+    eq(200, $status, $html);
+    has("href='/css/app.css", $html, 'the page links the css found in src/resources/css');
+    has('src/resources/views/home/partials/home.cast.php', (string) file_get_contents("$dir/src/resources/views/home/partials/home.cast.php"), 'the page text names the real path');
+    $agents = (string) file_get_contents("$dir/AGENTS.md");
+    has('src/resources/views/components', $agents);
+
+    // the framework serves css and js from the same place (static files are answered before the app boots)
+    $out = shell_exec(sprintf('cd %s && php -r %s 2>&1', escapeshellarg($dir), escapeshellarg('require "vendor/autoload.php"; $app = require "bootstrap/app.php"; echo json_encode(Cast\Core\Config::get("static.css"));')));
+    has('"dir":"src\/resources"', (string) $out);
+});
+
+test('init --resources=root keeps resources/ at the root even with src', function () {
+    $dir = init_dir();
+    [$code, $out] = cast_in($dir, 'init -n --resources=root');
+    eq(0, $code, $out);
+    ok(is_file("$dir/resources/views/home/home.cast.php") && !is_dir("$dir/src/resources"));
+    lacks('paths', (string) file_get_contents("$dir/bootstrap/app.php"));
+    ok(!is_file("$dir/.vscode/settings.json"));
+});
+
+test('init writes .env with every setting and its own APP_KEY, and .env.example with the same settings and no key', function () {
+    $dir = init_dir();
+    cast_in($dir, 'init -n');
+    $env = (string) file_get_contents("$dir/.env");
+    $example = (string) file_get_contents("$dir/.env.example");
+    foreach (['APP_NAME', 'APP_ENV', 'APP_DEBUG', 'APP_KEY', 'APP_TIMEZONE', 'APP_BASE_PATH', 'SESSION_NAME', 'COOKIE_LIFE', 'COOKIE_PATH', 'COOKIE_DOMAIN',
+        'COOKIE_SECURE', 'COOKIE_HTTP_ONLY', 'COOKIE_SITE', 'CORS_ALLOWED_ORIGINS', 'DB_CONN', 'DB_NAME'] as $key) {
+        has("$key=", $env, "$key in .env");
+        has("$key=", $example, "$key in .env.example");
+    }
+    eq(1, preg_match('/^APP_KEY=base64:[A-Za-z0-9+\/=]{40,}$/m', $env), 'a key was generated');
+    eq(1, preg_match('/^APP_KEY=$/m', $example), 'the example has no key');
+    has('.env.example', (string) file_get_contents("$dir/.gitignore") === '' ? '' : '.env.example', 'sanity');
+    [$code, $out] = cast_in($dir, 'env:check');
+    has('APP_KEY is set', $out);
+    lacks('note  APP_KEY', $out);
+
+    $demo = init_dir();
+    cast_in($demo, 'init --demo --no-migrate -n');
+    eq(1, preg_match('/^APP_KEY=base64:/m', (string) file_get_contents("$demo/.env")));
+    eq(1, preg_match('/^APP_KEY=$/m', (string) file_get_contents("$demo/.env.example")));
+    has('COOKIE_SITE=Lax', (string) file_get_contents("$demo/.env.example"));
+});
+
+test('htchars accepts null and numbers', function () {
+    eq('', htchars(null));
+    eq('5', htchars(5));
+    eq('&lt;b&gt; &quot;x&quot;', htchars('<b> "x"'));
 });

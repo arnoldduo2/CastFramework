@@ -153,6 +153,7 @@ php cast init [options]
 | `--no-migrate` | With --demo: skip the migrate and seed step |
 | `--force` | Overwrite files that already exist (.env and AGENTS.md are never overwritten) |
 | `--source=DIR` | Folder for your app source code (default src) |
+| `--resources=WHERE` | inside (views, CSS and JS in <source>/resources; default when the source folder is src) or root (resources/ next to it) |
 | `--frontend=NAME` | spa (server pages + the built-in SPA client, default), php (server pages, normal loads), external (API for a React/Vue/Next front end), api (API only) |
 | `--cors=ORIGIN` | With --frontend=external: the front end's address, allowed to call the API (default http://localhost:5173) |
 | `--error-handler=yes|no` | Use the Anode error handler (default yes; the defaults are listed when you run init interactively) |
@@ -163,6 +164,25 @@ php cast init [options]
 php cast init   # a minimal app
 php cast init --demo   # the full starter; login admin@example.com / password
 php cast init --demo --force --no-migrate   # refresh the demo files
+```
+
+## `key:generate`
+
+Generate the app key (APP_KEY in .env).
+
+```
+php cast key:generate [options]
+```
+
+| Option | |
+| --- | --- |
+| `--show` | Print a new key instead of writing it to .env |
+| `--force` | Replace an existing key (signed links and encrypted values made with the old key stop working) |
+
+```bash
+php cast key:generate   # write APP_KEY if there is none
+php cast key:generate --show   # just print one
+php cast key:generate --force   # rotate the key
 ```
 
 ## `make:command`
@@ -205,6 +225,31 @@ php cast make:component <Name> [options]
 ```bash
 php cast make:component Card   # an empty documented component
 php cast make:component Btns.AddNew --props=label:string=Add,href:?string,block:bool   # with props
+```
+
+## `make:config`
+
+Create a config file with all of a section's settings and their defaults.
+
+```
+php cast make:config [name] [options]
+```
+
+| Argument | |
+| --- | --- |
+| `name` (optional) | Which one: app, database, session, cors, static, view, api, spa, auth, models, helpers, request, console, error-handler (or --all, --list) |
+
+| Option | |
+| --- | --- |
+| `--list` | Show the sections you can create |
+| `--all` | Create every config file that does not exist yet |
+| `--force` | Overwrite a config file that exists |
+
+```bash
+php cast make:config session   # config/session.php: cookie name, lifetime, secure, samesite
+php cast make:config error-handler   # config/error-handler.php: logging, developer logs, email
+php cast make:config static   # config/static.php: where css, js, fonts and images are served from
+php cast make:config --list
 ```
 
 ## `make:controller`

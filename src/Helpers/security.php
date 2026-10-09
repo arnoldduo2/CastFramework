@@ -93,3 +93,43 @@ if (!function_exists('_checkAccess')) {
         }
     }
 }
+
+if (!function_exists('app_key')) {
+    /** The app key setting (`APP_KEY`), or '' when it was not generated yet. */
+    function app_key(): string
+    {
+        return (string) \Cast\Core\Config::get('app.key', '');
+    }
+}
+
+if (!function_exists('sign')) {
+    /** `sign('user:42')` => "user:42.<signature>": readable but tamper-proof (uses APP_KEY). */
+    function sign(string $value): string
+    {
+        return \Cast\Support\Crypt::sign($value);
+    }
+}
+
+if (!function_exists('unsign')) {
+    /** The value of a `sign()`ed string, or null when it was changed. */
+    function unsign(string $signed): ?string
+    {
+        return \Cast\Support\Crypt::unsign($signed);
+    }
+}
+
+if (!function_exists('encrypt')) {
+    /** Encrypt a string with APP_KEY (AES-256-GCM). */
+    function encrypt(string $plain): string
+    {
+        return \Cast\Support\Crypt::encrypt($plain);
+    }
+}
+
+if (!function_exists('decrypt')) {
+    /** The text of an `encrypt()`ed string, or null when it is not valid for this key. */
+    function decrypt(string $payload): ?string
+    {
+        return \Cast\Support\Crypt::decrypt($payload);
+    }
+}

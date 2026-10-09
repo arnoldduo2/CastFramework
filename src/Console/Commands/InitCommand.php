@@ -23,6 +23,7 @@ final class InitCommand extends Command
         '--no-migrate' => 'With --demo: skip the migrate and seed step',
         '--force' => 'Overwrite files that already exist (.env and AGENTS.md are never overwritten)',
         '--source=DIR' => 'Folder for your app source code (default src)',
+        '--resources=WHERE' => 'inside (views, CSS and JS in <source>/resources; default when the source folder is src) or root (resources/ next to it)',
         '--frontend=NAME' => 'spa (server pages + the built-in SPA client, default), php (server pages, normal loads), external (API for a React/Vue/Next front end), api (API only)',
         '--cors=ORIGIN' => 'With --frontend=external: the front end\'s address, allowed to call the API (default http://localhost:5173)',
         '--error-handler=yes|no' => 'Use the Anode error handler (default yes; the defaults are listed when you run init interactively)',
@@ -77,28 +78,44 @@ final class InitCommand extends Command
                 if ($answers['cors'] !== '') $contents = (string) preg_replace('/^CORS_ALLOWED_ORIGINS=.*$/m', 'CORS_ALLOWED_ORIGINS=' . $answers['cors'], $contents, 1);
             }
             $contents = $this->adapt($target, $contents, $answers);
-            // the app's classes live in the chosen source folder (the stubs and the starter keep them under app/)
+            // the app's classes live in the chosen source folder (the stubs and the starter keep them under app/), and so do the views, css and js when asked
             if (str_starts_with($target, 'app/')) $target = $src . '/' . substr($target, 4);
-            // .env holds the app's settings and secrets: it is created when missing and never overwritten, even with --force
+            elseif ($answers['resources'] === 'inside' && str_starts_with($target, 'resources/')) $target = $src . '/' . $target;
+
+            // .env holds the app's settings and secrets: it is created when missing and never overwritten, even with --force.
+            // It gets its own APP_KEY; .env.example (safe to commit) has none.
+            if ($target === '.env') {
+                $this->write($base . '/.env.example', $contents, false, '.env.example');
+                $contents = $this->withKey($contents);
+            }
             $this->write($base . '/' . $target, $contents, $force && $target !== '.env', $target);
 
             if ($demo && $target === '.env.example') {
-                $this->write($base . '/.env', $contents, false, '.env');
+                $this->write($base . '/.env', $this->withKey($contents), false, '.env');
             }
         }
 
         $this->write($base . '/config/app.php', $this->configCode($answers, $demo), $force, 'config/app.php');
         if ($answers['errorPages'] === 'custom') {
             // empty on purpose: until you write them the framework's pages are used, with a note in development
-            foreach (self::ERROR_PAGES as $code) $this->write($base . "/resources/views/errors/$code.cast.php", '', false, "resources/views/errors/$code.cast.php");
+            $views = ($answers['resources'] === 'inside' ? "$src/" : '') . 'resources/views';
+            foreach (self::ERROR_PAGES as $code) $this->write($base . "/$views/errors/$code.cast.php", '', false, "$views/errors/$code.cast.php");
         }
 
+        if ($answers['resources'] === 'inside') {
+            // the editor extension looks in resources/ by default
+            $this->write($base . '/.vscode/settings.json', json_encode([
+                'cast.viewsPath' => "$src/resources/views",
+                'cast.componentsPath' => "$src/resources/views/components",
+                'cast.resourcesPath' => "$src/resources",
+            ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n", false, '.vscode/settings.json');
+        }
         $this->write($base . '/storage/.gitkeep', '', $force, 'storage/.gitkeep');
         // `php cast <command>`: the launcher is always (re)checked, also for apps made before it existed
         $this->write($base . '/cast', (string) file_get_contents(dirname(__DIR__, 2) . '/Stubs/init/cast.stub'), $force, 'cast');
         @chmod($base . '/cast', 0755);
         // agent hints belong to the app once written: only ever created, never overwritten
-        $this->write($base . '/AGENTS.md', str_replace('{source}', $src, (string) file_get_contents(dirname(__DIR__, 2) . '/Stubs/agents.md')), false, 'AGENTS.md');
+        $this->write($base . '/AGENTS.md', $this->adapt('AGENTS.md', str_replace('{source}', $src, (string) file_get_contents(dirname(__DIR__, 2) . '/Stubs/agents.md')), $answers), false, 'AGENTS.md');
         $this->ignoreFile($base, $output);
         $autoload = $this->registerAutoload($base, $src);
         // so the editor knows htchars(), views(), ... from the first minute
@@ -128,7 +145,7 @@ final class InitCommand extends Command
 
     /**
      * What the user chose, from the options or by asking (a script or `--no-interaction` gets the defaults).
-     * @return array{source: string, type: string, frontend: string, cors: string, errorHandler: bool, handlerOptions: array<string, mixed>, errorPages: string}|null
+     * @return array{source: string, resources: string, type: string, frontend: string, cors: string, errorHandler: bool, handlerOptions: array<string, mixed>, errorPages: string}|null
      */
     private function answers(Input $input, Prompt $ask, Output $output, bool $demo): ?array
     {
@@ -160,6 +177,13 @@ final class InitCommand extends Command
             }
         }
 
+        $resources = $this->pick($input, $ask, $output, 'resources', 'Where do the views, CSS and JS go?', [
+            'inside' => "inside the source folder ($source/resources), everything of the app in one place",
+            'root' => 'in resources/ next to the source folder',
+        ], $source === 'src' ? 'inside' : 'root');
+        if ($resources === null || $type === 'api') $resources = $resources === null ? null : 'root';
+        if ($resources === null) return null;
+
         $handler = $this->yesNo($input, $ask, 'error-handler', 'Use the Anode error handler (logs errors, shows a developer error page)?', true);
         $options = [];
         if ($handler && $ask->interactive()) {
@@ -177,7 +201,7 @@ final class InitCommand extends Command
             $pages = $pages === 'custom' ? 'custom' : 'framework';
         }
 
-        return ['source' => $source, 'type' => $type, 'frontend' => $frontend, 'cors' => $cors, 'errorHandler' => $handler, 'handlerOptions' => $options, 'errorPages' => $pages];
+        return ['source' => $source, 'resources' => $resources, 'type' => $type, 'frontend' => $frontend, 'cors' => $cors, 'errorHandler' => $handler, 'handlerOptions' => $options, 'errorPages' => $pages];
     }
 
     /** @param array<string, string> $choices */
@@ -260,6 +284,13 @@ final class InitCommand extends Command
                 $contents = (string) preg_replace("/\n\s*<\?= __cast\([^\n]*\n/", "\n", $contents);
             }
         }
+        if ($a['resources'] === 'inside') {
+            // the page texts and notes say where the files are
+            if (preg_match('#(partials/home\.cast\.php|^AGENTS\.md)$#', $target)) $contents = (string) preg_replace('~(?<![\w/])resources/~', $a['source'] . '/resources/', $contents);
+            if ($target === 'bootstrap/app.php') {
+                $contents = str_replace('new Application(dirname(__DIR__))', "new Application(dirname(__DIR__), ['paths' => ['views' => '{$a['source']}/resources/views', 'resources' => '{$a['source']}/resources']])", $contents);
+            }
+        }
         if (str_ends_with($target, 'partials/home.cast.php')) $contents = (string) preg_replace('~\bapp/(Controllers|Models|helpers)~', $a['source'] . '/$1', $contents);
         if ($target === 'config/helpers.php') $contents = str_replace("'app/helpers'", "'" . $a['source'] . "/helpers'", $contents);
         return str_replace('{source}', $a['source'], $contents);
@@ -289,6 +320,7 @@ final class InitCommand extends Command
     private function summary(array $a, Output $output, bool $demo): void
     {
         $output->line('Your app:  source in ' . $a['source'] . '/ (namespace App\\), ' . ($a['type'] === 'api' ? 'an API (routes/api.php under /api)' : ($a['frontend'] === 'php' ? 'server-rendered pages' : 'server-rendered pages with the built-in SPA client')));
+        $output->line('Files:     views, CSS and JS in ' . ($a['resources'] === 'inside' ? $a['source'] . '/resources/' : 'resources/') . '; settings in .env (APP_KEY was generated; see .env.example for every setting); php cast make:config <name> writes a config file');
         $output->line('Errors:    ' . ($a['errorHandler'] ? 'Anode error handler on (config/app.php, \'error_handler\')' : 'Anode error handler off') . '; ' . ($a['errorPages'] === 'custom' ? 'your own error pages in resources/views/errors (empty until you build them)' : 'framework error pages'));
         if ($a['frontend'] === 'external') $output->line('Front end:  ' . ($a['cors'] ?: 'set CORS_ALLOWED_ORIGINS in .env') . ' may call the API; create a token with  php cast token:create <login>');
         $output->line('VS Code:   php cast editor:install   (highlighting and Ctrl+click for .cast.php views)');
@@ -343,6 +375,14 @@ final class InitCommand extends Command
     {
         $folder = basename($base);
         return ucwords(trim((string) preg_replace('/[-_.\s]+/', ' ', $folder))) ?: 'Cast App';
+    }
+
+    /** Gives a new .env its own APP_KEY (an empty or missing line is filled; a key that is already there stays). */
+    private function withKey(string $env): string
+    {
+        $key = \Cast\Support\Crypt::generateKey();
+        if (preg_match('/^APP_KEY=.+$/m', $env)) return $env;
+        return preg_match('/^APP_KEY=\s*$/m', $env) ? (string) preg_replace('/^APP_KEY=\s*$/m', 'APP_KEY=' . $key, $env, 1) : rtrim($env) . "\nAPP_KEY=$key\n";
     }
 
     private function withAppName(string $env, string $name): string

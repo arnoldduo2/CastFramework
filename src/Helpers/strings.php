@@ -53,9 +53,10 @@ if (!function_exists('snakeCase')) {
 
 if (!function_exists('htchars')) {
     /** Escape for HTML output (quotes included, invalid UTF-8 substituted). */
-    function htchars(string $str): string
+    function htchars(mixed $str): string
     {
-        return htmlspecialchars($str, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        // null (an empty column, a prop that was not given) is an empty string; numbers and Stringables are text
+        return htmlspecialchars((string) ($str ?? ''), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
     }
 }
 

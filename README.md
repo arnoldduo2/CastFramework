@@ -127,6 +127,7 @@ Env::set('FEATURE', 'on');       // updates memory and rewrites only that line o
 | Key | Default | Meaning |
 | --- | --- | --- |
 | `APP_NAME` | `Cast App` | Name used in pages and logs |
+| `APP_KEY` | none | Secret for `sign()` and `encrypt()`. `php cast key:generate` (`php cast init` makes one) |
 | `APP_ENV` | `production` | `development` recompiles views when files change |
 | `APP_DEBUG` | `false` | Debug output and fresh `?v=` asset versions |
 | `APP_VERSION` | none | Asset cache-busting version (production) |
@@ -134,10 +135,19 @@ Env::set('FEATURE', 'on');       // updates memory and rewrites only that line o
 | `APP_TIMEZONE` | `UTC` | Used by `getDateTime()` |
 | `APP_VIEWS_EXT` | `.cast.php` | View file extension |
 | `DB_CONN`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | mysql, 127.0.0.1 | Database (`DB_CONN` may be `mysql`, `pgsql`, `sqlite`; a trailing `:` is accepted) |
-| `SESSION_NAME`, `COOKIE_LIFE`, `COOKIE_PATH`, `COOKIE_DOMAIN`, `COOKIE_SECURE`, `COOKIE_HTTP_ONLY`, `COOKIE_SITE` | see `Application` | Session cookie |
+| `SESSION_NAME` | `cast_session` | Name of the session cookie |
+| `COOKIE_LIFE` | `0` | Seconds the cookie lives; 0 = until the browser closes |
+| `COOKIE_PATH`, `COOKIE_DOMAIN` | `/`, empty | Where the cookie is sent |
+| `COOKIE_SECURE` | `false` | `true` when the site is served over https (cookie only sent over https) |
+| `COOKIE_HTTP_ONLY` | `true` | Scripts cannot read the cookie |
+| `COOKIE_SITE` | `Lax` | `Lax`, `Strict` or `None` (`None` needs `COOKIE_SECURE=true`) |
 | `CORS_ALLOWED_ORIGINS` | none | Comma separated exact origins |
 
+`php cast init` writes a `.env` with every setting above (and its own `APP_KEY`) and a `.env.example` with the same settings and no key, safe to commit.
+
 ### `config/*.php`
+
+`php cast make:config <name>` writes `config/<name>.php` with every setting of that section and its default, documented and ready to edit: `app`, `database`, `session`, `cors`, `static`, `view`, `api`, `spa`, `auth`, `models`, `helpers`, `request`, `console`, `error-handler` (`--all` for every one, `--list` to see them). You only need a file for what you change.
 
 Each file returns an array and becomes a top-level key (`config/app.php` => `config('app.name')`). Your files are **merged over the framework
 defaults**: associative arrays merge key by key, lists and scalars replace. List only what you change.
@@ -154,8 +164,10 @@ Cast\Core\Config::has('auth.login_path');
 | `app.middleware` | `[Maintenance::class]` | Global middleware, run before routing |
 | `app.base_path` | `''` | Stripped from the request path, added by `route()` |
 | `app.auto_update` | `false` | Run a bound `updater` automatically |
-| `app.error_handler` | `true` | Register `anode/error-handler` on web requests |
-| `app.namespace`, `app.source_path` | `App`, `app` | Where `make:*` commands create classes |
+| `app.error_handler` | `true` | Register `anode/error-handler` on web requests: `false` for off, or an options array; the same options can live in `config/error-handler.php` (`php cast make:config error-handler`) |
+| `app.error_pages` | `framework` | `custom`: you build `<views>/errors/{404,403,500...}.cast.php`; an empty one falls back to the framework's page (with a note in development) |
+| `app.key` | `APP_KEY` | The app key |
+| `app.namespace`, `app.source_path` | `App`, `app` | Where `make:*` commands create classes (`php cast init` sets `src`) |
 | `request.sanitizer` | `null` | Callable that sanitises `getPost()` data |
 | `auth.session_key`, `login_path`, `home_path`, `permissions_key` | `login`, `/login`, `/`, `permissions` | Auth defaults |
 | `view.ext`, `view.components` | `.cast.php`, `components` | Views |
@@ -786,6 +798,7 @@ The full reference for every command and flag is in [docs/COMMANDS.md](docs/COMM
 | `views:clear` | Delete compiled views |
 | `down [--message=] [--secret=] [--retry=] [--in=]` / `up` | Maintenance mode |
 | `env:check` | Checks PHP, extensions, `.env`, debug in production, writable `storage/`, folders |
+| `make:config <name>`, `key:generate` | A documented config file for a section; the app key |
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
 | `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--migration|--run]` | API tokens |
 | `init [--demo] [--no-migrate] [--force]` | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded) |

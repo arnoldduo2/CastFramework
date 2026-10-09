@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '0.5.2';
+    public const VERSION = '0.6.0';
 
     private static ?self $instance = null;
 
@@ -52,7 +52,7 @@ final class Application
         Env::reset();
         Env::load($this->basePath('.env'));
         Config::reset();
-        Config::defaults(self::defaultConfig());
+        Config::defaults(self::defaultConfig($this->paths));
         Config::load($this->configPath());
     }
 
@@ -245,13 +245,14 @@ final class Application
     // ----------------------------------------------------------------- config
 
     /** Framework defaults; the app's `config/*.php` files override these. */
-    private static function defaultConfig(): array
+    private static function defaultConfig(array $paths): array
     {
         return [
             'app' => [
                 'name' => Env::get('APP_NAME', 'Cast App'),
                 'env' => Env::get('APP_ENV', 'production'),
                 'debug' => Env::bool('APP_DEBUG', false),
+                'key' => Env::get('APP_KEY', ''),   // `php cast key:generate`; used by sign(), encrypt()
                 'version' => Env::get('APP_VERSION'),
                 'base_path' => rtrim((string) Env::get('APP_BASE_PATH', ''), '/'),
                 'timezone' => Env::get('APP_TIMEZONE', 'UTC'),
@@ -296,8 +297,8 @@ final class Application
                 'components' => 'components',
             ],
             'static' => [
-                'css' => ['dir' => 'resources', 'keep_prefix' => true],
-                'js' => ['dir' => 'resources', 'keep_prefix' => true],
+                'css' => ['dir' => $paths['resources'], 'keep_prefix' => true],
+                'js' => ['dir' => $paths['resources'], 'keep_prefix' => true],
                 'styles' => ['dir' => 'public/assets/css', 'keep_prefix' => false],
                 'fonts' => ['dir' => 'public/assets/fonts', 'keep_prefix' => false],
                 'images' => ['dir' => 'public/assets/images', 'keep_prefix' => false],

@@ -32,6 +32,21 @@ final class EnvCheckCommand extends Command
         foreach (['pdo', 'mbstring', 'json'] as $ext) $check(extension_loaded($ext), "extension $ext");
         $check(is_file($this->app->basePath('.env')), '.env file exists', 'copy .env.example to .env');
         $check(Env::has('APP_NAME'), 'APP_NAME is set');
+        // advice that does not fail the check (except the key in production)
+        $advise = function (bool $ok, string $label, string $fix) use ($output): void {
+            $ok ? $output->info("  ok    $label") : $output->warn("  note  $label ($fix)");
+        };
+        $hasKey = (string) Config::get('app.key', '') !== '';
+        Config::get('app.env') === 'production'
+            ? $check($hasKey, 'APP_KEY is set (sign(), encrypt())', 'php cast key:generate')
+            : $advise($hasKey, 'APP_KEY is set (sign(), encrypt())', 'php cast key:generate');
+
+        // the two packages the framework is built on: older versions have known problems
+        foreach (['anode/cast-template-engine' => ['1.0.3', 'errors in views name the compiled cache file, not your view'], 'anode/error-handler' => ['1.0.19', '']] as $package => [$minimum, $why]) {
+            if (!class_exists(\Composer\InstalledVersions::class) || !\Composer\InstalledVersions::isInstalled($package)) continue;
+            $have = ltrim((string) \Composer\InstalledVersions::getPrettyVersion($package), 'v');
+            $advise(version_compare($have, $minimum, '>='), "$package $have is current (>= $minimum)", "composer update $package" . ($why !== '' ? "; older: $why" : ''));
+        }
 
         $production = Config::get('app.env') === 'production';
         $check(!($production && Config::get('app.debug')), 'debug is off in production', 'set APP_DEBUG=false');

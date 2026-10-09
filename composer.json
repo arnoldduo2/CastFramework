@@ -22,8 +22,8 @@
         "ext-json": "*",
         "ext-mbstring": "*",
         "ext-pdo": "*",
-        "anode/cast-template-engine": "^1.0",
-        "anode/error-handler": "^1.0",
+        "anode/cast-template-engine": "^1.0.2",
+        "anode/error-handler": "^1.0.19",
         "composer-plugin-api": "^2.0"
     },
     "autoload": {

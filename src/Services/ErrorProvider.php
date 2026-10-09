@@ -18,8 +18,9 @@ final class ErrorProvider extends ServiceProvider
     public function register(): void
     {
         $setting = Config::get('app.error_handler', true);
-        // `false` turns it off; `true` uses the defaults; an array is the package's options (`enabled => false` also turns it off)
-        if (PHP_SAPI === 'cli' || $setting === false || (is_array($setting) && ($setting['enabled'] ?? true) === false) || !class_exists(ErrorHandler::class)) return;
+        $file = (array) Config::get('error-handler', []);
+        // `false` turns it off; `true` uses the defaults; an array is the package's options (`enabled => false`, here or in config/error-handler.php, also turns it off)
+        if (PHP_SAPI === 'cli' || $setting === false || (is_array($setting) && ($setting['enabled'] ?? true) === false) || ($file['enabled'] ?? true) === false || !class_exists(ErrorHandler::class)) return;
 
         $this->app->set('error_handler', new ErrorHandler(self::options($this->app)));
     }
@@ -31,8 +32,10 @@ final class ErrorProvider extends ServiceProvider
      */
     public static function options(Application $app): array
     {
+        // options from config/app.php ('error_handler' => [...]) and from config/error-handler.php (the file wins)
         $given = Config::get('app.error_handler', true);
-        $given = is_array($given) ? array_diff_key($given, ['enabled' => 1]) : [];
+        $given = array_replace(is_array($given) ? $given : [], (array) Config::get('error-handler', []));
+        $given = array_diff_key($given, ['enabled' => 1]);
         // folders are written relative to the app
         foreach (['log_directory', 'dev_logs_directory', 'error_view'] as $key) {
             if (isset($given[$key]) && is_string($given[$key]) && $given[$key] !== '' && !preg_match('#^([a-z]:)?[\\/]#i', $given[$key])) {

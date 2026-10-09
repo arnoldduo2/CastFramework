@@ -21,10 +21,14 @@ php cast serve             # http://127.0.0.1:8000
 | Use the Anode error handler? | yes | logs errors and shows a developer page. Answer yes to see every setting with its default, then choose to configure it (log folder, developer logs, `display_errors`, email) or keep the defaults. (`--error-handler=yes|no`) |
 | Error pages | the framework's | **custom** creates empty views in `resources/views/errors` for you to build; until you do, the framework's page is shown, with a note in development. (`--error-pages=default|custom`) |
 
+| Where do the views, CSS and JS go? | inside the source folder when it is `src` | `inside`: `src/resources/views`, `src/resources/css`, `src/resources/js` (everything of the app in `src/`); `root`: `resources/` next to it. (`--resources=inside\|root`) The paths are set in `bootstrap/app.php`, and `.vscode/settings.json` tells the editor extension |
+
 All answers end up in `config/app.php` (and `.env` for the CORS origin) and can be edited later.
 
 Then, once: `php cast editor:install` (VS Code highlighting, Ctrl+click on components, prop hints) and `php cast ide:helpers` (so the editor knows `htchars()`, `views()` and the other helpers).
 `php cast list` shows every command; `php cast help <command>` shows its arguments and flags ([COMMANDS.md](COMMANDS.md)).
+
+> **Paths in this guide.** With the default layout the views, CSS and JS are in `src/resources/` (so `resources/views/...` below means `src/resources/views/...`). With `--resources=root` they are in `resources/` at the root.
 
 ## 2. The workflow: one path for every page
 
@@ -100,12 +104,18 @@ To start with nothing in a new folder, run `php cast init` without `--demo`.
 `php cast migrate:sync --init` tests the relationships; `php cast migrate:sync` writes migrations for the tables you have ([Legacy databases](../README.md#legacy-databases-migratesync)).
 Upgrading an app made on an older version: [UPGRADING.md](UPGRADING.md).
 
+## 6b. Settings
+
+`php cast init` writes `.env` (with its own `APP_KEY`) and `.env.example` listing every setting: app, session cookie, CORS, database. `php cast make:config <name>` (`--list`) writes a config file for a section with all its defaults, e.g. `make:config session` or `make:config error-handler`.
+`php cast key:generate` makes or rotates the app key; `sign()` / `unsign()` and `encrypt()` / `decrypt()` use it.
+
 ## 7. When something looks wrong
 
 | Symptom | Do |
 | --- | --- |
 | "Undefined function 'htchars'" in the editor (the app runs) | restart the editor window, or `php cast ide:helpers` |
 | an API-only app (`--frontend=external` or `api`) has no views | `routes/api.php` and `src/Controllers/`; it answers JSON under `/api` |
+| an error page names a file in `storage/framework/views/` or in `vendor/` | update the engine: `composer update anode/cast-template-engine` (1.0.3 names your view and its line); `php cast env:check` says whether it is current |
 | a page loads forever / a 500 with no detail | set `APP_DEBUG=true` in `.env`; the message names the template. `php cast views:check` finds views that start with `declare(strict_types=1);` |
 | old compiled views | `php cast views:clear` |
 | the environment looks off | `php cast env:check` |

@@ -7,7 +7,7 @@ function fatal_app(): string
 {
     $dir = init_dir();
     cast_in($dir, 'init');
-    file_put_contents("$dir/resources/views/home/partials/home.cast.php", "<?php\n\ndeclare(strict_types=1);\n?>\n<p>hello</p>\n");
+    file_put_contents("$dir/src/resources/views/home/partials/home.cast.php", "<?php\n\ndeclare(strict_types=1);\n?>\n<p>hello</p>\n");
     return $dir;
 }
 
@@ -37,9 +37,9 @@ test('views:check finds views that start with declare(strict_types) and --fix re
     [$code, $out] = cast_in($dir, 'views:check --fix');
     eq(0, $code, $out);
     has('fixed', $out);
-    eq("<?php\n\n?>\n<p>hello</p>\n", file_get_contents("$dir/resources/views/home/partials/home.cast.php"));
+    eq("<?php\n\n?>\n<p>hello</p>\n", file_get_contents("$dir/src/resources/views/home/partials/home.cast.php"));
     eq(0, cast_in($dir, 'views:check')[0]);
-    ok(is_file("$dir/resources/views/home/partials/home.cast.php"));
+    ok(is_file("$dir/src/resources/views/home/partials/home.cast.php"));
 });
 
 test('client: an HTTP error without a Cast body is shown as an error, never reloaded in a loop', function () {
@@ -52,7 +52,7 @@ test('client: an HTTP error without a Cast body is shown as an error, never relo
 test('a PHP fatal error in a view is answered as an error: JSON for Cast clients, no raw PHP output, details only in debug', function () {
     $dir = fatal_app();
     // a real compile-time fatal that does not depend on the template engine's version (newer engines accept a leading declare)
-    file_put_contents("$dir/resources/views/home/partials/home.cast.php", "<?php\nfunction twice() {}\nfunction twice() {}\n?>\n<p>never shown</p>\n");
+    file_put_contents("$dir/src/resources/views/home/partials/home.cast.php", "<?php\nfunction twice() {}\nfunction twice() {}\n?>\n<p>never shown</p>\n");
     file_put_contents("$dir/.env", preg_replace('/APP_DEBUG=.*/', 'APP_DEBUG=true', (string) file_get_contents("$dir/.env")));
     [$status, $body] = dev_server_get($dir, ['X-Cast-Request: 1']);
     eq(500, $status, $body);
@@ -75,7 +75,7 @@ test('ide:helpers writes the helper signatures for editors; init creates it and 
     eq(0, $code, $out);
     has('_ide_helpers.php', $out);
     $stub = (string) file_get_contents("$dir/_ide_helpers.php");
-    has('function htchars(string $str): string {}', $stub);
+    has('function htchars(mixed $str): string {}', $stub);
     has('function views(', $stub);
     ok(substr_count($stub, "\nfunction ") > 60, 'every helper is listed');
     exec('php -l ' . escapeshellarg("$dir/_ide_helpers.php") . ' 2>&1', $lint, $lintCode);

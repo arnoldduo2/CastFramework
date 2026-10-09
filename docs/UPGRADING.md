@@ -51,3 +51,17 @@ The files are recorded as run, so nothing is executed against your data. See [Le
 
 From 0.5.0 `php cast init` creates new apps with their classes in `src/` (it asks). An app made earlier keeps working untouched: its `config/app.php` says `'source_path' => 'app'`. If an old app has no `source_path` line the framework still assumes `app/`.
 To move an old app to `src/`: move the folder, set `'source_path' => 'src'` in `config/app.php` and `"App\\": "src/"` in `composer.json`, then `composer dump-autoload`.
+
+## Keeping the two packages current
+
+`anode/cast-template-engine` and `anode/error-handler` are separate packages: `composer update anode/cast-framework` alone leaves them where `composer.lock` has them. Update them together:
+
+```
+composer update anode/cast-framework anode/cast-template-engine anode/error-handler --with-all-dependencies
+```
+
+`php cast env:check` tells you when either is older than the framework expects. (The framework requires at least `cast-template-engine ^1.0.2` and `error-handler ^1.0.19`.)
+
+## Views, CSS and JS inside `src/` (0.6.0)
+
+New apps made with the default `src` source folder keep `views/`, `css/` and `js/` in `src/resources/`. Existing apps are unchanged. To move one: move `resources/` into `src/`, add `['paths' => ['views' => 'src/resources/views', 'resources' => 'src/resources']]` as the second argument of `new Application(...)` in `bootstrap/app.php`, and (for the editor) set `cast.viewsPath`, `cast.componentsPath` and `cast.resourcesPath` in `.vscode/settings.json`.

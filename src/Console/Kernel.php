@@ -19,6 +19,8 @@ final class Kernel
         Commands\ViewsClearCommand::class,
         Commands\ViewsCheckCommand::class,
         Commands\IdeHelpersCommand::class,
+        Commands\KeyGenerateCommand::class,
+        Commands\MakeConfigCommand::class,
         Commands\DownCommand::class,
         Commands\UpCommand::class,
         Commands\EnvCheckCommand::class,

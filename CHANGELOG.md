@@ -2,6 +2,15 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.6.0
+
+- **`php cast make:config <name>`** writes `config/<name>.php` with every setting of a section and its default, documented (`app`, `database`, `session`, `cors`, `static`, `view`, `api`, `spa`, `auth`, `models`, `helpers`, `request`, `console`, `error-handler`; `--all`, `--list`). A test keeps each file equal to the framework's defaults. `config/error-handler.php` holds the error handler's options (`enabled => false` turns it off).
+- **`APP_KEY`**: `php cast key:generate [--show] [--force]`; `config('app.key')`; `sign()` / `unsign()`, `encrypt()` / `decrypt()` (`Cast\Support\Crypt`, AES-256-GCM and HMAC-SHA256). `php cast init` generates one. `env:check` reports a missing key (a failure in production) and an old template engine or error handler.
+- **`.env` and `.env.example`** written by `php cast init` list every setting, including the session cookie (`SESSION_NAME`, `COOKIE_LIFE`, `COOKIE_PATH`, `COOKIE_DOMAIN`, `COOKIE_SECURE`, `COOKIE_HTTP_ONLY`, `COOKIE_SITE`), `APP_KEY`, `APP_TIMEZONE`, CORS and the database. `.env.example` has no key.
+- **Views, CSS and JS inside `src/`**: with the default source folder `src`, `php cast init` puts them in `src/resources/` (`bootstrap/app.php` sets the paths, the static file map follows `paths.resources`, `.vscode/settings.json` points the extension). `--resources=inside|root`.
+- Errors in a view name the view and its line (needs `cast-template-engine` 1.0.3: the compiled cache file and the framework's frames are no longer what an error page shows). `htchars()` accepts `null` and numbers.
+- The framework requires `cast-template-engine ^1.0.2` and `error-handler ^1.0.19`; UPGRADING explains updating them together.
+
 ## 0.5.2
 
 - Fix: on a PHP fatal error the framework's JSON answer for Cast and API clients was followed by the Anode error handler's HTML page (the handler's shutdown function ran after ours), so the response was not valid JSON. The JSON answer now ends the request. For browsers the error handler, when it is on, keeps showing its own page.
