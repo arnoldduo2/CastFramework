@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {namespace};
+
+use RuntimeException;
+
+/**
+ * {class}: makes QR codes (payment links, invoice URLs, Wi-Fi, tickets) as SVG or PNG. A QR code needs error correction maths, so this
+ * service wraps a maintained library instead of re-implementing it:
+ *
+ *   composer require chillerlan/php-qrcode
+ *
+ *   $svg = (new \{namespace}\{class}())->svg('https://example.com/invoice/42');       // echo in a view:  <?= $svg ?>
+ *   $png = (new \{namespace}\{class}())->dataUri('https://example.com/invoice/42');   // <img src="<?= $png ?>">
+ *
+ * Bind it once (AppServiceProvider::register):  $this->app->singleton('{key}', fn() => new \{namespace}\{class}());
+ * To use another library (endroid/qr-code, bacon/bacon-qr-code) change render() only: nothing else in your app calls the library.
+ */
+final class {class}
+{
+    /** An <svg> element: scales to any size and prints sharp. */
+    public function svg(string $text, int $scale = 5): string
+    {
+        return $this->render($text, 'svg', $scale);
+    }
+
+    /** A PNG as a data: address for <img src="...">. Needs the gd extension. */
+    public function dataUri(string $text, int $scale = 5): string
+    {
+        return $this->render($text, 'png', $scale);
+    }
+
+    private function render(string $text, string $format, int $scale): string
+    {
+        if (!class_exists(\chillerlan\QRCode\QRCode::class)) {
+            throw new RuntimeException('Install the QR code library first:  composer require chillerlan/php-qrcode');
+        }
+        $options = new \chillerlan\QRCode\QROptions([
+            'outputType' => $format === 'svg' ? \chillerlan\QRCode\Output\QROutputInterface::MARKUP_SVG : \chillerlan\QRCode\Output\QROutputInterface::GDIMAGE_PNG,
+            'scale' => $scale,
+            'outputBase64' => $format !== 'svg',
+            'imageTransparent' => false,
+        ]);
+        return (new \chillerlan\QRCode\QRCode($options))->render($text);
+    }
+}

@@ -102,6 +102,7 @@ php cast migrate:fresh --seed             # rebuild the database without the dem
 
 | Pack | What is left |
 | --- | --- |
+| `clean` | a blank white page: one heading with the framework name, version and how the app works |
 | `shell` | the welcome page and layout: no login, no tables |
 | `crud` | Items (create, edit, delete) for everyone, no login |
 | `auth` | login, register, logout and a private Account page |

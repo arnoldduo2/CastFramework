@@ -16,17 +16,19 @@ final class DemoStripCommand extends Command
     protected string $name = 'demo:strip';
     protected string $description = 'Remove the demo and leave a clean starter (shell, crud, auth or auth-crud)';
     protected array $options = [
-        '--pack=NAME' => 'shell (the welcome page only), crud (items, no login), auth (login, register, an account page) or auth-crud (login + items). Asked when left out',
+        '--pack=NAME' => 'clean (a blank page), shell (the welcome page only), crud (items, no login), auth (login, register, an account page) or auth-crud (login + items). Asked when left out',
         '--dry-run' => 'List what would be deleted and rewritten, change nothing',
         '--yes' => 'Do not ask for confirmation (also -n)',
     ];
     protected array $examples = [
         'php cast demo:strip' => 'ask which starter pack to keep',
         'php cast demo:strip --pack=auth-crud --yes' => 'keep login + a table to create, edit and delete; remove the rest of the demo',
+        'php cast demo:strip --pack=clean --yes' => 'start from a blank white page with just the framework name and version',
         'php cast demo:strip --pack=shell --dry-run' => 'see what a bare shell would delete',
     ];
 
     private const PACKS = [
+        'clean' => 'a blank white page: one heading with the framework name, version and how the app works. No styles, no components',
         'shell' => 'the welcome page and layout only: no login, no tables',
         'crud' => 'Items (create, edit, delete) for everyone, no login',
         'auth' => 'login, register, logout and a private Account page',
@@ -46,11 +48,13 @@ final class DemoStripCommand extends Command
             $output->error('--pack must be one of: ' . implode(', ', array_keys(self::PACKS)));
             return 1;
         }
+        $clean = $pack === 'clean';
         $auth = str_starts_with($pack, 'auth');
         $crud = str_ends_with($pack, 'crud');
 
-        $delete = $this->filesToDelete($auth, $crud);
-        $rewrite = ['routes/web.php', 'config/app.php', basename((string) config('app.source_path', 'app')) . '/Providers/AppServiceProvider.php', 'database/seeders/DatabaseSeeder.php'];
+        $delete = $this->filesToDelete($auth, $crud, $clean);
+        $rewrite = $clean ? ['the layout (header, footer), the home page and app.css'] : [];
+        $rewrite = [...$rewrite, 'routes/web.php', 'config/app.php', basename((string) config('app.source_path', 'app')) . '/Providers/AppServiceProvider.php', 'database/seeders/DatabaseSeeder.php'];
 
         $output->line($output->color('Pack: ', 'orange') . $pack . ' - ' . self::PACKS[$pack]);
         $output->line();
@@ -73,6 +77,7 @@ final class DemoStripCommand extends Command
         if ($auth && !$crud) $this->writeAccountPage();
         if ($crud && !$auth) $this->controllersGuard('private', 'public');
         $this->removeHomeDemoMethod();
+        if ($clean) $this->writeCleanSlate();
 
         $output->line();
         $output->line($output->color("The demo is gone; '$pack' is what is left.", 'green'));
@@ -85,7 +90,7 @@ final class DemoStripCommand extends Command
     // --- what goes -----------------------------------------------------------------------------------------------------------------
 
     /** @return list<string> absolute paths (files or folders) */
-    private function filesToDelete(bool $auth, bool $crud): array
+    private function filesToDelete(bool $auth, bool $crud, bool $clean = false): array
     {
         $src = $this->app->basePath((string) config('app.source_path', 'app'));
         $views = $this->app->viewsPath();
@@ -104,6 +109,10 @@ final class DemoStripCommand extends Command
         if (!$auth) {
             array_push($paths, "$src/Controllers/AuthController.php", "$src/Services/UserStore.php", "$src/Models/Users.php", "$views/auth", "$views/components/crud-banner.cast.php", "$db/seeders/UserSeeder.php", $this->app->configPath('auth.php'));
             foreach (glob("$db/migrations/*_create_users_table.php") ?: [] as $f) $paths[] = $f;
+        }
+        if ($clean) {
+            array_push($paths, "$views/components", $this->app->resourcesPath('js/app/app.module.js'));
+            foreach (glob("$css/home/*") ?: [] as $f) $paths[] = $f;
         }
         return array_values(array_filter($paths, fn($p) => file_exists($p)));
     }
@@ -220,6 +229,70 @@ final class DemoStripCommand extends Command
         $this->write($this->app->databasePath('seeders/DatabaseSeeder.php'), "<?php\n\ndeclare(strict_types=1);\n\nnamespace Database\\Seeders;\n\nuse Cast\\Database\\Seeder;\n\n"
             . "/** The seeder `php cast migrate --seed` and `php cast db:seed` run: it calls the others. Create one with  php cast make:seeder Name */\n"
             . "class DatabaseSeeder extends Seeder\n{\n    public function run(): void\n    {\n" . ($auth ? "        \$this->call(UserSeeder::class);\n" : "        // \$this->call(YourSeeder::class);\n") . "    }\n}\n");
+    }
+
+    /** The `clean` pack: a layout with nothing in it, a home page with one heading, no styles. */
+    private function writeCleanSlate(): void
+    {
+        $views = $this->relative($this->app->viewsPath());
+        $routes = 'routes/web.php';
+        $controller = $this->relative($this->app->basePath((string) config('app.source_path', 'app'))) . '/Controllers/HomeController.php';
+        $this->write($this->app->viewsPath('layouts/header.cast.php'), <<<'PHP'
+<?php
+/**
+ * The top of every page: the <head> and the opening <body>. Each page view starts with  __includes('layouts.header', $data)  and ends with
+ * __includes('layouts.footer', $data). Put your menu after <body>. __cast() is the SPA client (remove the line to use normal page loads),
+ * __modules() loads the css and js named after the page (resources/css/<parent>/<page>.css), and the csrf-token meta is used by forms and requests.
+ */
+$parentName = $data['parentName'] ?? '';
+$pageName = $data['pageName'] ?? '';
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="csrf-token" content="<?= htchars(\Cast\Core\Session::csrfToken()) ?>">
+    <meta name="base-url" content="<?= htchars(route('/')) ?>">
+    <title><?= htchars((string) config('app.name', 'App')) ?></title>
+    <?= __cast($data['authguard'] ?? '') ?>
+    <?= __modules('app', 'css') ?>
+    <?= __modules("$parentName.$pageName", 'css') ?>
+</head>
+
+<body>
+    <?= __getAlerts() ?>
+    <main class="page <?= htchars($pageName) ?>">
+PHP . "
+");
+        $this->write($this->app->viewsPath('layouts/footer.cast.php'), <<<'PHP'
+<?php
+/** The bottom of every page: closes what header.cast.php opened, then loads the page's own JavaScript. */
+$parentName = $data['parentName'] ?? '';
+$pageName = $data['pageName'] ?? '';
+?>
+    </main>
+    <?= __modules('app.app', 'js') ?>
+    <?= __modules("$parentName.$pageName", 'js') ?>
+</body>
+
+</html>
+PHP . "
+");
+        $this->write($this->app->viewsPath('home/partials/home.cast.php'), <<<PHP
+<?php
+/** The home page content (route GET /, HomeController::index). Replace everything here with your own page. */
+?>
+<h1>CastFramework <?= htchars(\Cast\App\Application::VERSION) ?></h1>
+<p>How this page is made: the route <code>GET /</code> in <code>$routes</code> calls <code>HomeController::index()</code> (<code>$controller</code>),
+which renders the view <code>$views/home/home.cast.php</code>. That view puts the layout (<code>$views/layouts/</code>) around this file
+(<code>$views/home/partials/home.cast.php</code>). Add a page: a route, a controller method and a view. <code>php cast list</code> shows the commands.</p>
+
+PHP);
+        $this->write($this->app->resourcesPath('css/app.css'), "/* Your styles. Loaded on every page by layouts/header.cast.php: __modules('app', 'css').
+   A page's own css goes in css/<parent>/<page>.css and loads by itself. */
+");
     }
 
     /** The `auth` pack needs one private page to land on after login. */

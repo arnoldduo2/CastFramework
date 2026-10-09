@@ -32,6 +32,14 @@
       --secondary: #3f4bd0; --secondary-bg: rgba(114, 128, 253, .16); --tertiary: #b34700; --tertiary-bg: rgba(255, 119, 29, .14);
       --danger: #b3261e;
     }
+    :root { color-scheme: dark; --thumb: #3a3a3a; --thumb-hover: #565656; }
+    :root[data-theme="light"] { color-scheme: light; --thumb: #bdbdbd; --thumb-hover: #8f8f8f; }
+    /* thin scrollbars that follow the theme (Firefox: scrollbar-*; Chrome, Edge, Safari: ::-webkit-scrollbar) */
+    * { scrollbar-width: thin; scrollbar-color: var(--thumb) transparent; }
+    *::-webkit-scrollbar { width: 6px; height: 6px; }
+    *::-webkit-scrollbar-track, *::-webkit-scrollbar-corner { background: transparent; }
+    *::-webkit-scrollbar-thumb { background: var(--thumb); border-radius: 6px; }
+    *::-webkit-scrollbar-thumb:hover { background: var(--thumb-hover); }
     * { box-sizing: border-box; }
     html { scroll-behavior: smooth; scroll-padding-top: 76px; }
     body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.7 var(--body); -webkit-font-smoothing: antialiased; }

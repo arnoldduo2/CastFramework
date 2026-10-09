@@ -7,6 +7,7 @@ namespace Cast\Services;
 use Cast\Contracts\UserProvider;
 use Cast\Core\Config;
 use Cast\Core\Session;
+use Cast\Support\Hash;
 
 /**
  * Log users in and out. The app's own storage is reached through a {@see UserProvider}.
@@ -27,9 +28,11 @@ final class Auth
     {
         $user = $this->users->findByCredentials($identifier);
         $key = $this->users->passwordKey();
-        if (!$user || !isset($user[$key]) || !password_verify($password, (string) $user[$key])) {
+        if (!$user || !isset($user[$key]) || !Hash::check($password, (string) $user[$key])) {
             return null;
         }
+        // store a stronger hash when the settings moved on (the provider opts in by having a rehash() method)
+        if (Hash::needsRehash((string) $user[$key]) && method_exists($this->users, 'rehash')) $this->users->rehash($user, Hash::make($password));
         unset($user[$key]);
         return $user;
     }
@@ -70,12 +73,12 @@ final class Auth
 
     public static function hash(string $password): string
     {
-        return password_hash($password, PASSWORD_DEFAULT);
+        return Hash::make($password);
     }
 
     public static function needsRehash(string $hash): bool
     {
-        return password_needs_rehash($hash, PASSWORD_DEFAULT);
+        return Hash::needsRehash($hash);
     }
 
     private function key(): string

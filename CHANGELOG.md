@@ -2,6 +2,15 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.9.0
+
+- **`demo:strip --pack=clean`**: removes everything, including the welcome UI and the components, and leaves a blank white page with one heading: the framework name, its version and how the page is made (route, controller, views).
+- **Docs viewer**: thin scrollbars that follow the dark and light theme.
+- **Password hashing** with `Cast\Support\Hash`: Argon2id when PHP has it, bcrypt otherwise (`config/hashing.php`, `HASH_DRIVER`; `make:config hashing`). Old bcrypt hashes still verify and are upgraded at login when the user provider has a `rehash()` method (the demo's does). `hashPassword()`, `verifyPassword()` and `Auth::hash()` use it. `encrypt()` / `decrypt()` / `sign()` / `unsign()` keep using `APP_KEY` (AES-256-GCM, HMAC-SHA256); the docs now say when to hash and when to encrypt.
+- **`php cast make:service <Name>`** with working examples: `--example=printer` (ESC/POS thermal printer over the network or USB), `barcode` (Code 128 as SVG, no library), `qrcode` (through `chillerlan/php-qrcode`), or a blank service.
+- **Deployment**: `deploy:init` asks the production questions (public address, cookie domain, SameSite, secure cookies, database login, CORS) and writes `.env.production` (mode 600, new `APP_KEY`, debug off); `deploy:check` audits settings, cookies, CORS, folders, the database and PHP; `deploy:optimize` clears compiled views and lists the speed-ups.
+- **`php cast requirements [--production] [--json]`** checks the PHP version, extensions, limits and, for production, `display_errors`, OPcache and more. `composer.json` now requires `ext-openssl` and `ext-ctype`.
+
 ## 0.8.0
 
 - **The framework's docs are at `/cdocs`** (was `/docs`), so `/docs` stays free for your own app. Config: `config/cdocs.php` (`make:config cdocs`), `cdocs.enabled` for production. If you copied the old `docs` entry into `config/static.php`, rename it to `cdocs`.

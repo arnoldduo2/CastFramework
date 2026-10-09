@@ -78,3 +78,19 @@ test('demo:strip: --dry-run changes nothing, an unknown pack is refused, a non-d
     \Cast\Core\Config::set('app.demo', false);
     eq(1, $cmd->handle(new \Cast\Console\Input(['demo:strip', '--pack=shell', '--yes']), new \Cast\Console\Output(fopen('php://memory', 'w+'))));
 });
+
+test('demo:strip --pack=clean: a white page with one heading, the version and how the app works', function () {
+    starter(false, 'clean');
+    $page = handle(new Request('GET', '/'));
+    eq(200, $page->statusCode());
+    $html = $page->body();
+    has('<h1>CastFramework ' . \Cast\App\Application::VERSION . '</h1>', $html);
+    has('routes/web.php', $html, 'says how the page is made');
+    has('HomeController::index()', $html);
+    lacks('class="nav"', $html, 'no menu');
+    lacks('Card', $html);
+    ok(!stripped_has('resources/views/components') && !stripped_has('resources/views/items') && !stripped_has('app/Controllers/AuthController.php'), 'components and demo files are gone');
+    eq('', trim(preg_replace('#/\*.*?\*/#s', '', (string) file_get_contents($GLOBALS['starter_dir'] . '/resources/css/app.css'))), 'app.css has no rules');
+    eq(404, handle(new Request('GET', '/login'))->statusCode());
+    ok(str_contains(handle(new Request('GET', '/_boom'))->body(), 'server error') || handle(new Request('GET', '/_boom'))->statusCode() === 500, 'error pages still work');
+});

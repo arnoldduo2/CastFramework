@@ -36,14 +36,14 @@ if (!function_exists('__verifyCsrf')) {
 if (!function_exists('hashPassword')) {
     function hashPassword(string $password): string
     {
-        return password_hash($password, PASSWORD_DEFAULT);
+        return \Cast\Support\Hash::make($password);
     }
 }
 
 if (!function_exists('verifyPassword')) {
     function verifyPassword(string $password, string $hashed): bool
     {
-        return password_verify($password, $hashed);
+        return \Cast\Support\Hash::check($password, $hashed);
     }
 }
 

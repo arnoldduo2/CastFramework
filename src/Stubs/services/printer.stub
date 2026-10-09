@@ -1,0 +1,105 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {namespace};
+
+use RuntimeException;
+
+/**
+ * {class}: prints receipts and labels on a thermal printer that speaks ESC/POS (most 58 mm and 80 mm receipt printers).
+ * The printer is reached over the network (port 9100, the usual raw printing port) or through a device/file path
+ * (/dev/usb/lp0 on Linux, a shared printer path such as \\PC\Receipt on Windows). For printing a normal page from the browser use
+ * window.print() with a print stylesheet instead; this class is for printers the browser cannot reach.
+ *
+ *   $printer = new \{namespace}\{class}('192.168.1.50:9100');         // or '/dev/usb/lp0'
+ *   $printer->text('SHOP NAME', center: true, bold: true)->line()->text('Total 12.50')->cut()->send();
+ *
+ * Bind it once (AppServiceProvider::register):
+ *   $this->app->singleton('{key}', fn() => new \{namespace}\{class}((string) env('PRINTER_ADDRESS', '192.168.1.50:9100')));
+ */
+final class {class}
+{
+    private const ESC = "\x1b";
+    private const GS = "\x1d";
+
+    private string $buffer;
+
+    /** @param string $target "host:port" (network printer) or a path to the printer device or share */
+    public function __construct(private string $target, private int $timeout = 5)
+    {
+        $this->reset();
+    }
+
+    /** Start a new receipt (also clears the printer's formatting). */
+    public function reset(): static
+    {
+        $this->buffer = self::ESC . '@';
+        return $this;
+    }
+
+    /** Add a line of text (a newline follows). */
+    public function text(string $text, bool $center = false, bool $bold = false, bool $big = false): static
+    {
+        $this->buffer .= self::ESC . 'a' . ($center ? "\x01" : "\x00")
+            . self::ESC . 'E' . ($bold ? "\x01" : "\x00")
+            . self::GS . '!' . ($big ? "\x11" : "\x00")
+            . $this->encode($text) . "\n";
+        return $this;
+    }
+
+    /** A blank line, or $n of them. */
+    public function line(int $n = 1): static
+    {
+        $this->buffer .= str_repeat("\n", max(1, $n));
+        return $this;
+    }
+
+    /** Two columns on one line: "Coffee ........ 3.50". $width is the characters per line (32 for 58 mm paper, 48 for 80 mm). */
+    public function row(string $left, string $right, int $width = 32): static
+    {
+        $gap = max(1, $width - mb_strlen($left) - mb_strlen($right));
+        return $this->text($left . str_repeat(' ', $gap) . $right);
+    }
+
+    /** Open the cash drawer connected to the printer. */
+    public function openDrawer(): static
+    {
+        $this->buffer .= self::ESC . "p\x00\x19\xfa";
+        return $this;
+    }
+
+    /** Feed the paper and cut it. */
+    public function cut(): static
+    {
+        $this->buffer .= "\n\n\n" . self::GS . 'V' . "\x00";
+        return $this;
+    }
+
+    /** The raw bytes, to save to a file or test. */
+    public function bytes(): string
+    {
+        return $this->buffer;
+    }
+
+    /** Send to the printer. Throws when it cannot be reached. */
+    public function send(): void
+    {
+        if (preg_match('/^[^\/\\\\]+:\d{1,5}$/', $this->target)) {
+            $socket = @stream_socket_client('tcp://' . $this->target, $errno, $error, $this->timeout);
+            if (!$socket) throw new RuntimeException("Cannot reach the printer at {$this->target}: $error");
+            fwrite($socket, $this->buffer);
+            fclose($socket);
+        } elseif (@file_put_contents($this->target, $this->buffer) === false) {
+            throw new RuntimeException("Cannot write to the printer at {$this->target}. Is it connected, and can the web server write to it?");
+        }
+        $this->reset();
+    }
+
+    /** Printers use a code page, not UTF-8: keep it to what CP437/CP858 can show. */
+    private function encode(string $text): string
+    {
+        $converted = @iconv('UTF-8', 'CP858//TRANSLIT//IGNORE', $text);
+        return $converted === false ? $text : $converted;
+    }
+}

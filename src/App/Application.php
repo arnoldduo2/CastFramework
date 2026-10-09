@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '0.8.0';
+    public const VERSION = '0.9.0';
 
     private static ?self $instance = null;
 
@@ -308,6 +308,7 @@ final class Application
                 'cdocs' => ['path' => dirname(__DIR__) . '/Resources/docs', 'keep_prefix' => false, 'index' => 'index.html', 'dev_only' => true],
             ],
             'cdocs' => ['enabled' => false],
+            'hashing' => ['driver' => Env::get('HASH_DRIVER', 'auto'), 'bcrypt' => ['cost' => 12], 'argon' => ['memory' => 65536, 'time' => 4, 'threads' => 1]],
             'dock' => ['enabled' => Env::bool('CAST_DOCK', true), 'demo_url' => '/demo'],
             'cors' => ['allowed_origins' => array_filter(array_map('trim', explode(',', (string) Env::get('CORS_ALLOWED_ORIGINS', ''))))],
             'models' => ['namespace' => 'App\\Models'],

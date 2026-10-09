@@ -28,7 +28,7 @@ New here? Read **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)** first: the
 | **Data** | [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Legacy databases](#legacy-databases-migratesync) · [Another ORM](#using-another-orm) |
 | **Front end and API** | [SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api) |
 | **Tooling** | [Console](#console) ([all commands](docs/COMMANDS.md)) · [Editor support](#editor-support) · [Testing](#testing) |
-| **Running it** | [Windows / XAMPP](#running-on-windows--xampp-or-in-a-sub-folder) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Contracts](#contracts) · [Upgrading](#upgrading) · [Versioning](#versioning) |
+| **Running it** | [Windows / XAMPP](#running-on-windows--xampp-or-in-a-sub-folder) · [Deploying](#deploying-to-production) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Contracts](#contracts) · [Upgrading](#upgrading) · [Versioning](#versioning) |
 
 ## Install
 
@@ -354,8 +354,12 @@ $auth = new Cast\Services\Auth(new UserStore());              // UserStore imple
 if ($auth->attempt($email, $password)) { /* logged in: new session id, new CSRF token, no password hash kept */ }
 $user = $auth->verify($email, $password);                      // check credentials only, no session (API token login)
 $auth->user(); $auth->check(); $auth->logout();
-Auth::hash($password);                                         // password_hash; $2a$ hashes from older apps verify too
+Auth::hash($password);                                         // Hash::make(): Argon2id, or bcrypt where PHP has no Argon2; $2a$ hashes from older apps verify too
 ```
+
+**Passwords and secrets.** Passwords are *hashed* (one way): `Cast\Support\Hash::make()` / `check()` / `needsRehash()` (and the helpers `hashPassword()` / `verifyPassword()`) use **Argon2id** when your PHP has it and **bcrypt** otherwise; the algorithm is read from the stored hash, so old bcrypt hashes keep working. When a user logs in with a weaker hash than `config/hashing.php` asks for (`HASH_DRIVER`, bcrypt `cost`, Argon2 `memory`/`time`), `Auth` stores a new one if your user provider has a `rehash(array $user, string $newHash)` method. Values you must read back (a token, a card number) are *encrypted* with the **app key** instead: `encrypt()` / `decrypt()` (AES-256-GCM) and `sign()` / `unsign()` (HMAC-SHA256) from `Cast\Support\Crypt`, keyed by `APP_KEY` (`php cast key:generate`). Never encrypt a password; never hash something you need back.
+
+**Your own services.** `php cast make:service Mailer` writes `<source>/Services/MailerService.php` with a how-to in its comment. For things older apps need there are working examples: `--example=printer` (ESC/POS receipt printing over the network or USB), `--example=barcode` (Code 128 as SVG, no library), `--example=qrcode` (QR codes through `chillerlan/php-qrcode`). Bind one in your provider (`$this->app->singleton('printer', fn() => new ReceiptService('192.168.1.50:9100'))`) and call `app('printer')` anywhere.
 
 `UserProvider` has three methods: `findByCredentials($identifier): ?array`, `onLogin(array $user)`, `passwordKey(): string`.
 
@@ -803,6 +807,10 @@ Output is coloured on a terminal (green commands, blue arguments, orange heading
 | `down [--message=] [--secret=] [--retry=] [--in=]` / `up` | Maintenance mode |
 | `env:check` | Checks PHP, extensions, `.env`, debug in production, writable `storage/`, folders |
 | `make:config <name>`, `key:generate` | A documented config file for a section; the app key |
+| `make:service <Name> [--example=printer\|barcode\|qrcode]` | A service class, blank or a working printer / barcode / QR example |
+| `requirements [--production] [--json]` | Does this PHP have the extensions, limits and settings the framework needs |
+| `deploy:init`, `deploy:check`, `deploy:optimize` | [Deploying to production](#deploying-to-production) |
+| `demo:strip [--pack=clean\|shell\|crud\|auth\|auth-crud]` | Remove the demo and keep a starter pack |
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
 | `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--migration\|--run]` | API tokens |
 | `init [--demo] [--no-migrate] [--force]` | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded) |
@@ -838,13 +846,32 @@ Interfaces in `Cast\Contracts` where an app plugs in its own behaviour:
 | `Updater` | `CallbackUpdater` or your own | Pending updates |
 | `Command` | `Console\Command` | Console commands |
 
+## Deploying to production
+
+Three commands take an app from your machine to a server:
+
+```bash
+php cast deploy:init          # asks: public address, cookie domain, SameSite, database host/name/user/password, allowed front ends
+                              # writes .env.production (mode 600): APP_ENV=production, APP_DEBUG=false, a NEW APP_KEY, secure cookies on https
+# on the server
+composer install --no-dev --optimize-autoloader
+cp .env.production .env       # keep it out of git
+php cast migrate --force
+php cast deploy:check         # settings, cookies, CORS, folders, database, PHP: exits 1 on a problem
+php cast deploy:optimize      # clears compiled views and lists the OPcache / autoloader speed-ups
+```
+
+`deploy:init` starts from your `.env`, so your own keys are kept, and answers can come from options (`--url=`, `--cookie-domain=`, `--same-site=`, `--db-conn=`, `--db-host=`, `--db-name=`, `--db-user=`, `--db-pass=`, `--cors=`, `--keep-key`, `--file=`). It refuses `SameSite=None` without https and `*` as a CORS origin. The web server's document root must be `public/`.
+
+`php cast requirements [--production]` checks PHP itself: version, the extensions the framework needs (`pdo`, `mbstring`, `json`, `openssl`, `ctype`, `session`, and the PDO driver of your database), nice-to-haves (`sodium`, `gd`, `zip`, `intl` ...), `memory_limit`, upload sizes and, with `--production`, `display_errors`, `expose_php`, OPcache and strict sessions. `deploy:check` includes it.
+
 ## Security notes
 
 - Every value in the query builder is bound; identifiers are validated. Raw SQL goes through `raw()` with bound parameters.
 - Escape output: `<?= htchars($value) ?>`. `<?= ?>` prints raw, and `Request` input is raw too.
 - Compiled views are PHP code: keep `storage/` outside the web root, or deny web access to it. Only render templates you trust.
 - Set `APP_DEBUG=false` in production (`php cast env:check` warns when it is not).
-- Passwords: `Auth::hash()` uses `password_hash`; the session never stores the hash; a new session id and CSRF token are issued at login.
+- Passwords: `Auth::hash()` uses Argon2id (bcrypt as a fallback); the session never stores the hash; a new session id and CSRF token are issued at login.
 - Keep `.env` out of git. The starter ships `.env.example` only.
 - API tokens: only a SHA-256 of the secret is stored; give each client its own token with the fewest abilities it needs, set an expiry, and revoke tokens that leak.
   Send them over HTTPS only. Rate-limit the login route.

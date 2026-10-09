@@ -36,6 +36,12 @@ final class UserStore implements UserProvider, FindsUsersById
         Users::updateColumns(['last_login' => date('Y-m-d H:i:s')], $user['id']);
     }
 
+    /** Optional: Auth calls this at login when the stored hash is weaker than config/hashing.php asks for (an older cost or algorithm). */
+    public function rehash(array $user, string $newHash): void
+    {
+        Users::updateColumns(['password' => $newHash], $user['id']);
+    }
+
     public function passwordKey(): string
     {
         return 'password';

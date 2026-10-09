@@ -8,7 +8,7 @@ use Cast\Support\Crypt;
 test('make:config writes a file for every section, and its values are exactly the framework defaults', function () {
     $app = console_app();
     $defaults = [];
-    foreach (['app', 'database', 'session', 'cors', 'cdocs', 'dock', 'static', 'view', 'api', 'spa', 'auth', 'models', 'helpers', 'request'] as $section) $defaults[$section] = Config::get($section);
+    foreach (['app', 'database', 'session', 'cors', 'cdocs', 'dock', 'hashing', 'static', 'view', 'api', 'spa', 'auth', 'models', 'helpers', 'request'] as $section) $defaults[$section] = Config::get($section);
 
     [$code, $out] = cast(['make:config', '--all'], $app);
     eq(0, $code, $out);

@@ -1,0 +1,23 @@
+<?php
+
+declare(strict_types=1);
+
+namespace {namespace};
+
+/**
+ * {class}: a service holds a piece of the app's logic that is not a page (controller) or a table (model): sending mail, printing,
+ * calculating tax, talking to another system. Controllers call it; it knows nothing about requests or views, so it is easy to test.
+ *
+ * Use it from a controller:      $result = (new \{namespace}\{class}())->handle($input);
+ * or bind it once and share it:  in your AppServiceProvider::register()
+ *                                    $this->app->singleton('{key}', fn() => new \{namespace}\{class}());
+ *                                then anywhere:  app('{key}')->handle($input);
+ */
+final class {class}
+{
+    public function handle(array $input): array
+    {
+        // your logic here
+        return $input;
+    }
+}

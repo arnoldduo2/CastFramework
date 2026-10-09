@@ -88,14 +88,73 @@ php cast demo:strip [options]
 
 | Option | |
 | --- | --- |
-| `--pack=NAME` | shell (the welcome page only), crud (items, no login), auth (login, register, an account page) or auth-crud (login + items). Asked when left out |
+| `--pack=NAME` | clean (a blank page), shell (the welcome page only), crud (items, no login), auth (login, register, an account page) or auth-crud (login + items). Asked when left out |
 | `--dry-run` | List what would be deleted and rewritten, change nothing |
 | `--yes` | Do not ask for confirmation (also -n) |
 
 ```bash
 php cast demo:strip   # ask which starter pack to keep
 php cast demo:strip --pack=auth-crud --yes   # keep login + a table to create, edit and delete; remove the rest of the demo
+php cast demo:strip --pack=clean --yes   # start from a blank white page with just the framework name and version
 php cast demo:strip --pack=shell --dry-run   # see what a bare shell would delete
+```
+
+## `deploy:check`
+
+Check that this install is ready for production (settings, cookies, database, PHP, folders).
+
+```
+php cast deploy:check [options]
+```
+
+| Option | |
+| --- | --- |
+| `--skip-db` | Do not try to connect to the database |
+
+```bash
+php cast deploy:check   # run on the server after deploy:init and migrate
+php cast deploy:check --skip-db   # when the database is not reachable from where you run it
+```
+
+## `deploy:init`
+
+Ask the production questions (cookie domain, https, database ...) and write the live settings file.
+
+```
+php cast deploy:init [options]
+```
+
+| Option | |
+| --- | --- |
+| `--file=PATH` | Where to write the settings (default .env.production). Copy it to .env on the server |
+| `--url=URL` | The public address, e.g. https://app.example.com (an https address turns secure cookies on) |
+| `--cookie-domain=HOST` | Cookie domain, e.g. .example.com to share it with sub-domains (empty: this host only) |
+| `--same-site=VALUE` | Lax (default), Strict or None (None needs https) |
+| `--db-conn=DRIVER` | mysql, pgsql or sqlite |
+| `--db-host=HOST` | Database host |
+| `--db-port=PORT` | Database port |
+| `--db-name=NAME` | Database name (the file for sqlite) |
+| `--db-user=USER` | Database user |
+| `--db-pass=PASSWORD` | Database password (asked, without it being shown in your shell history, when left out) |
+| `--cors=ORIGINS` | Front ends allowed to call the API, comma separated exact origins |
+| `--keep-key` | Keep the APP_KEY of your .env instead of making a new one for production |
+| `--force` | Overwrite the settings file if it exists |
+
+```bash
+php cast deploy:init   # answer the questions
+php cast deploy:init --url=https://app.example.com --db-conn=mysql --db-name=shop --db-user=shop --force   # answer some of them on the command line
+```
+
+## `deploy:optimize`
+
+Clear compiled views and list the production speed-ups (autoloader, OPcache).
+
+```
+php cast deploy:optimize
+```
+
+```bash
+php cast deploy:optimize   # run after each deploy
 ```
 
 ## `docs:build`
@@ -423,6 +482,30 @@ php cast make:seeder <Name> [options]
 php cast make:seeder UserSeeder
 ```
 
+## `make:service`
+
+Create a service class (blank, or a printer, barcode or QR code example).
+
+```
+php cast make:service <Name> [options]
+```
+
+| Argument | |
+| --- | --- |
+| `Name` | The service name, e.g. Printer (the suffix Service is added when missing) |
+
+| Option | |
+| --- | --- |
+| `--example=KIND` | plain (blank), printer (ESC/POS receipt printer), barcode (Code 128 as SVG) or qrcode (QR codes). Asked when left out |
+| `--force` | Overwrite the file if it exists |
+
+```bash
+php cast make:service Mailer   # a blank service with a how-to in its comment
+php cast make:service Receipt --example=printer   # ESC/POS printing to a network or USB thermal printer
+php cast make:service Barcode --example=barcode   # Code 128 barcodes as SVG, no library
+php cast make:service Qr --example=qrcode   # QR codes through chillerlan/php-qrcode
+```
+
 ## `migrate`
 
 Run the pending migrations.
@@ -570,6 +653,25 @@ php cast migrate:sync   # every table without a migration
 php cast migrate:sync users   # one table
 php cast migrate:sync --except=logs,cache   # skip some
 php cast migrate:sync --pretend   # look before writing
+```
+
+## `requirements`
+
+Check this PHP for the extensions and settings the framework needs.
+
+```
+php cast requirements [options]
+```
+
+| Option | |
+| --- | --- |
+| `--production` | Also check the settings a live server wants (display_errors off, OPcache, strict sessions ...) |
+| `--json` | Print the results as JSON |
+
+```bash
+php cast requirements   # the PHP version, extensions and limits
+php cast requirements --production   # plus what a live server should have
+php cast requirements --json   # for scripts and CI (exit code 1 when something required is missing)
 ```
 
 ## `route:list`
