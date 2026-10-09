@@ -65,26 +65,26 @@ test('docs: the viewer makes the same heading anchors as the builder (slug() in 
     eq(array_map([DocsBuilder::class, 'slug'], $headings), json_decode((string) $out, true));
 });
 
-test('/docs: served in development (a redirect to /docs/, the viewer, data.js), refused in production unless docs.enabled', function () {
+test('/cdocs: served in development (a redirect to /cdocs/, the viewer, data.js), refused in production unless cdocs.enabled', function () {
     $app = boot_app(['.env' => "APP_ENV=development\nAPP_DEBUG=true\n"]);
     $static = new \Cast\Services\StaticResourceProvider($app);
     $get = fn(string $uri) => $static->serve(new \Cast\Http\Request('GET', $uri));
 
-    $r = $get('/docs');
+    $r = $get('/cdocs');
     eq(302, $r->statusCode());
-    eq('/docs/', $r->getHeader('Location'));
-    $r = $get('/docs/');
-    ok($r !== null && $r->statusCode() === 200, '/docs/ is the viewer');
+    eq('/cdocs/', $r->getHeader('Location'));
+    $r = $get('/cdocs/');
+    ok($r !== null && $r->statusCode() === 200, '/cdocs/ is the viewer');
     has('text/html', (string) $r->getHeader('Content-Type'));
-    $js = $get('/docs/data.js');
+    $js = $get('/cdocs/data.js');
     ok($js !== null && $js->statusCode() === 200 && str_contains((string) $js->getHeader('Content-Type'), 'javascript'), 'data.js is served');
-    ok($get('/docs/../../composer.json') === null, 'no way out of the folder');
-    ok($get('/docs/nope.txt') === null);
+    ok($get('/cdocs/../../composer.json') === null, 'no way out of the folder');
+    ok($get('/cdocs/nope.txt') === null);
 
     Config::set('app.env', 'production');
-    ok($get('/docs/') === null, 'off in production');
-    Config::set('docs.enabled', true);
-    ok($get('/docs/') !== null, 'unless docs.enabled');
+    ok($get('/cdocs/') === null, 'off in production');
+    Config::set('cdocs.enabled', true);
+    ok($get('/cdocs/') !== null, 'unless cdocs.enabled');
 });
 
 test('docs:build: builds a site from any markdown folder, and --check says when it is stale', function () {

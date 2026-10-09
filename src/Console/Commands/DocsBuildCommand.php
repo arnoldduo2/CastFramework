@@ -23,7 +23,7 @@ final class DocsBuildCommand extends Command
         '--check' => 'Write nothing: exit 1 when data.js is out of date with the markdown (for CI)',
     ];
     protected array $examples = [
-        'php cast docs:build' => 'docs/*.md -> public/docs/ (then open /docs after pointing config static.docs at it)',
+        'php cast docs:build' => 'docs/*.md -> public/docs/ (public/ is served by your web server, so it is at /docs)',
         'php cast docs:build --source=docs --readme=README.md --out=public/docs' => 'with a README split into pages',
         'php cast docs:build --check' => 'is data.js up to date?',
     ];

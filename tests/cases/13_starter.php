@@ -60,7 +60,7 @@ test('Starter: the home page renders with the layout, components, and auto-loade
     $html = $r->body();
     has('<title>Cast Starter | Home</title>', $html);
     has('Let\'s build something', $html, 'the welcome page');
-    has('href="/docs/"', $html, 'a link to the documentation');
+    has('href="/cdocs/"', $html, 'a link to the documentation');
     has('href="/demo"', $html, 'the demo shortcut in the menu');
     has('Demo the Cast Framework', $html);
     has("href='/css/app.css", $html, 'app.css is found by __modules()');
@@ -80,7 +80,7 @@ test('Starter: /demo goes to the demo (the login for guests); register creates a
     foreach (['/login', '/register'] as $path) {
         $html = handle(new Request('GET', $path))->body();
         has($path === '/login' ? 'Use the framework for CRUD operations' : 'Register, then try CRUD on Items', $html, $path);
-        has('href="/docs/#/getting-started"', $html);
+        has('href="/cdocs/#/getting-started"', $html);
         has("name='_token'", $html);
     }
     has('name="password_confirmation"', handle(new Request('GET', '/register'))->body());

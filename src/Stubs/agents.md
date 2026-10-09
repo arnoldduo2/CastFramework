@@ -13,7 +13,7 @@ This app is built on CastFramework (`anode/cast-framework`).
 
 ## Documentation
 
-- The framework's documentation is a site at `/docs` while the dev server runs (`php cast serve`). Pages are markdown files with front matter (title, section, order, description); build with `php cast docs:build` (see docs/WRITING-DOCS.md in the framework).
+- The framework's documentation is a site at `/cdocs` while the dev server runs (`php cast serve`). Pages are markdown files with front matter (title, section, order, description); build with `php cast docs:build` (see docs/WRITING-DOCS.md in the framework).
 - When you change behaviour, update the matching `.md` page and rebuild, so the docs, the `--help` text and the code agree.
 
 ## Commands

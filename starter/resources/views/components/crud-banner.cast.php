@@ -6,7 +6,7 @@
  * @var string|null $title The headline (default: "Use the framework for CRUD operations")
  */
 $title ??= 'Use the framework for CRUD operations';
-$docs = config('app.env') !== 'production' || config('docs.enabled');
+$docs = config('app.env') !== 'production' || config('cdocs.enabled');
 ?>
 <div class="banner">
     <div>
@@ -15,10 +15,10 @@ $docs = config('app.env') !== 'production' || config('docs.enabled');
     </div>
     <?php if ($docs) : ?>
         <nav>
-            <a href="<?= route('/docs/#/getting-started') ?>" data-cast="off">Getting started</a>
-            <a href="<?= route('/docs/#/models-and-the-query-builder') ?>" data-cast="off">Models</a>
-            <a href="<?= route('/docs/#/validation') ?>" data-cast="off">Validation</a>
-            <a href="<?= route('/docs/#/migrations') ?>" data-cast="off">Migrations</a>
+            <a href="<?= route('/cdocs/#/getting-started') ?>" data-cast="off">Getting started</a>
+            <a href="<?= route('/cdocs/#/models-and-the-query-builder') ?>" data-cast="off">Models</a>
+            <a href="<?= route('/cdocs/#/validation') ?>" data-cast="off">Validation</a>
+            <a href="<?= route('/cdocs/#/migrations') ?>" data-cast="off">Migrations</a>
         </nav>
     <?php endif ?>
 </div>

@@ -2,12 +2,12 @@
 title: Writing the docs
 section: Tooling
 order: 5
-description: How the documentation site at /docs is made from markdown files, and how to build one for your own project.
+description: How the documentation site at /cdocs is made from markdown files, and how to build one for your own project.
 ---
 
 # Writing the docs
 
-The documentation you are reading is a static site made from markdown files. There is no build tool: a PHP command turns the `.md` files into one data file (`data.js`) and a viewer page (`index.html`) shows it. Edit the markdown, run the command, reload `/docs`.
+The documentation you are reading is a static site made from markdown files. There is no build tool: a PHP command turns the `.md` files into one data file (`data.js`) and a viewer page (`index.html`) shows it. Edit the markdown, run the command, reload `/cdocs`.
 
 ```bash
 php cast serve                      # then open http://127.0.0.1:8000/docs
@@ -64,5 +64,5 @@ Inside a table cell write a pipe that belongs to code as `\|`.
 
 ## Showing the site
 
-The framework's own documentation is served at `/docs` while `APP_ENV` is not `production` (`config/docs.php`: `'enabled' => true` also serves it in production). To show your project's docs there instead, build them to `public/docs` and point the `docs` entry of `config/static.php` at that folder: `'docs' => ['dir' => 'public/docs', 'keep_prefix' => false, 'index' => 'index.html']`.
+The framework's own documentation is served at `/cdocs` while `APP_ENV` is not `production` (`config/cdocs.php`: `'enabled' => true` also serves it in production). To show your project's docs there instead, build them to `public/docs` and point the `docs` entry of `config/static.php` at that folder: `'docs' => ['dir' => 'public/docs', 'keep_prefix' => false, 'index' => 'index.html']`.
 The viewer works from files too (open `index.html` in a browser), with search (press `/`), a dark and a light theme, copy buttons on code blocks and a list of the headings of the page. Its look is the CSS variables at the top of `index.html`.

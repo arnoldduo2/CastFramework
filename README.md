@@ -781,7 +781,7 @@ reports a pending update the app shows `views/updating.cast.php` (503, `Retry-Af
 
 ## Documentation site
 
-`php cast serve`, then open **`/docs`**: this documentation as a browsable site (search with `/`, a dark and a light theme, copy buttons, a list of the headings of each page). It is two static files made from the markdown by `php cast docs:build`;
+`php cast serve`, then open **`/cdocs`**: this documentation as a browsable site (search with `/`, a dark and a light theme, copy buttons, a list of the headings of each page). It is two static files made from the markdown by `php cast docs:build`;
 use the same command for your own project's docs (front matter and `docs/_meta.json` say where each page goes). It is served while `APP_ENV` is not `production`. See [Writing the docs](docs/WRITING-DOCS.md).
 
 ## Console

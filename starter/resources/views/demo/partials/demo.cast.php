@@ -1,6 +1,6 @@
 <?php
 /** "Demo the Cast Framework" (route /demo, HomeController::demo). In the demo app this route sends you to the demo instead (see routes/web.php). */
-$docs = config('app.env') !== 'production' || config('docs.enabled');
+$docs = config('app.env') !== 'production' || config('cdocs.enabled');
 ?>
 <section class="hero">
     <span class="chip dot">Live demo</span>
@@ -17,5 +17,5 @@ $docs = config('app.env') !== 'production' || config('docs.enabled');
 
 <div class="cta">
     <a class="btn" href="<?= route('/') ?>">Back to the welcome page</a>
-    <?php if ($docs) : ?><a class="btn btn-ghost" href="<?= route('/docs/') ?>" data-cast="off">Read the docs</a><?php endif ?>
+    <?php if ($docs) : ?><a class="btn btn-ghost" href="<?= route('/cdocs/') ?>" data-cast="off">Read the docs</a><?php endif ?>
 </div>

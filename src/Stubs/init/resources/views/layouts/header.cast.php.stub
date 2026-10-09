@@ -12,7 +12,7 @@ $parentName = $data['parentName'] ?? '';
 $pageName = $data['pageName'] ?? '';
 $demo = (bool) config('app.demo');                       // true when the app was made with  php cast init --demo
 $user = $demo ? __getUser() : null;                      // the logged-in user (the demo has a login)
-$docs = config('app.env') !== 'production' || config('docs.enabled');   // the documentation viewer at /docs
+$docs = config('app.env') !== 'production' || config('cdocs.enabled');   // the documentation viewer at /cdocs
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -42,7 +42,7 @@ $docs = config('app.env') !== 'production' || config('docs.enabled');   // the d
                 <a href="<?= route('/items') ?>">Items</a>
                 <a href="<?= route('/stats') ?>">Stats</a>
             <?php endif ?>
-            <?php if ($docs) : ?><a href="<?= route('/docs/') ?>" data-cast="off">Docs</a><?php endif ?>
+            <?php if ($docs) : ?><a href="<?= route('/cdocs/') ?>" data-cast="off">Docs</a><?php endif ?>
             <a class="nav-demo" href="<?= route('/demo') ?>">Demo the Cast Framework</a>
         </nav>
         <div class="nav-end">

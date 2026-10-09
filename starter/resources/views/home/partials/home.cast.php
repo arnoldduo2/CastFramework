@@ -3,7 +3,7 @@
  * The welcome page (route "/", HomeController::index). It is only content: the menu and footer come from layouts/header and
  * layouts/footer. Replace this file with your own home page; nothing else depends on it.
  */
-$docs = config('app.env') !== 'production' || config('docs.enabled');
+$docs = config('app.env') !== 'production' || config('cdocs.enabled');
 $demo = (bool) config('app.demo');
 $quick = "php cast make:controller Orders\nphp cast make:migration create_orders_table\nphp cast migrate\nphp cast make:component Btns.AddNew --props=label:string=Add";
 ?>
@@ -12,7 +12,7 @@ $quick = "php cast make:controller Orders\nphp cast make:migration create_orders
     <h1>Let's build something <em>amazing</em>.</h1>
     <p class="lead">Server-rendered pages that behave like a single-page app, a JSON API when you want one, and tools that explain themselves. Your app is running: start with the docs, or try the demo.</p>
     <div class="cta">
-        <?php if ($docs) : ?><a class="btn" href="<?= route('/docs/') ?>" data-cast="off">Read the docs</a><?php endif ?>
+        <?php if ($docs) : ?><a class="btn" href="<?= route('/cdocs/') ?>" data-cast="off">Read the docs</a><?php endif ?>
         <a class="btn btn-secondary" href="<?= route('/demo') ?>">Demo the Cast Framework</a>
     </div>
 </section>
@@ -37,7 +37,7 @@ $quick = "php cast make:controller Orders\nphp cast make:migration create_orders
 
 <p class="section-title">Your first five minutes</p>
 <ol class="steps">
-    <li><strong>Open the docs</strong>: <?php if ($docs) : ?><a href="<?= route('/docs/') ?>" data-cast="off">/docs</a><?php else : ?>run <code>php cast serve</code> in development<?php endif ?>, the page called <em>Getting started</em> shows where every file goes.</li>
+    <li><strong>Open the docs</strong>: <?php if ($docs) : ?><a href="<?= route('/cdocs/') ?>" data-cast="off">/docs</a><?php else : ?>run <code>php cast serve</code> in development<?php endif ?>, the page called <em>Getting started</em> shows where every file goes.</li>
     <li><strong>Change this page</strong>: edit <code>resources/views/home/partials/home.cast.php</code>. The menu and footer are <code>resources/views/layouts/</code>.</li>
     <li><strong>Add a page</strong>: a route in <code>routes/web.php</code>, a controller in <code>app/Controllers</code>, a view in <code>resources/views/&lt;page&gt;/</code>. Its CSS and JS in <code>resources/css/&lt;page&gt;/</code> and <code>resources/js/&lt;page&gt;/</code> load by themselves.</li>
     <li><strong>Ask the console</strong>: <code>php cast list</code> shows every command, <code>php cast help migrate:sync</code> explains one.</li>
@@ -46,6 +46,6 @@ $quick = "php cast make:controller Orders\nphp cast make:migration create_orders
 <?php if ($demo) : ?>
     <div class="card">
         <h2>You are running the demo</h2>
-        <p class="muted">Log in or register (top right) to try create, edit and delete on <em>Items</em>, a stats page and the JSON API. When you have seen enough, <a href="<?= route('/docs/#/getting-started') ?>" data-cast="off">Getting started</a> lists exactly what to delete to keep the structure and start your own project.</p>
+        <p class="muted">Log in or register (top right) to try create, edit and delete on <em>Items</em>, a stats page and the JSON API. When you have seen enough, <a href="<?= route('/cdocs/#/getting-started') ?>" data-cast="off">Getting started</a> lists exactly what to delete to keep the structure and start your own project.</p>
     </div>
 <?php endif ?>

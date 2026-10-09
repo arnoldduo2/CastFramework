@@ -15,7 +15,7 @@ final class MakeConfigCommand extends Command
     protected string $name = 'make:config';
     protected string $description = 'Create a config file with all of a section\'s settings and their defaults';
     protected array $arguments = [
-        'name?' => 'Which one: app, database, session, cors, docs, static, view, api, spa, auth, models, helpers, request, console, error-handler (or --all, --list)',
+        'name?' => 'Which one: app, database, session, cors, cdocs, static, view, api, spa, auth, models, helpers, request, console, error-handler (or --all, --list)',
     ];
     protected array $options = [
         '--list' => 'Show the sections you can create',
@@ -35,7 +35,7 @@ final class MakeConfigCommand extends Command
         'database' => 'connection, migrations table, seeder',
         'session' => 'the session cookie (name, lifetime, secure, httponly, samesite)',
         'cors' => 'origins allowed to call the app from another site',
-        'docs' => 'the documentation viewer at /docs',
+        'cdocs' => 'the framework documentation viewer at /cdocs',
         'static' => 'where css, js, fonts, images and the SPA client are served from',
         'view' => 'view extension and components folder',
         'api' => 'the JSON API prefix, middleware and token table',

@@ -329,7 +329,7 @@ final class InitCommand extends Command
         $output->line($output->color('Errors:', 'orange') . '    ' . ($a['errorHandler'] ? 'Anode error handler on (config/app.php, \'error_handler\')' : 'Anode error handler off') . '; ' . ($a['errorPages'] === 'custom' ? 'your own error pages in resources/views/errors (empty until you build them)' : 'framework error pages'));
         if ($a['frontend'] === 'external') $output->line('Front end:  ' . ($a['cors'] ?: 'set CORS_ALLOWED_ORIGINS in .env') . ' may call the API; create a token with  php cast token:create <login>');
         $output->line($output->color('VS Code:', 'orange') . '   ' . $output->color('php cast editor:install', 'green') . '   (highlighting and Ctrl+click for .cast.php views)');
-        $output->line($output->color('Start it:', 'orange') . '  ' . $output->color('php cast serve', 'green') . '   (then open http://127.0.0.1:8000; the documentation is at /docs). All commands:  ' . $output->color('php cast list', 'green'));
+        $output->line($output->color('Start it:', 'orange') . '  ' . $output->color('php cast serve', 'green') . '   (then open http://127.0.0.1:8000; the documentation is at /cdocs). All commands:  ' . $output->color('php cast list', 'green'));
         if ($demo) $output->line('Demo login:  admin@example.com / password');
     }
 
