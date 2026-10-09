@@ -13,6 +13,7 @@ $pageName = $data['pageName'] ?? '';
 $demo = (bool) config('app.demo');                       // true when the app was made with  php cast init --demo
 $hasAuth = (bool) config('app.auth', $demo);             // the app has a login (the demo, or a pack made with  php cast demo:strip)
 $showcase = (bool) config('app.showcase', true);         // the "Demo the Cast Framework" link (php cast demo:strip removes it)
+// config('app.menu') is a list of [label, path, signed-in-only] shown after Home, e.g. ['Items', '/items', true]
 $user = $hasAuth ? __getUser() : null;                   // the logged-in user
 $docs = config('app.env') !== 'production' || config('cdocs.enabled');   // the documentation viewer at /cdocs
 ?>
@@ -40,6 +41,9 @@ $docs = config('app.env') !== 'production' || config('cdocs.enabled');   // the 
         <a class="brand" href="<?= route('/') ?>"><img src="<?= route('/cast/logo.svg') ?>" alt="">CastFramework</a>
         <nav class="nav-links">
             <a href="<?= route('/') ?>">Home</a>
+            <?php foreach ((array) config('app.menu', []) as [$label, $path, $private]) : ?>
+                <?php if (!$private || $user) : ?><a href="<?= route($path) ?>"><?= htchars($label) ?></a><?php endif ?>
+            <?php endforeach ?>
             <?php if ($docs) : ?><a href="<?= route('/cdocs/') ?>" data-cast="off">Docs</a><?php endif ?>
             <?php if ($showcase) : ?><a class="nav-demo" href="<?= route('/demo') ?>">Demo the Cast Framework</a><?php endif ?>
         </nav>

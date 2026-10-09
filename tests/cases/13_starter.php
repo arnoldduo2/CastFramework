@@ -7,7 +7,7 @@ use Cast\Core\Session;
 use Cast\Http\Request;
 
 /** Boot a copy of the starter app against an in-memory SQLite database. */
-function starter(bool $lazy = false): Application
+function starter(bool $lazy = false, ?string $pack = null): Application
 {
     $source = dirname(__DIR__, 2) . '/starter';
     $dir = app_dir();
@@ -27,10 +27,19 @@ function starter(bool $lazy = false): Application
     }
     $GLOBALS['starter_dir'] = $dir;
 
+    if ($pack !== null) {                                     // php cast demo:strip --pack=...  on a fresh demo (own process: the routes file is loaded once per process)
+        $script = "$dir/.strip.php";
+        file_put_contents($script, '<?php require ' . var_export(dirname(__DIR__, 2) . '/vendor/autoload.php', true) . ';'
+            . '$app = new Cast\\App\\Application(' . var_export($dir, true) . '); $app->boot();'
+            . 'exit((new Cast\\Console\\Commands\\DemoStripCommand($app))->handle(new Cast\\Console\\Input(["demo:strip", "--pack=' . $pack . '", "--yes"]), new Cast\\Console\\Output(fopen("php://memory", "w+"))));');
+        exec('php ' . escapeshellarg($script) . ' 2>&1', $out, $code);
+        eq(0, $code, implode("\n", $out));
+        unlink($script);
+    }
     $app = require "$dir/bootstrap/app.php";
     $app->boot();
     $app->make('migrator')->migrate();       // the tables come from database/migrations
-    \Cast\Database\SeederRunner::run('UserSeeder');
+    if ($pack === null || str_starts_with($pack, 'auth')) \Cast\Database\SeederRunner::run('UserSeeder');
     if (!$lazy) \Cast\Core\Config::set('spa.initial', 'inline');   // most tests look at the page content itself
     return $app;
 }

@@ -2,11 +2,19 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.8.0
+
+- **The framework's docs are at `/cdocs`** (was `/docs`), so `/docs` stays free for your own app. Config: `config/cdocs.php` (`make:config cdocs`), `cdocs.enabled` for production. If you copied the old `docs` entry into `config/static.php`, rename it to `cdocs`.
+- **What's new**: the documentation has a *What's new* page built from this changelog (`_meta.json` can add any file as a page with `"files"`), linked in the top bar.
+- **`php cast demo:strip`** removes the demo from an app made with `init --demo` and leaves a starter pack: `shell`, `crud`, `auth` or `auth-crud` (asked, or `--pack=`; `--dry-run`, `--yes`). It rewrites the routes, provider, seeder and config, and writes an Account page for the `auth` pack.
+- **The dock**: a floating button (bottom right) with links to the demo and the docs, added by the framework to HTML pages in development, so it is there even if you delete your layout and views. `CAST_DOCK=false` or `config/dock.php` turns it off; the menu has *Hide*. Never in production, Cast or JSON answers.
+- **Demo menu**: the demo's pages sit in a group on the right: a grayed *Demo App* label, Items, Stats and a *Logout* button (the email is its tooltip). New settings in `config/app.php`: `auth`, `showcase` and `menu` (`[label, path, signed-in only]`), which `demo:strip` writes.
+
 ## 0.7.0
 
 - **A welcome UI**: `php cast init` now starts on a designed welcome page ("Let's build something amazing"): the framework logo, a menu with *Docs* and *Demo the Cast Framework*, a quick-start terminal, what you get, and your first five minutes. Dark and light themes (CSS variables in `app.css`), the fixed footer and a `100dvh` body.
 - **`php cast init --demo` keeps that page** and adds Log in / Register at the top right. New: a **register** page (validates, creates the user, logs in), and a banner above login and register ("Use the framework for CRUD operations") with links to the docs (a `<CrudBanner />` component). `/demo` in the minimal app explains how to install the demo; in the demo it goes to the login.
-- **The documentation at `/docs`**: a static viewer (`Resources/docs/index.html`: sidebar, search, on-this-page, copy buttons, dark/light) fed by `data.js`, made from the markdown by **`php cast docs:build`** (front matter: title, section, order, description; `docs/_meta.json`; a README is split into pages; links are rewritten; `--check` for CI). `composer docs` rebuilds the framework's own. Served in development (`config/docs.php`, `docs.enabled` for production). Guide: [docs/WRITING-DOCS.md](docs/WRITING-DOCS.md).
+- **The documentation at `/docs`** (moved to `/cdocs` in 0.8.0): a static viewer (`Resources/docs/index.html`: sidebar, search, on-this-page, copy buttons, dark/light) fed by `data.js`, made from the markdown by **`php cast docs:build`** (front matter: title, section, order, description; `docs/_meta.json`; a README is split into pages; links are rewritten; `--check` for CI). `composer docs` rebuilds the framework's own. Served in development. Guide: [docs/WRITING-DOCS.md](docs/WRITING-DOCS.md).
 - **Colourful console**: `php cast list` is grouped (General, Db, Make, Migrate, ...), help has coloured headings, flags and examples, tables have coloured headers, `init` colours what it created. `NO_COLOR` and `FORCE_COLOR` are honoured; pipes stay plain.
 - **Files that explain themselves**: the `cast` launcher (how to create a command, what not to change), `public/index.php`, `bootstrap/app.php`, `.htaccess`, `config/app.php`, routes, controllers, the demo's provider, services, models, migrations, seeders, views and scripts all carry comments (what it does, the options, what to copy). `make:command` writes a class with `$arguments`, `$options`, `$examples` and a how-to. A test fails when one of them has no comments.
 - `StaticResourceProvider`: a mapping can have an `index` file and be `dev_only`; `config/docs.php` (`make:config docs`).

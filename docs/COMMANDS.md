@@ -78,6 +78,26 @@ php cast db:sequence --sync   # fix the ones that are behind
 php cast db:sequence orders --set=5000   # set one table
 ```
 
+## `demo:strip`
+
+Remove the demo and leave a clean starter (shell, crud, auth or auth-crud).
+
+```
+php cast demo:strip [options]
+```
+
+| Option | |
+| --- | --- |
+| `--pack=NAME` | shell (the welcome page only), crud (items, no login), auth (login, register, an account page) or auth-crud (login + items). Asked when left out |
+| `--dry-run` | List what would be deleted and rewritten, change nothing |
+| `--yes` | Do not ask for confirmation (also -n) |
+
+```bash
+php cast demo:strip   # ask which starter pack to keep
+php cast demo:strip --pack=auth-crud --yes   # keep login + a table to create, edit and delete; remove the rest of the demo
+php cast demo:strip --pack=shell --dry-run   # see what a bare shell would delete
+```
+
 ## `docs:build`
 
 Build the documentation site (data.js + viewer) from markdown files.
@@ -94,7 +114,7 @@ php cast docs:build [options]
 | `--check` | Write nothing: exit 1 when data.js is out of date with the markdown (for CI) |
 
 ```bash
-php cast docs:build   # docs/*.md -> public/docs/ (then open /cdocs after pointing config static.docs at it)
+php cast docs:build   # docs/*.md -> public/docs/ (public/ is served by your web server, so it is at /docs)
 php cast docs:build --source=docs --readme=README.md --out=public/docs   # with a README split into pages
 php cast docs:build --check   # is data.js up to date?
 ```
@@ -265,7 +285,7 @@ php cast make:config [name] [options]
 
 | Argument | |
 | --- | --- |
-| `name` (optional) | Which one: app, database, session, cors, docs, static, view, api, spa, auth, models, helpers, request, console, error-handler (or --all, --list) |
+| `name` (optional) | Which one: app, database, session, cors, cdocs, static, view, api, spa, auth, models, helpers, request, console, error-handler (or --all, --list) |
 
 | Option | |
 | --- | --- |

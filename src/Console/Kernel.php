@@ -20,6 +20,7 @@ final class Kernel
         Commands\ViewsCheckCommand::class,
         Commands\IdeHelpersCommand::class,
         Commands\KeyGenerateCommand::class,
+        Commands\DemoStripCommand::class,
         Commands\MakeConfigCommand::class,
         Commands\DocsBuildCommand::class,
         Commands\DownCommand::class,

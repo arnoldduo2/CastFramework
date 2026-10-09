@@ -5,6 +5,7 @@
  */
 $docs = config('app.env') !== 'production' || config('cdocs.enabled');
 $demo = (bool) config('app.demo');
+$showcase = (bool) config('app.showcase', true);          // false after  php cast demo:strip
 $quick = "php cast make:controller Orders\nphp cast make:migration create_orders_table\nphp cast migrate\nphp cast make:component Btns.AddNew --props=label:string=Add";
 ?>
 <section class="hero">
@@ -13,7 +14,7 @@ $quick = "php cast make:controller Orders\nphp cast make:migration create_orders
     <p class="lead">Server-rendered pages that behave like a single-page app, a JSON API when you want one, and tools that explain themselves. Your app is running: start with the docs, or try the demo.</p>
     <div class="cta">
         <?php if ($docs) : ?><a class="btn" href="<?= route('/cdocs/') ?>" data-cast="off">Read the docs</a><?php endif ?>
-        <a class="btn btn-secondary" href="<?= route('/demo') ?>">Demo the Cast Framework</a>
+        <?php if ($showcase) : ?><a class="btn btn-secondary" href="<?= route('/demo') ?>">Demo the Cast Framework</a><?php endif ?>
     </div>
 </section>
 

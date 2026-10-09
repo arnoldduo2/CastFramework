@@ -92,7 +92,24 @@ php cast make:component Btns.AddNew --props=label:string=Add
 
 ## 5. Turn the demo into your own project
 
-If you started with `php cast init --demo`, delete what belongs to the demo and keep the structure:
+If you started with `php cast init --demo`, one command does it:
+
+```bash
+php cast demo:strip                       # asks which starter pack to keep
+php cast demo:strip --pack=auth-crud --yes
+php cast migrate:fresh --seed             # rebuild the database without the demo's tables
+```
+
+| Pack | What is left |
+| --- | --- |
+| `shell` | the welcome page and layout: no login, no tables |
+| `crud` | Items (create, edit, delete) for everyone, no login |
+| `auth` | login, register, logout and a private Account page |
+| `auth-crud` | login, register and Items behind the login |
+
+The demo's stats page, the JSON API and the demo page are removed in every pack. `--dry-run` lists what would go; the files it rewrites (`routes/web.php`, `config/app.php`, the provider and seeder) keep your old copy as `.bak`. The menu is the `menu` list in `config/app.php`.
+
+By hand, delete what belongs to the demo and keep the structure:
 
 | Delete | Keep |
 | --- | --- |
