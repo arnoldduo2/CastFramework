@@ -809,7 +809,7 @@ Output is coloured on a terminal (green commands, blue arguments, orange heading
 | `make:config <name>`, `key:generate` | A documented config file for a section; the app key |
 | `make:service <Name> [--example=printer\|barcode\|qrcode]` | A service class, blank or a working printer / barcode / QR example |
 | `requirements [--production] [--json]` | Does this PHP have the extensions, limits and settings the framework needs |
-| `deploy:init`, `deploy:check`, `deploy:optimize` | [Deploying to production](#deploying-to-production) |
+| `deploy:init`, `deploy:check`, `deploy:scan`, `deploy:optimize` | [Deploying to production](#deploying-to-production) |
 | `demo:strip [--pack=clean\|shell\|crud\|auth\|auth-crud]` | Remove the demo and keep a starter pack |
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
 | `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--migration\|--run]` | API tokens |
@@ -857,11 +857,13 @@ php cast deploy:init          # asks: public address, cookie domain, SameSite, d
 composer install --no-dev --optimize-autoloader
 cp .env.production .env       # keep it out of git
 php cast migrate --force
-php cast deploy:check         # settings, cookies, CORS, folders, database, PHP: exits 1 on a problem
+php cast deploy:check         # settings, cookies, CORS, folders, database, leftover debugging, PHP: exits 1 on a problem
 php cast deploy:optimize      # clears compiled views and lists the OPcache / autoloader speed-ups
 ```
 
 `deploy:init` starts from your `.env`, so your own keys are kept, and answers can come from options (`--url=`, `--cookie-domain=`, `--same-site=`, `--db-conn=`, `--db-host=`, `--db-name=`, `--db-user=`, `--db-pass=`, `--cors=`, `--keep-key`, `--file=`). It refuses `SameSite=None` without https and `*` as a CORS origin. The web server's document root must be `public/`.
+
+**Leftover debugging.** `deploy:check` (and `php cast deploy:scan` on its own) reads your code and fails on `dd()`, `dump()`, `vd()`, `var_dump()`, `print_r()`, `var_export()`, `phpinfo()`, `debug_print_backtrace()` in PHP and views, and on `console.log/debug/info/warn/table/trace/...` and `debugger` in your JavaScript (also inline `<script>` blocks). `console.error()` is allowed, and so are `print_r($x, true)`, methods named `dump()`, and anything in a comment or a string. Third-party files (`vendor/`, `public/assets/vendor`, `*.min.js`) are not read. To keep one on purpose put `cast:keep` in a comment on that line or the line above; to debug in production in general use `php cast deploy:check --allow-debug`, `DEPLOY_ALLOW_DEBUG=true` in `.env`, or `deploy:init --allow-debug` (it asks too).
 
 `php cast requirements [--production]` checks PHP itself: version, the extensions the framework needs (`pdo`, `mbstring`, `json`, `openssl`, `ctype`, `session`, and the PDO driver of your database), nice-to-haves (`sodium`, `gd`, `zip`, `intl` ...), `memory_limit`, upload sizes and, with `--production`, `display_errors`, `expose_php`, OPcache and strict sessions. `deploy:check` includes it.
 

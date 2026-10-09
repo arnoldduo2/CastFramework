@@ -15,6 +15,7 @@ final class DeployCheckCommand extends Command
     protected string $description = 'Check that this install is ready for production (settings, cookies, database, PHP, folders)';
     protected array $options = [
         '--skip-db' => 'Do not try to connect to the database',
+        '--allow-debug' => 'Do not fail on leftover debugging (dd, console.log ...): you debug in production on purpose. DEPLOY_ALLOW_DEBUG=true in .env does the same',
     ];
     protected array $examples = [
         'php cast deploy:check' => 'run on the server after deploy:init and migrate',
@@ -75,6 +76,14 @@ final class DeployCheckCommand extends Command
             } catch (\Throwable $e) {
                 $report('fail', 'the database does not answer: ' . $e->getMessage(), 'check DB_* in .env');
             }
+        }
+
+        $output->line($output->color('Leftover debugging', 'orange'));
+        if ($input->hasOption('allow-debug') || \Cast\Core\Env::bool('DEPLOY_ALLOW_DEBUG', false)) {
+            $report('warn', 'debug scan skipped (--allow-debug or DEPLOY_ALLOW_DEBUG=true): dd(), console.log() and friends may run in production');
+        } else {
+            $hits = DeployScanCommand::scanApp($this->app);
+            $report($hits ? 'fail' : 'ok', $hits ? count($hits) . ' leftover debug call(s): ' . implode(', ', array_map(fn($h) => $h['what'] . ' at ' . $h['file'] . ':' . $h['line'], array_slice($hits, 0, 3))) . (count($hits) > 3 ? ' ...' : '') : 'no dd(), dump(), var_dump(), print_r(), console.log() or debugger (console.error() is allowed)', $hits ? 'php cast deploy:scan lists them; cast:keep in a comment keeps one; --allow-debug skips the scan' : '');
         }
 
         $output->line($output->color('PHP', 'orange'));

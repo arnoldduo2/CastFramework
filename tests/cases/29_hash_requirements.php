@@ -154,3 +154,57 @@ test('make:service writes a documented class; the barcode example draws a valid 
     try { $printer->send(); } catch (RuntimeException) { $threw = true; }
     ok($threw, 'an unreachable printer is an error you can catch');
 });
+
+test('deploy:scan finds dd, dump, print_r, console.log and debugger; console.error, comments, strings, methods and cast:keep are fine', function () {
+    $s = new \Cast\Support\DebugScanner();
+    $php = <<<'CODE'
+<?php
+dd($x);
+$a = print_r($x, true);          // returns a string: fine
+print_r($y);
+var_dump($z);
+$obj->dump();                    // a method
+Cache::dump();                   // a static method
+function dump() {}               // a definition
+$s = "dd(1) in a string";
+// dd(2) in a comment
+dump($keep);                     // cast:keep
+echo var_export($v, true);
+var_export($v);
+CODE;
+    $found = array_map(fn($h) => $h[0] . ':' . $h[1], $s->php($php));
+    eq(['2:dd()', '4:print_r()', '5:var_dump()', '11:dump()', '13:var_export()'], $found);
+
+    $js = "console.log('a');\nconsole.error('fine');\n// console.log('commented');\n/* console.log('block'); */\nconst t = \"console.log('in a string')\";\nconsole . warn('w');\n  debugger;\nconsole.table(rows)";
+    eq(['1:console.log()', '6:console.warn()', '7:debugger', '8:console.table()'], array_map(fn($h) => $h[0] . ':' . $h[1], $s->js($js)));
+
+    $app = boot_app([
+        'app/Controllers/A.php' => "<?php\nclass A { function x() { dd(1); } }\n",
+        'resources/js/app/app.module.js' => "console.log('x');\nconsole.error('ok');\n",
+        'resources/views/home/home.cast.php' => "<h1>Hi</h1>\n<script>\n  console.log('inline');\n</script>\n",
+        'public/assets/vendor/lib.js' => "console.log('third party');",
+        'resources/js/app/lib.min.js' => "console.log('minified');",
+        'resources/js/app/kept.js' => "console.log('on purpose'); // cast:keep\n",
+        'storage/x.php' => "<?php dd(1);",
+    ]);
+    $hits = \Cast\Console\Commands\DeployScanCommand::scanApp($app);
+    eq(['app/Controllers/A.php:2', 'resources/js/app/app.module.js:1', 'resources/views/home/home.cast.php:3'], array_map(fn($h) => $h['file'] . ':' . $h['line'], $hits));
+
+    [$code, $out] = cmd_run(\Cast\Console\Commands\DeployScanCommand::class, [], null, $app);
+    eq(1, $code);
+    has('app/Controllers/A.php:2', $out);
+    [$json] = [cmd_run(\Cast\Console\Commands\DeployScanCommand::class, ['--json'], null, $app)[1]];
+    eq(3, count(json_decode($json, true)));
+
+    // deploy:check fails on them, unless you opt out
+    $check = \Cast\Console\Commands\DeployCheckCommand::class;
+    [$c1, $o1] = cmd_run($check, ['--skip-db'], null, $app);
+    has('FAIL  3 leftover debug call(s)', $o1);
+    [, $o2] = cmd_run($check, ['--skip-db', '--allow-debug'], null, $app);
+    has('debug scan skipped', $o2);
+    lacks('FAIL  3 leftover', $o2);
+
+    [$ci] = cmd_run(\Cast\Console\Commands\DeployInitCommand::class, ['--url=https://x.test', '--db-conn=sqlite', '--allow-debug', '-n'], null, $app);
+    eq(0, $ci);
+    has('DEPLOY_ALLOW_DEBUG=true', (string) file_get_contents($app->basePath('.env.production')));
+});

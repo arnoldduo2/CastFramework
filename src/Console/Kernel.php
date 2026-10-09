@@ -23,6 +23,7 @@ final class Kernel
         Commands\MakeServiceCommand::class,
         Commands\DeployInitCommand::class,
         Commands\DeployCheckCommand::class,
+        Commands\DeployScanCommand::class,
         Commands\DeployOptimizeCommand::class,
         Commands\RequirementsCommand::class,
         Commands\DemoStripCommand::class,

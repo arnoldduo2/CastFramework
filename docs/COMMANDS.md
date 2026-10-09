@@ -110,6 +110,7 @@ php cast deploy:check [options]
 | Option | |
 | --- | --- |
 | `--skip-db` | Do not try to connect to the database |
+| `--allow-debug` | Do not fail on leftover debugging (dd, console.log ...): you debug in production on purpose. DEPLOY_ALLOW_DEBUG=true in .env does the same |
 
 ```bash
 php cast deploy:check   # run on the server after deploy:init and migrate
@@ -137,6 +138,7 @@ php cast deploy:init [options]
 | `--db-user=USER` | Database user |
 | `--db-pass=PASSWORD` | Database password (asked, without it being shown in your shell history, when left out) |
 | `--cors=ORIGINS` | Front ends allowed to call the API, comma separated exact origins |
+| `--allow-debug` | You will debug in production: writes DEPLOY_ALLOW_DEBUG=true so deploy:check does not fail on dd(), console.log() ... |
 | `--keep-key` | Keep the APP_KEY of your .env instead of making a new one for production |
 | `--force` | Overwrite the settings file if it exists |
 
@@ -155,6 +157,23 @@ php cast deploy:optimize
 
 ```bash
 php cast deploy:optimize   # run after each deploy
+```
+
+## `deploy:scan`
+
+Find leftover debugging in your code: dd(), dump(), var_dump(), print_r(), console.log(), debugger.
+
+```
+php cast deploy:scan [options]
+```
+
+| Option | |
+| --- | --- |
+| `--json` | Print the findings as JSON |
+
+```bash
+php cast deploy:scan   # list every leftover (exit code 1 when there are any)
+php cast deploy:scan --json   # for scripts and CI
 ```
 
 ## `docs:build`

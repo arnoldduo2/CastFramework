@@ -2,6 +2,10 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.9.1
+
+- **Leftover debugging is checked before you deploy.** `php cast deploy:scan` (and `deploy:check`) read your PHP, views and JavaScript for `dd()`, `dump()`, `var_dump()`, `print_r()`, `console.log()`, `debugger` and friends. `console.error()` is allowed. Opt out: `cast:keep` in a comment keeps one line, `--allow-debug` / `DEPLOY_ALLOW_DEBUG=true` skips the scan when you debug in production on purpose (`deploy:init` asks).
+
 ## 0.9.0
 
 - **`demo:strip --pack=clean`**: removes everything, including the welcome UI and the components, and leaves a blank white page with one heading: the framework name, its version and how the page is made (route, controller, views).

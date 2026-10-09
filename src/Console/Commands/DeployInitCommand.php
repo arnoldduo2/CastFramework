@@ -27,6 +27,7 @@ final class DeployInitCommand extends Command
         '--db-user=USER' => 'Database user',
         '--db-pass=PASSWORD' => 'Database password (asked, without it being shown in your shell history, when left out)',
         '--cors=ORIGINS' => 'Front ends allowed to call the API, comma separated exact origins',
+        '--allow-debug' => 'You will debug in production: writes DEPLOY_ALLOW_DEBUG=true so deploy:check does not fail on dd(), console.log() ...',
         '--keep-key' => 'Keep the APP_KEY of your .env instead of making a new one for production',
         '--force' => 'Overwrite the settings file if it exists',
     ];
@@ -91,11 +92,13 @@ final class DeployInitCommand extends Command
             return 1;
         }
 
+        $allowDebug = $input->hasOption('allow-debug') || ($ask->interactive() && $ask->confirm('Will you need debugging calls (dd, console.log ...) in production? deploy:check will not fail on them', false));
         $values = [
             'APP_ENV' => 'production', 'APP_DEBUG' => 'false', 'CAST_DOCK' => 'false',
             'APP_BASE_PATH' => $path, 'COOKIE_DOMAIN' => $cookieDomain, 'COOKIE_SECURE' => $secure ? 'true' : 'false',
             'COOKIE_HTTP_ONLY' => 'true', 'COOKIE_SITE' => $site, 'CORS_ALLOWED_ORIGINS' => $cors,
         ] + $db;
+        if ($allowDebug) $values['DEPLOY_ALLOW_DEBUG'] = 'true';
         $currentKey = $this->valueOf($text, 'APP_KEY');
         $values['APP_KEY'] = $input->hasOption('keep-key') && $currentKey !== '' ? $currentKey : Crypt::generateKey();
         if ($text === '') $text = "APP_NAME=\"App\"\n";
