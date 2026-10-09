@@ -10,6 +10,16 @@
     "Running it",
     "Reference"
   ],
+  "files": [
+    {
+      "path": "CHANGELOG.md",
+      "slug": "whats-new",
+      "title": "What's new",
+      "section": "Reference",
+      "order": 1,
+      "description": "Every release, newest first."
+    }
+  ],
   "readme": {
     "Contents": [
       "_skip",

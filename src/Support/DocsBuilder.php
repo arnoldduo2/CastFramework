@@ -44,6 +44,17 @@ final class DocsBuilder
             $page = $this->page($file, (string) file_get_contents($file), $meta['root'] ?? dirname($source));
             if ($page !== null) $this->pages[] = $page;
         }
+        // extra files placed by _meta.json ("files": [{"path": "CHANGELOG.md", "slug": "whats-new", "title": "What's new", "section": "Start", "order": 9}])
+        foreach ($meta['files'] ?? [] as $extra) {
+            $file = ($meta['root'] ?? dirname($source)) . '/' . ltrim((string) ($extra['path'] ?? ''), '/\\');
+            if (!is_file($file)) continue;
+            $page = $this->page($file, (string) file_get_contents($file), $meta['root'] ?? dirname($source));
+            if ($page === null) continue;
+            foreach (['slug' => 'slug', 'title' => 'title', 'section' => 'section', 'order' => 'order', 'description' => 'description'] as $key => $field) {
+                if (isset($extra[$key])) $page[$field] = $key === 'slug' ? self::slug((string) $extra[$key]) : $extra[$key];
+            }
+            $this->pages[] = $page;
+        }
         if ($readme !== null && is_file($readme)) {
             foreach ($this->splitReadme((string) file_get_contents($readme), $meta, basename($readme)) as $page) $this->pages[] = $page;
         }
@@ -79,7 +90,7 @@ final class DocsBuilder
         return trim((string) preg_replace('/ /', '-', $text), '-');
     }
 
-    /** @return array{title?: string, sections?: list<string>, readme?: array<string, array{0: string, 1?: int}>, root?: string} */
+    /** @return array{title?: string, sections?: list<string>, files?: list<array<string, mixed>>, readme?: array<string, array{0: string, 1?: int}>, root?: string} */
     private function meta(string $file): array
     {
         $meta = is_file($file) ? json_decode((string) file_get_contents($file), true) : null;

@@ -171,3 +171,21 @@ test('make:command writes a command that already explains itself and is document
     $code = (string) file_get_contents($file);
     foreach (['protected array $arguments', 'protected array $options', 'protected array $examples', "protected string \$name = 'sync:stock'", 'config/console.php', '->table('] as $needle) has($needle, $code, $needle);
 });
+
+test('docs: "files" in _meta.json adds an outside file (the changelog) as a page, "What\'s new"', function () use ($root) {
+    $data = (new DocsBuilder())->build("$root/docs", "$root/README.md");
+    $page = null;
+    foreach ($data['pages'] as $p) if ($p['slug'] === 'whats-new') $page = $p;
+    ok($page !== null, 'the changelog is a page');
+    eq("What's new", $page['title']);
+    ok(str_contains($page['md'], '## 0.7.0'), 'it carries the releases');
+    ok(!str_contains($page['md'], '# Changelog'), 'the viewer shows the title itself');
+    $dir = sys_get_temp_dir() . '/cast_files_' . uniqid();
+    mkdir("$dir/docs", 0777, true);
+    file_put_contents("$dir/NEWS.md", "# News\n\nhello\n");
+    file_put_contents("$dir/docs/_meta.json", json_encode(['files' => [['path' => 'NEWS.md', 'slug' => 'news', 'section' => 'Start']], 'sections' => ['Start']]));
+    $d = (new DocsBuilder())->build("$dir/docs");
+    eq('news', $d['pages'][0]['slug']);
+    eq('News', $d['pages'][0]['title']);
+    eq([], array_filter($d['pages'], fn($p) => $p['slug'] === 'missing'));
+});
