@@ -20,6 +20,8 @@ final class ModulesCommand extends Command
                 ['php cast modules:list' => 'every module and its state']],
             'check' => ['Fail when a core module is not active (for CI and deploys); optional ones only warn', [], [],
                 ['php cast modules:check' => 'exit code 1 when a core module is inactive, unbuilt or missing']],
+            'tier' => ['Show the plan (tier) this install is on and what each plan unlocks, or set it', ['tier?' => 'The plan to switch to (one of modules.tiers). Leave out to show the current one'], [],
+                ['php cast modules:tier' => 'the current plan and which modules each plan adds', 'php cast modules:tier professional' => 'move this install to the Professional plan']],
             'enable' => ['Switch a module on (kept in storage/framework/modules.json)', ['name' => 'The module, as listed in config/modules.php'], [],
                 ['php cast modules:enable reports' => 'turn the reports module on']],
             default => ['Switch an optional module off (core modules cannot be switched off)', ['name' => 'The module, as listed in config/modules.php'], [],
@@ -30,7 +32,7 @@ final class ModulesCommand extends Command
     /** @return list<string> */
     public static function actions(): array
     {
-        return ['list', 'check', 'enable', 'disable'];
+        return ['list', 'check', 'tier', 'enable', 'disable'];
     }
 
     public function handle(Input $input, Output $output): int
@@ -40,6 +42,7 @@ final class ModulesCommand extends Command
         return match ($this->action) {
             'list' => $this->list($modules, $input, $output),
             'check' => $this->check($modules, $output),
+            'tier' => $this->tier($modules, (string) $input->argument(0), $output),
             default => $this->toggle($modules, (string) $input->argument(0), $this->action === 'enable', $output),
         };
     }
@@ -56,8 +59,10 @@ final class ModulesCommand extends Command
             return 0;
         }
         if (!$modules->enabled()) $output->warn('Module gating is off (modules.enabled / CAST_MODULES=true turns it on): every module counts as active.');
-        $rows = array_map(fn($m) => [$m['name'], $m['core'] ? 'core' : 'optional', $m['state'], $m['reason']], $all);
-        $output->table(['Module', 'Type', 'State', 'Why'], $rows);
+        $plan = $modules->tier();
+        if ($plan !== null) $output->line('Plan: ' . $output->color($plan, 'green') . '  (modules:tier changes it)');
+        $rows = array_map(fn($m) => [$m['name'], $m['core'] ? 'core' : 'optional', $m['tier'] ?: '-', $m['state'], $m['reason']], $all);
+        $output->table(['Module', 'Type', 'Tier', 'State', 'Why'], $rows);
         return 0;
     }
 
@@ -74,7 +79,9 @@ final class ModulesCommand extends Command
                 continue;
             }
             $label = ($m['core'] ? 'core' : 'optional') . " module {$m['name']} is {$m['state']}" . ($m['reason'] !== '' ? " ({$m['reason']})" : '');
-            if ($m['core']) {
+            if ($m['state'] === 'locked') {
+                $output->line("  plan  $label");          // not a fault: the plan does not include it
+            } elseif ($m['core']) {
                 $bad++;
                 $output->error("  FAIL  $label");
             } else {
@@ -84,6 +91,34 @@ final class ModulesCommand extends Command
         $output->line();
         $bad === 0 ? $output->info('Every core module is active.') : $output->error("$bad core module(s) not active: their routes show the fallback page.");
         return $bad === 0 ? 0 : 1;
+    }
+
+    private function tier(Modules $modules, string $tier, Output $output): int
+    {
+        $tiers = $modules->tiers();
+        if (!$tiers) {
+            $output->error("No plans are listed. Add 'tiers' => ['essentials', 'professional', 'enterprise'] to config/modules.php.");
+            return 1;
+        }
+        if ($tier !== '') {
+            if (!in_array(strtolower($tier), $tiers, true)) {
+                $output->error("There is no plan \"$tier\". The plans are: " . implode(', ', $tiers));
+                return 1;
+            }
+            if (!$modules->setTier($tier)) {
+                $output->error('This install keeps the plan elsewhere (module_store has no setTier). Change it there.');
+                return 1;
+            }
+            $output->info('This install is now on the ' . strtolower($tier) . ' plan.');
+        }
+        $output->line('Plan: ' . $output->color((string) $modules->tier(), 'green') . '  (modules:tier <name> changes it; CAST_TIER or modules.tier in config/modules.php can override the saved one)');
+        $rows = [];
+        foreach ($tiers as $i => $name) {
+            $adds = array_map(fn($m) => $m['name'], array_filter($modules->all(), fn($m) => ($m['core'] ? $tiers[0] : ($m['tier'] ?: $tiers[0])) === $name));
+            $rows[] = [$name, $name === $modules->tier() ? 'current' : ($modules->allows($name) ? 'included' : 'locked'), implode(', ', $adds) ?: '-'];
+        }
+        $output->table(['Plan', 'For this install', 'Adds'], $rows);
+        return 0;
     }
 
     private function toggle(Modules $modules, string $name, bool $on, Output $output): int

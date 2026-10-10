@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '0.10.0';
+    public const VERSION = '0.11.0';
 
     private static ?self $instance = null;
 
@@ -310,7 +310,7 @@ final class Application
             ],
             'cdocs' => ['enabled' => false],
             'hashing' => ['driver' => Env::get('HASH_DRIVER', 'auto'), 'bcrypt' => ['cost' => 12], 'argon' => ['memory' => 65536, 'time' => 4, 'threads' => 1]],
-            'modules' => ['enabled' => Env::bool('CAST_MODULES', false), 'core' => [], 'optional' => []],
+            'modules' => ['enabled' => Env::bool('CAST_MODULES', false), 'store' => 'file', 'table' => 'modules', 'tiers' => [], 'tier' => Env::get('CAST_TIER'), 'upgrade_url' => '', 'core' => [], 'optional' => []],
             'dock' => ['enabled' => Env::bool('CAST_DOCK', true), 'demo_url' => '/demo'],
             'cors' => ['allowed_origins' => array_filter(array_map('trim', explode(',', (string) Env::get('CORS_ALLOWED_ORIGINS', ''))))],
             'models' => ['namespace' => 'App\\Models'],

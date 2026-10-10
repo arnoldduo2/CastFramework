@@ -326,3 +326,23 @@ if (!function_exists('module_active')) {
         return !$app || !$app->has('modules') || $app->make('modules')->isActive($name);
     }
 }
+
+if (!function_exists('plan_allows')) {
+    /** Does this install's plan include the tier? `plan_allows('professional')`. Always true while module gating is off or no tiers are listed. */
+    function plan_allows(string $tier): bool
+    {
+        $app = Application::instance();
+        if (!$app || !$app->has('modules')) return true;
+        $modules = $app->make('modules');
+        return !$modules->enabled() || $modules->allows($tier);
+    }
+}
+
+if (!function_exists('module_tier')) {
+    /** The plan this install is on ('essentials', 'professional' ...), or null without tiers. */
+    function module_tier(): ?string
+    {
+        $app = Application::instance();
+        return $app && $app->has('modules') ? $app->make('modules')->tier() : null;
+    }
+}

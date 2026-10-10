@@ -82,7 +82,7 @@ final class DeployCheckCommand extends Command
             $output->line($output->color('Modules', 'orange'));
             foreach ($this->app->make('modules')->all() as $m) {
                 $label = ($m['core'] ? 'core' : 'optional') . " module {$m['name']} is {$m['state']}" . ($m['reason'] !== '' ? " ({$m['reason']})" : '');
-                $report($m['state'] === 'active' ? 'ok' : ($m['core'] ? 'fail' : 'warn'), $label, $m['state'] === 'active' ? '' : 'php cast modules:list');
+                $report(in_array($m['state'], ['active', 'locked'], true) ? 'ok' : ($m['core'] ? 'fail' : 'warn'), $label, in_array($m['state'], ['active', 'locked'], true) ? '' : 'php cast modules:list');
             }
         }
 

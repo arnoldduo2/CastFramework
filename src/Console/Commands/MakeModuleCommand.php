@@ -19,6 +19,7 @@ final class MakeModuleCommand extends Command
     protected array $options = [
         '--core' => 'A core module: the app cannot work without it (modules:check fails when it is missing, it cannot be switched off). Asked when left out',
         '--title=TEXT' => 'The name shown on the fallback page (default: the module name in words)',
+        '--tier=NAME' => 'The plan it belongs to (professional, enterprise ...; one of modules.tiers). Core modules are always in the first plan',
         '--model' => 'Also create a model class for the module',
         '--no-config' => 'Do not touch config/modules.php',
         '--force' => 'Overwrite files that exist',
@@ -65,7 +66,7 @@ final class MakeModuleCommand extends Command
             $output->info('Created ' . $this->relative($path));
         }
 
-        if (!$input->hasOption('no-config')) $this->register($slug, $title, $core, "$ns\\Controllers\\$controller", $output);
+        if (!$input->hasOption('no-config')) $this->register($slug, $title, $core, "$ns\\Controllers\\$controller", $output, $core ? '' : strtolower((string) $input->option('tier')));
 
         $output->line();
         $output->line($output->color('Next:', 'orange'));
@@ -94,7 +95,7 @@ final class MakeModuleCommand extends Command
     }
 
     /** Add the module to config/modules.php under core or optional, creating the file from the framework's default when missing. */
-    private function register(string $slug, string $title, bool $core, string $controller, Output $output): void
+    private function register(string $slug, string $title, bool $core, string $controller, Output $output, string $tier = ''): void
     {
         $file = $this->app->configPath('modules.php');
         if (!is_file($file)) {
@@ -108,7 +109,7 @@ final class MakeModuleCommand extends Command
             return;
         }
         $group = $core ? 'core' : 'optional';
-        $entry = "        '$slug' => ['title' => '" . addcslashes($title, "'\\") . "', 'requires' => [\\" . $controller . "::class]],\n";
+        $entry = "        '$slug' => ['title' => '" . addcslashes($title, "'\\") . "', 'requires' => [\\" . $controller . "::class]" . ($tier !== '' ? ", 'tier' => '" . addcslashes($tier, "'\\") . "'" : '') . "],\n";
         $new = preg_replace("/('" . $group . "'\s*=>\s*\[\R)/", '$1' . addcslashes($entry, '\\$'), $text, 1, $count);
         if (!$count) {
             $output->warn("Add this to the '$group' list in config/modules.php:\n" . rtrim($entry));

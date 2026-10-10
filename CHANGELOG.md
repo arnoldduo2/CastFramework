@@ -2,6 +2,11 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.11.0
+
+- **Plans (tiers) for modules**: `modules.tiers` lists them lowest first (`essentials`, `professional`, `enterprise`), a module has a `tier`, core modules are always in the first plan, a plan includes every tier below it. A module above the plan is `locked`: `403`, a "Not in your plan" page with an optional upgrade link, JSON for APIs. The install's plan: a function in `modules.tier` (a licence or tenant row), the saved one, `CAST_TIER`, or the first tier. `php cast modules:tier [plan]` shows and sets it; `module_tier()` and `plan_allows()` for code and views; `make:module --tier=`; `modules:list` shows the tier column.
+- **Database-controlled modules**: `'store' => 'database'` reads switches and the plan from a `modules` table (`php cast modules:table --migration`); a missing table is "no opinion". New `Cast\Contracts\TierStore`; the file store keeps the plan too.
+
 ## 0.10.0
 
 - **Module gating** (opt in, off by default: `CAST_MODULES=true`). List modules as core or optional in `config/modules.php` and put a group of routes behind a gate with `Router::module('reports', fn() => ...)` (a `ModuleGate` middleware). A module that is inactive, unbuilt (a `requires` class or file is missing) or unlisted answers `503` with a "module inactive or unavailable" page (`errors/module`, overridable; JSON envelope for APIs and the SPA client) instead of breaking the app. `module_active('name')` hides menu items.

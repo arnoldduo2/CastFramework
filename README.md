@@ -809,7 +809,7 @@ Output is coloured on a terminal (green commands, blue arguments, orange heading
 | `make:config <name>`, `key:generate` | A documented config file for a section; the app key |
 | `make:service <Name> [--example=printer\|barcode\|qrcode]` | A service class, blank or a working printer / barcode / QR example |
 | `requirements [--production] [--json]` | Does this PHP have the extensions, limits and settings the framework needs |
-| `make:module <Name> [--core] [--model]`, `modules:list`, `modules:check`, `modules:enable <name>`, `modules:disable <name>` | [Modules](#modules-optional-gating) |
+| `make:module <Name> [--core] [--model]`, `modules:list`, `modules:check`, `modules:tier [plan]`, `modules:table --migration`, `modules:enable <name>`, `modules:disable <name>` | [Modules](#modules-optional-gating) |
 | `deploy:init`, `deploy:check`, `deploy:scan`, `deploy:optimize` | [Deploying to production](#deploying-to-production) |
 | `demo:strip [--pack=clean\|shell\|crud\|auth\|auth-crud]` | Remove the demo and keep a starter pack |
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
@@ -873,7 +873,20 @@ Router::module('reports', function () {            // = Router::middleware([Modu
 });
 ```
 
-A module is **active**, **inactive** (`'active' => false`, a function returning a bool, `modules:disable`, or your own `module_store`), **unbuilt** (a class or file in its `requires` list does not exist yet) or **unregistered** (the gate names a module that is not listed). Anything but active answers `503` with the page `errors/module` (the framework has one; make `errors/module.cast.php` in your views to replace it), `Retry-After` set, and the usual JSON envelope for APIs and the SPA client. **Core** modules are the ones the app cannot work without: they cannot be switched off, `modules:check` and `deploy:check` fail when one is not active, and optional ones only warn. Hide a menu item while its module is off with `module_active('reports')`. To keep switches in a database implement `Cast\Contracts\ModuleStore` (`isEnabled($module): ?bool`, `set()`) and bind it as `module_store`. With gating off every gate lets everything through, so the same code runs either way.
+**Plans (tiers).** For an Essentials / Professional / Enterprise product list the plans, lowest first, and give modules a tier:
+
+```php
+'tiers' => ['essentials', 'professional', 'enterprise'],
+'tier'  => env('CAST_TIER'),                      // this install's plan: a name, or a function (read a licence / tenant row): fn() => app('licence')->plan()
+'core'     => ['billing', 'users'],               // core modules are always in the first plan: Essentials always works
+'optional' => ['reports', 'payroll' => ['tier' => 'professional'], 'analytics' => ['tier' => 'enterprise']],
+```
+
+A plan includes every tier below it. A module above the install's plan answers **403** with a "Not in your plan" page (a "See the plans" link when `upgrade_url` is set) and the JSON envelope for APIs, and it counts as `locked`, not as a fault (`modules:check` does not fail). The install's plan comes from, in order: a function in `modules.tier`, the plan saved in the store (`php cast modules:tier professional`, or the database), `CAST_TIER`, the first tier. In code and views: `plan_allows('professional')`, `module_tier()`, `module_active('payroll')`. `php cast modules:tier` shows the plan and what each plan adds; `make:module Payroll --tier=professional` lists a new module in a plan.
+
+**Controlled by the database.** Set `'store' => 'database'` and run `php cast modules:table --migration` then `php cast migrate`: the `modules` table holds one row per module (`name`, `enabled`: 1 on, 0 off, NULL follows the config) and a row named `@tier` whose `value` is the plan, so an admin screen or a billing webhook can switch modules and move a customer between plans with plain updates (`Cast\Core\Modules\DatabaseModuleStore` has `set()`, `setTier()`). Rows are read once per request, and a missing table means "no opinion", so the app keeps running while you migrate. Another storage (a licence server, a multi-tenant table) is a class implementing `Cast\Contracts\ModuleStore` (and `TierStore` for the plan) bound as `module_store`.
+
+A module is **active**, **inactive** (`'active' => false`, a function returning a bool, `modules:disable`, or your own `module_store`), **unbuilt** (a class or file in its `requires` list does not exist yet) or **unregistered** (the gate names a module that is not listed) or **locked** (a higher plan). Anything but active answers `503` (`403` for locked) with the page `errors/module` (the framework has one; make `errors/module.cast.php` in your views to replace it), `Retry-After` set, and the usual JSON envelope for APIs and the SPA client. **Core** modules are the ones the app cannot work without: they cannot be switched off, `modules:check` and `deploy:check` fail when one is not active, and optional ones only warn. Hide a menu item while its module is off with `module_active('reports')`. To keep switches in a database implement `Cast\Contracts\ModuleStore` (`isEnabled($module): ?bool`, `set()`) and bind it as `module_store`. With gating off every gate lets everything through, so the same code runs either way.
 
 ## Deploying to production
 

@@ -181,3 +181,136 @@ test('module routes files in routes/modules/ are loaded by the framework and gat
     eq('tasks page', handle(new Request('GET', '/tasks'))->body());
     eq(503, handle(new Request('GET', '/notes'))->statusCode());
 });
+
+function tier_app(array $extra = [], string $env = ''): \Cast\App\Application
+{
+    $config = var_export(array_replace([
+        'enabled' => true,
+        'tiers' => ['essentials', 'professional', 'enterprise'],
+        'upgrade_url' => 'https://example.com/plans',
+        'core' => ['billing'],
+        'optional' => ['reports', 'payroll' => ['tier' => 'professional'], 'analytics' => ['tier' => 'enterprise'], 'odd' => ['tier' => 'platinum']],
+    ], $extra), true);
+    $app = boot_app(['config/modules.php' => "<?php return $config;", '.env' => "APP_NAME=Shop\n$env"]);
+    mkdir($app->basePath('storage'), 0777, true);
+    foreach (['billing', 'reports', 'payroll', 'analytics', 'odd'] as $m) Router::module($m, fn() => Router::get("/$m", fn() => "the $m page"));
+    return $app;
+}
+
+test('tiers: Essentials is the base, a plan includes every tier below it, higher modules answer 403 with the plan page', function () {
+    tier_app();
+    $modules = app('modules');
+    eq('essentials', $modules->tier(), 'the base plan by default');
+    eq('the billing page', handle(new Request('GET', '/billing'))->body());
+    eq('the reports page', handle(new Request('GET', '/reports'))->body());
+    $locked = handle(new Request('GET', '/payroll'));
+    eq(403, $locked->statusCode(), 'not a fault: the plan');
+    has('Not in your plan', $locked->body());
+    has('Professional plan', $locked->body());
+    has('you are on Essentials', $locked->body());
+    has('https://example.com/plans', $locked->body(), 'the upgrade link');
+    eq(403, handle(new Request('GET', '/analytics'))->statusCode());
+    eq(403, handle(new Request('GET', '/odd'))->statusCode(), 'an unknown tier name is never reachable');
+    $json = json_decode(handle(new Request('GET', '/payroll', [], '', ['HTTP_ACCEPT' => 'application/json']))->body(), true);
+    eq('error', $json['status']);
+    has('not part of your plan', $json['msg']);
+    ok(!module_active('payroll') && !plan_allows('professional') && plan_allows('essentials') && module_active('billing'));
+});
+
+test('tiers: modules:tier moves the install up and down, core is always base, and bad plans are refused', function () {
+    $app = tier_app();
+    $class = \Cast\Console\Commands\ModulesCommand::class;
+    [$c, $o] = cmd_run_module($class, 'tier', ['professional'], $app);
+    eq(0, $c, $o);
+    has('now on the professional plan', $o);
+    eq(200, handle(new Request('GET', '/payroll'))->statusCode());
+    eq(200, handle(new Request('GET', '/reports'))->statusCode(), 'includes the tiers below');
+    eq(403, handle(new Request('GET', '/analytics'))->statusCode(), 'but not the ones above');
+    ok(plan_allows('essentials') && plan_allows('professional') && !plan_allows('enterprise'));
+    [, $show] = cmd_run_module($class, 'tier', [], $app);
+    has('Plan: professional', $show);
+    has('payroll', $show);
+    [$bad] = cmd_run_module($class, 'tier', ['platinum'], $app);
+    eq(1, $bad);
+    cmd_run_module($class, 'tier', ['enterprise'], $app);
+    eq(200, handle(new Request('GET', '/analytics'))->statusCode());
+    [, $list] = cmd_run_module($class, 'list', [], $app);
+    has('Plan: enterprise', $list);
+    has('Tier', $list);
+    cmd_run_module($class, 'tier', ['essentials'], $app);
+    eq(403, handle(new Request('GET', '/payroll'))->statusCode());
+    [$check] = cmd_run_module($class, 'check', [], $app);
+    eq(0, $check, 'a module above the plan is not a failure');
+    [$none] = cmd_run_module($class, 'tier', ['x'], boot_app(['config/modules.php' => "<?php return ['enabled' => true];"]));
+    eq(1, $none, 'no tiers listed');
+});
+
+test('tiers: CAST_TIER, a function (a licence row) and the store decide, in that order', function () {
+    tier_app([], "CAST_TIER=professional\n");
+    eq('professional', app('modules')->tier(), 'CAST_TIER from .env');
+    eq(200, handle(new Request('GET', '/payroll'))->statusCode());
+
+    $app = tier_app();
+    \Cast\Core\Config::set('modules.tier', fn() => 'Enterprise');
+    $app->singleton('modules', fn() => new \Cast\Core\Modules\Modules($app->make('module_store')));
+    eq('enterprise', app('modules')->tier(), 'a function wins, any case');
+    $app->make('module_store')->setTier('professional');
+    eq('enterprise', app('modules')->tier(), 'even over the saved plan');
+    \Cast\Core\Config::set('modules.tier', 'nonsense');
+    eq('professional', app('modules')->tier(), 'a bad name is ignored: the saved plan');
+    \Cast\Core\Config::set('modules.tiers', []);
+    eq(null, app('modules')->tier(), 'no tiers, no plans');
+    ok(app('modules')->allows('anything'));
+});
+
+test('a database controls the modules and the plan: modules:table writes the migration, the store reads switches and the tier', function () {
+    $app = boot_app([
+        '.env' => "APP_NAME=Shop\nDB_CONN=sqlite\nDB_NAME=:memory:\n",
+        'config/modules.php' => "<?php return ['enabled' => true, 'store' => 'database', 'tiers' => ['essentials', 'pro'], 'core' => ['billing'], 'optional' => ['reports', 'payroll' => ['tier' => 'pro']]];",
+    ]);
+    mkdir($app->basePath('database/migrations'), 0777, true);
+    foreach (['billing', 'reports', 'payroll'] as $m) Router::module($m, fn() => Router::get("/$m", fn() => "the $m page"));
+    $screen = fopen('php://memory', 'w+');
+    $cmd = new \Cast\Console\Commands\ModulesTableCommand($app);
+    eq(0, $cmd->handle(new \Cast\Console\Input(['modules:table', '--migration']), new \Cast\Console\Output($screen, false)));
+    $files = glob($app->basePath('database/migrations/*_create_modules_table.php'));
+    eq(1, count($files));
+    eq(0, $cmd->handle(new \Cast\Console\Input(['modules:table', '--migration']), new \Cast\Console\Output(fopen('php://memory', 'w+'), false)), 'once only');
+    eq(1, count(glob($app->basePath('database/migrations/*_create_modules_table.php'))));
+
+    eq('essentials', app('modules')->tier(), 'no table yet: the app still runs on the base plan');
+    eq(200, handle(new Request('GET', '/reports'))->statusCode());
+    $app->make('migrator')->migrate();
+
+    $store = $app->make('module_store');
+    ok($store instanceof \Cast\Core\Modules\DatabaseModuleStore);
+    $store->set('reports', false);
+    $store->setTier('pro');
+    $app->singleton('module_store', fn() => new \Cast\Core\Modules\DatabaseModuleStore('modules'));   // a new request
+    $app->singleton('modules', fn() => new \Cast\Core\Modules\Modules($app->make('module_store')));
+    eq('pro', app('modules')->tier(), 'the plan comes from the table');
+    eq(200, handle(new Request('GET', '/payroll'))->statusCode(), 'pro unlocks payroll');
+    eq(503, handle(new Request('GET', '/reports'))->statusCode(), 'reports switched off in the table');
+    $store->set('reports', true);
+    $store->setTier('essentials');
+    $app->singleton('module_store', fn() => new \Cast\Core\Modules\DatabaseModuleStore('modules'));
+    $app->singleton('modules', fn() => new \Cast\Core\Modules\Modules($app->make('module_store')));
+    eq(200, handle(new Request('GET', '/reports'))->statusCode());
+    eq(403, handle(new Request('GET', '/payroll'))->statusCode());
+    eq(2, \Cast\Core\QueryBuilder::table('modules')->count(), 'one row per switch, one for the plan');
+});
+
+test('make:module --tier puts the module in a plan; core ignores it', function () {
+    $app = boot_app(['.env' => "APP_NAME=Shop\n"]);
+    $make = function (array $args) use ($app) {
+        $screen = fopen('php://memory', 'w+');
+        $cmd = new \Cast\Console\Commands\MakeModuleCommand($app);
+        $code = $cmd->handle(new \Cast\Console\Input(['make:module', ...$args, '-n']), new \Cast\Console\Output($screen, false));
+        return $code;
+    };
+    eq(0, $make(['Payroll', '--tier=Professional']));
+    eq(0, $make(['Ledger', '--core', '--tier=enterprise']));
+    $text = (string) file_get_contents($app->basePath('config/modules.php'));
+    has("'payroll' => ['title' => 'Payroll', 'requires' => [\\App\\Controllers\\PayrollController::class], 'tier' => 'professional']", $text);
+    lacks("'ledger' => ['title' => 'Ledger', 'requires' => [\\App\\Controllers\\LedgerController::class], 'tier'", $text);
+});
