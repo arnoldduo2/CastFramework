@@ -41,5 +41,10 @@ Router::middleware([Authenticate::class, 'private'], function () {
     });
 });
 
-// A route that fails, to see the error page: /_boom
+// Routes that fail, to see the error pages: /_boom (an HTTP error) and /_crash (an exception: in development the code, the stack and an
+// "Open in editor" link are shown, also inside the SPA and in the JSON an API client gets)
 Router::get('/_boom', fn() => abort(500, 'This is what a server error looks like.'));
+Router::get('/_crash', function () {
+    $items = ['qty' => 2];
+    return $items['qty'] * $price;      // $price was never defined
+});

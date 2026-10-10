@@ -174,6 +174,21 @@ const step = async (name, fn) => {
     assert.match(page.url(), /\/stats$/, "the address did not change");
   });
 
+  await step("in development a server error shows the code with the failing part underlined, an editor link and the stack", async () => {
+    await page.evaluate(() => Cast.load("/_crash"));
+    const overlay = page.locator("[data-cast-error-overlay]");
+    await overlay.waitFor({ state: "attached" });
+    assert.ok(await overlay.locator("text=Undefined variable $price").count(), "the message");
+    assert.equal(await overlay.locator(".u").first().innerText(), "$price", "the failing part is underlined");
+    assert.ok(await overlay.locator(".cl.err").count() === 1, "one failing line");
+    assert.match(await overlay.locator("a:has-text('Open in editor')").first().getAttribute("href"), /^vscode:\/\/file\/.*routes\/web\.php:\d+:1$/);
+    assert.match(await overlay.locator("a:has-text('Full error page')").getAttribute("href"), /\/cast\/error\/[0-9a-f]{8}$/);
+    assert.ok(await overlay.locator(".t").count() >= 1, "the stack");
+    assert.equal(await marker(), "alive", "no reload");
+    await page.keyboard.press("Escape");
+    assert.equal(await page.locator("[data-cast-error-overlay]").count(), 0, "Esc closes it");
+  });
+
   await step("logging out (a Cast form) returns to the public layout without a reload", async () => {
     await page.click("button[title='admin@example.com']");
     await page.waitForSelector("text=Log in");

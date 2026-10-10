@@ -62,6 +62,11 @@ final class DocsBuildCommand extends Command
         file_put_contents("$out/data.js", $js);
         $viewer = dirname(__DIR__, 2) . '/Resources/docs/index.html';
         if (!is_file("$out/index.html") && is_file($viewer)) copy($viewer, "$out/index.html");
+        // pictures used by the pages: docs/images/* goes to <out>/images/ (a page writes  ![alt](images/name.png))
+        if (is_dir("$source/images")) {
+            if (!is_dir("$out/images")) mkdir("$out/images", 0775, true);
+            foreach (glob("$source/images/*.{png,jpg,jpeg,gif,svg,webp}", GLOB_BRACE) ?: [] as $image) copy($image, "$out/images/" . basename($image));
+        }
         $output->info("Built $count pages in " . str_replace($this->app->basePath() . DIRECTORY_SEPARATOR, '', $out) . '/ (data.js' . (is_file("$out/index.html") ? ', index.html' : '') . ')');
         foreach ($data['sections'] as $section) {
             $n = count(array_filter($data['pages'], fn($p) => $p['section'] === $section));

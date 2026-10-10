@@ -24,6 +24,8 @@ What it does:
 - **Ajax, Cast and API requests** get JSON, not HTML. The framework also answers HTTP errors itself (404, 403, 405, 419, 503) with its own pages:
   these are not PHP errors, so the handler is not involved.
 
+![The development error page: the failing code with the part underlined in red, an Open in editor link, and the stack](images/error-page.png)
+
 ## Configure it
 
 `php cast init` asks whether to use it (and shows every setting with its default). Later:
@@ -65,6 +67,51 @@ HTTP error pages are views: create `resources/views/errors/404.cast.php` (or `40
 yours replaces the framework's; an **empty** file means "not built yet", so the framework page shows and, in development, says which view you still
 have to write. `php cast init` can create the empty ones (`--error-pages=custom`). The page the handler shows for a 500 in production is
 `error_view`.
+
+## In the SPA and with a front-end framework
+
+A browser page gets the full error page above. A Cast (SPA) page or a React / Vue / Next.js front end never navigates to a failing request: it gets JSON, so the server sends the same details **inside the JSON, in development only**:
+
+```json
+{
+  "status": "error",
+  "msg": "Undefined variable $price",
+  "data": {
+    "type": "error", "code": 500,
+    "debug": {
+      "id": "a11a4802", "kind": "ErrorException", "severity": "WARNING",
+      "message": "Undefined variable $price",
+      "file": "app/Controllers/ItemsController.php", "line": 49,
+      "editor": "vscode://file//home/me/shop/app/Controllers/ItemsController.php:49:1",
+      "url": "http://localhost:8000/cast/error/a11a4802",
+      "code": [{ "n": 48, "text": "    $items = ['qty' => 2];", "error": false }, { "n": 49, "text": "    return $items['qty'] * $price;", "error": true }],
+      "focus": [30, 6],
+      "trace": [{ "index": 0, "file": "app/Controllers/ItemsController.php", "line": 49, "context": "App\\Controllers\\ItemsController->edit()", "app": true, "editor": "vscode://..." }]
+    }
+  }
+}
+```
+
+![The error overlay the Cast client shows in development: the code, the failing part underlined, Open in editor, Full error page, and the stack](images/error-overlay.png)
+
+- **Cast (SPA) pages:** the client shows an **overlay** on top of the page (a failing form submit or navigation too): the message, the code with the failing part underlined, *Open in editor*, *Full error page* and the stack. Esc closes it; the page underneath stays as it was. Nothing to set up. (`CAST_EDITOR` chooses the editor.)
+- **A front end of your own** (React, Vue, Next.js, Svelte ...): the same overlay is one script, served by the framework, that you can load while developing, or you can read `data.debug` and draw your own:
+
+```html
+<script src="http://localhost:8000/cast/error-overlay.js"></script>   <!-- development only -->
+```
+
+```js
+const res = await fetch("http://localhost:8000/api/items", { headers: { Accept: "application/json" } });
+const body = await res.json();
+if (body.status === "error" && body.data?.debug) window.CastErrorOverlay.show(body.data.debug);   // the overlay
+// or: console.error(body.data.debug.message, body.data.debug.file + ":" + body.data.debug.line); window.open(body.data.debug.url);
+```
+
+  In a Vite or Next.js app put the `<script>` in `index.html` / the root layout behind `import.meta.env.DEV` / `process.env.NODE_ENV === 'development'`, so it never ships. The overlay lives in a shadow root (your CSS cannot break it) and inserts everything as text.
+- **`url`** opens the same full page the browser would have shown (all stack steps with their code, the request, the environment): `GET /cast/error/<id>`. The server keeps the last 25 reports in `storage/framework/errors/` for this, and serves the page only in development. The page and the editor links need error handler 1.3; with an older one `debug` still has the message, file, line, code and stack.
+- **Production:** none of this exists. `APP_ENV=production`, or `APP_DEBUG=false`, answers with the generic message and no `debug`, and `/cast/error/<id>` is a 404. (`APP_DEBUG=true` in production would show the message: never set it.)
+- **Fatal errors** (memory exhausted, a compile error in a view) and errors inside a `.cast.php` view reach SPA and API clients the same way.
 
 ## In practice
 

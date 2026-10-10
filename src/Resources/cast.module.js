@@ -42,6 +42,25 @@
 
   const pages = new Map(); // page key => {mount, destroy}
 
+  // ------------------------------------------------------------------ development error overlay
+
+  // In development a server error comes with `data.debug` (the code, the stack, editor links): shown on top of the page. The overlay is a
+  // separate file (error-overlay.js next to this one) that is only loaded when there is an error to show; production never sends `debug`.
+  let overlay = null;
+  function showDebug(debug) {
+    if (!debug || typeof debug !== "object") return;
+    if (window.CastErrorOverlay) return void window.CastErrorOverlay.show(debug);
+    if (!overlay) {
+      overlay = new Promise((resolve) => {
+        const el = document.createElement("script");
+        el.src = script && script.src ? script.src.replace(/[^/]*(\?.*)?$/, "error-overlay.js") : url("/cast/error-overlay.js");
+        el.onload = el.onerror = () => resolve();
+        document.head.appendChild(el);
+      });
+    }
+    overlay.then(() => window.CastErrorOverlay && window.CastErrorOverlay.show(debug));
+  }
+
   // ------------------------------------------------------------------ helpers
 
   const root = document.documentElement;
@@ -163,6 +182,7 @@
     }
 
     if (res.data && res.data.csrf) setToken(res.data.csrf);
+    if (res.status === "error" && res.data && res.data.debug) showDebug(res.data.debug);
     if (options.follow !== false) await follow(res);
     return res;
   }
@@ -326,6 +346,7 @@
 
   function showError(target, env, retryUrl) {
     const data = env.data || {};
+    if (data.debug) showDebug(data.debug); // development: the code, the stack, editor links
     const box = document.createElement("div");
     box.className = "cast-error";
     box.setAttribute("role", "alert");
@@ -620,7 +641,7 @@
   }
 
   window.Cast = {
-    version: "1.2.0",
+    version: "1.3.0",
     load,
     http: (options) => http(options),
     page,

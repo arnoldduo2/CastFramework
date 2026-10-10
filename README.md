@@ -766,6 +766,8 @@ CORS headers are sent only for exact origins in `CORS_ALLOWED_ORIGINS`, never `*
 
 ## Errors, maintenance and updates
 
+In development a server error is also shown to **SPA and API clients**: the JSON gets `data.debug` (where it happened, the code with the failing part marked, the stack, an *Open in editor* link and a link to the full error page), the Cast client shows it as an overlay, and a front end of your own can load `/cast/error-overlay.js` or use `data.debug` itself. Never in production. Details: [docs/ERROR-HANDLER.md](docs/ERROR-HANDLER.md).
+
 The error handler is **Anode Error Handler**, installed with the framework: options, logs and your own pages are in [docs/ERROR-HANDLER.md](docs/ERROR-HANDLER.md). Views are compiled by **CastTemplateEngine**, also installed with it: [docs/TEMPLATE-ENGINE.md](docs/TEMPLATE-ENGINE.md).
 
 **Error pages.** `abort(404)`, a missing route, a wrong verb, a bad CSRF token and a permission failure all end in an error page (HTML) or `{status:'error', msg}` (JSON clients).

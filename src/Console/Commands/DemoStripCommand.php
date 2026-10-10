@@ -176,7 +176,7 @@ final class DemoStripCommand extends Command
         } elseif ($crud) {
             $body .= "\n// Items: open to everyone. Wrap it in Router::middleware([Authenticate::class, 'private'], ...) when you add a login.\n" . $items('');
         }
-        $body .= "\n// A route that fails, to see the error page: /_boom\nRouter::get('/_boom', fn() => abort(500, 'This is what a server error looks like.'));\n";
+        $body .= "\n// Routes that fail, to see the error pages: /_boom (an HTTP error) and /_crash (an exception: in development the code, the stack and an Open in editor link)\nRouter::get('/_boom', fn() => abort(500, 'This is what a server error looks like.'));\nRouter::get('/_crash', function () {\n    \$items = ['qty' => 2];\n    return \$items['qty'] * \$price;      // \$price was never defined\n});\n";
 
         $this->write($this->app->routesPath('web.php'), "<?php\n\ndeclare(strict_types=1);\n\n" . implode("\n", $uses) . "\n\n"
             . "/*\n * Your app's pages. `Router::get(path, handler)`: the handler is a controller class (its index() runs) or [Controller::class, 'method'].\n"

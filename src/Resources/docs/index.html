@@ -114,6 +114,8 @@
     .doc li { margin: 4px 0; }
     .doc li > ul, .doc li > ol { margin: 4px 0 0; }
     .doc hr { border: 0; border-top: 1px solid var(--line); margin: 32px 0; }
+    .doc .shot { display: block; margin: 18px 0; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; line-height: 0; }
+    .doc .shot img { width: 100%; height: auto; display: block; }
     .doc code { font: 13px var(--mono); background: var(--high); color: var(--secondary); border-radius: 4px; padding: 1px 6px; }
     .doc strong { color: var(--text); font-weight: 600; }
     .callout { background: var(--card); border-left: 3px solid var(--secondary); border-radius: 0 8px 8px 0; padding: 12px 16px; margin: 0 0 18px; color: var(--muted); }
@@ -206,6 +208,12 @@
         var codes = [];
         text = text.replace(/`([^`]+)`/g, function (_, c) { codes.push(c); return '\u0000' + (codes.length - 1) + '\u0000'; });
         text = esc(text);
+        // images: ![alt](images/name.png), relative to the docs folder (docs:build copies docs/images/)
+        text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, function (_, alt, url) {
+          url = url.replace(/&amp;/g, '&');
+          if (/^(javascript|data):/i.test(url)) return '';
+          return '<a href="' + esc(url) + '" target="_blank" rel="noopener" class="shot"><img src="' + esc(url) + '" alt="' + alt + '" loading="lazy"></a>';
+        });
         text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (_, label, url) {
           url = url.replace(/&amp;/g, '&');
           var external = /^https?:/i.test(url);
