@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Cast\Core\Modules;
 
 use Cast\App\Application;
-use Cast\Contracts\{ModuleStore, TierStore};
+use Cast\Contracts\ModuleStore;
 use Cast\Core\Config;
 
 /**
@@ -19,18 +19,22 @@ use Cast\Core\Config;
  *   inactive      switched off: 'active' => false in the config, or `php cast modules:disable reports`
  *   unbuilt       a class or file it 'requires' is not there yet
  *   unregistered  Router::module('x') names a module that is not listed
- *   locked        the module belongs to a higher plan than this install is on (tiers, below)
  * With gating off (the default) every gate lets everything through and every state is 'active'.
  *
- * Tiers (plans): `modules.tiers` lists them lowest first, e.g. ['essentials', 'professional', 'enterprise']. A module has a 'tier' (default: the
- * lowest); core modules are always in the lowest tier, so the base plan always works. The install's plan is `modules.tier` (a name, or a
- * function returning one, e.g. read from a licence or tenant row), else the one saved in the store (`php cast modules:tier professional`,
- * or the database), else the lowest. A plan includes every tier below it. With no tiers listed there are no plans.
+ * Your app can add rules of its own (a plan, a licence, a tenant setting) without the framework knowing about them: register a function with
+ * `resolveUsing()`. It is called with each module and returns null (carry on) or a status that replaces the framework's:
+ *     app('modules')->resolveUsing(fn(array $m) => plan_allows($m['options']['tier'] ?? '') ? null : [
+ *         'state' => 'locked', 'reason' => 'Part of a higher plan.', 'http' => 403, 'fault' => false,
+ *         'headline' => 'Not in your plan', 'detail' => '...', 'action' => ['label' => 'See the plans', 'url' => '/plans']]);
+ * Keys: state (any word), reason, http (status code, default 503), fault (false = not a problem: modules:check and deploy:check do not complain),
+ * message (JSON), headline / detail / action (the fallback page). Every other key you put in a module's config array is in `$m['options']`.
  */
 final class Modules
 {
-    /** @var array<string, array{name: string, title: string, core: bool, active: mixed, requires: list<string>, description: string}> */
+    /** @var array<string, array{name: string, title: string, core: bool, active: mixed, requires: list<string>, description: string, options: array<string, mixed>}> */
     private array $modules = [];
+    /** @var list<callable> rules added with resolveUsing() */
+    private array $resolvers = [];
 
     public function __construct(private ?ModuleStore $store = null)
     {
@@ -49,7 +53,7 @@ final class Modules
             'active' => $options['active'] ?? true,
             'requires' => array_values((array) ($options['requires'] ?? [])),
             'description' => (string) ($options['description'] ?? ''),
-            'tier' => $core ? '' : strtolower((string) ($options['tier'] ?? '')),     // '' = the lowest tier
+            'options' => $options,
         ];
     }
 
@@ -59,57 +63,26 @@ final class Modules
         return (bool) Config::get('modules.enabled', false);
     }
 
-    /** @return list<string> the plans, lowest first (empty: no plans) */
-    public function tiers(): array
+    /** Add a rule of your own (see the class comment). @param callable(array<string, mixed>): ?array<string, mixed> $resolver */
+    public function resolveUsing(callable $resolver): void
     {
-        return array_values(array_filter(array_map(fn($t) => strtolower(trim((string) $t)), (array) Config::get('modules.tiers', []))));
+        $this->resolvers[] = $resolver;
     }
 
-    /** The plan this install is on (null when no tiers are listed). */
-    public function tier(): ?string
-    {
-        $tiers = $this->tiers();
-        if (!$tiers) return null;
-        $setting = Config::get('modules.tier');
-        $tier = is_callable($setting) ? $setting() : null;
-        if (!is_string($tier) || $tier === '') $tier = $this->store instanceof TierStore ? $this->store->tier() : null;
-        if (!is_string($tier) || $tier === '') $tier = is_string($setting) && !is_callable($setting) ? $setting : null;
-        $tier = strtolower(trim((string) $tier));
-        return in_array($tier, $tiers, true) ? $tier : $tiers[0];       // unknown or missing: the base plan
-    }
-
-    /** Does the plan include this tier (the plan's own and every one below it)? Always true without tiers. */
-    public function allows(string $tier): bool
-    {
-        $tiers = $this->tiers();
-        if (!$tiers || $tier === '') return true;
-        $need = array_search(strtolower($tier), $tiers, true);
-        return $need !== false && $need <= (int) array_search($this->tier(), $tiers, true);
-    }
-
-    public function setTier(string $tier): bool
-    {
-        if (!in_array(strtolower($tier), $this->tiers(), true) || !$this->store instanceof TierStore) return false;
-        $this->store->setTier(strtolower($tier));
-        return true;
-    }
-
-    /** @return array{name: string, title: string, core: bool, tier: string, state: string, reason: string} */
+    /** @return array<string, mixed> name, title, core, state, reason (and what a resolver added: http, fault, headline, detail, action, message) */
     public function status(string $name): array
     {
         $m = $this->modules[$name] ?? null;
-        $base = $this->tiers()[0] ?? '';
         if ($m === null) {
-            return ['name' => $name, 'title' => ucwords(str_replace(['-', '_'], ' ', $name)), 'core' => false, 'tier' => $base, 'state' => $this->enabled() ? 'unregistered' : 'active',
+            return ['name' => $name, 'title' => ucwords(str_replace(['-', '_'], ' ', $name)), 'core' => false, 'state' => $this->enabled() ? 'unregistered' : 'active',
                 'reason' => $this->enabled() ? "The module \"$name\" is not listed in config/modules.php." : ''];
         }
-        $tier = $m['tier'] !== '' ? $m['tier'] : $base;
-        $result = ['name' => $name, 'title' => $m['title'], 'core' => $m['core'], 'tier' => $tier, 'state' => 'active', 'reason' => ''];
+        $result = ['name' => $name, 'title' => $m['title'], 'core' => $m['core'], 'state' => 'active', 'reason' => ''];
         if (!$this->enabled()) return $result;
 
-        if (!$this->allows($tier)) {
-            $plan = $this->tier();
-            return [...$result, 'state' => 'locked', 'reason' => 'It is part of the ' . ucfirst($tier) . ' plan; this install is on ' . ucfirst((string) $plan) . '.'];
+        foreach ($this->resolvers as $resolver) {
+            $override = $resolver($result + ['options' => $m['options']]);
+            if (is_array($override)) return array_replace($result, $override);
         }
         foreach ($m['requires'] as $need) {
             if (!$this->exists($need)) return [...$result, 'state' => 'unbuilt', 'reason' => "$need is not there yet."];
@@ -124,7 +97,7 @@ final class Modules
         return $this->status($name)['state'] === 'active';
     }
 
-    /** @return list<array{name: string, title: string, core: bool, tier: string, state: string, reason: string}> core modules first */
+    /** @return list<array<string, mixed>> core modules first */
     public function all(): array
     {
         $list = array_map(fn($n) => $this->status($n), array_keys($this->modules));
@@ -135,6 +108,12 @@ final class Modules
     public function has(string $name): bool
     {
         return isset($this->modules[$name]);
+    }
+
+    /** The extra keys of a module's config array (the framework reads title, active, requires, description; the rest is for your own rules). */
+    public function options(string $name): array
+    {
+        return $this->modules[$name]['options'] ?? [];
     }
 
     public function isCore(string $name): bool

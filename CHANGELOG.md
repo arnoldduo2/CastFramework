@@ -2,10 +2,11 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
-## 0.11.0
+## 0.12.0
 
-- **Plans (tiers) for modules**: `modules.tiers` lists them lowest first (`essentials`, `professional`, `enterprise`), a module has a `tier`, core modules are always in the first plan, a plan includes every tier below it. A module above the plan is `locked`: `403`, a "Not in your plan" page with an optional upgrade link, JSON for APIs. The install's plan: a function in `modules.tier` (a licence or tenant row), the saved one, `CAST_TIER`, or the first tier. `php cast modules:tier [plan]` shows and sets it; `module_tier()` and `plan_allows()` for code and views; `make:module --tier=`; `modules:list` shows the tier column.
-- **Database-controlled modules**: `'store' => 'database'` reads switches and the plan from a `modules` table (`php cast modules:table --migration`); a missing table is "no opinion". New `Cast\Contracts\TierStore`; the file store keeps the plan too.
+- **Plans (tiers) moved out of the framework**: they are app lifecycle, so they now live in the app (a ready-made package for a cast-app: `PlanService`, `PlanServiceProvider`, `php cast plan`, `plan_allows()`). Removed from the framework: `modules.tiers` / `tier` / `upgrade_url`, `modules:tier`, `TierStore`, `plan_allows()`, `module_tier()`, `make:module --tier` and the plan row of the database store.
+- **`Modules::resolveUsing()`**: the one hook the app needs. A rule gets each module and returns `null` or a status (`state`, `reason`, `http`, `fault`, `message`, `headline`, `detail`, `action`) that replaces the framework's checks; extra keys in a module's config arrive as `$m['options']` (`Modules::options($name)`). A `fault => false` status is not reported by `modules:check` / `deploy:check`. The module gate and the fallback page use the status code and texts.
+- The database store (`modules:table`) keeps only the per-module switches.
 
 ## 0.10.0
 

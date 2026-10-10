@@ -7,17 +7,13 @@
 return [
     'enabled' => env('CAST_MODULES', false),     // true (or CAST_MODULES=true in .env) turns the gates on
 
-    // Where on/off switches (and the plan) are kept: 'file' (storage/framework/modules.json) or 'database' (the table below; php cast modules:table --migration).
+    // Where on/off switches are kept: 'file' (storage/framework/modules.json) or 'database' (the table below; php cast modules:table --migration).
     // Or bind your own Cast\Contracts\ModuleStore as 'module_store' in a provider.
     'store' => 'file',
     'table' => 'modules',
 
-    // Plans (tiers), lowest first. Empty = no plans. A plan includes every tier below it. Core modules are always in the first tier.
-    // The install's plan: CAST_TIER in .env, php cast modules:tier professional (kept in the store), or a function returning the name
-    // (read it from a licence or tenant row):  'tier' => fn() => app('licence')->plan(),
-    'tiers' => [],                                  // e.g. ['essentials', 'professional', 'enterprise']
-    'tier' => env('CAST_TIER'),
-    'upgrade_url' => '',                            // "See the plans" link on the page for a module the plan does not include
+    // Plans, licences or tenant rules are your app's business, not the framework's: add them with app('modules')->resolveUsing(fn(array $m) => ...)
+    // in a service provider (see the README, "Modules"). Any extra key in a module's array below is passed to it as $m['options'].
 
     // Core: the app cannot work without them. modules:check and deploy:check fail when one is missing; they cannot be switched off.
     'core' => [
@@ -29,7 +25,7 @@ return [
     'optional' => [
         // 'reports',
         // 'printing' => ['title' => 'Receipt printing', 'requires' => [App\Services\PrinterService::class]],   // unbuilt until the class exists
-        // 'payroll' => ['tier' => 'professional'],                                      // part of the Professional plan and above
+        // 'payroll' => ['tier' => 'professional'],                                      // 'tier' means nothing to the framework: your resolveUsing() rule can read it
         // 'barcodes' => ['active' => false],                                            // switched off; true, false or a function returning bool
     ],
 ];

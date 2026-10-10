@@ -477,7 +477,6 @@ php cast make:module <Name> [options]
 | --- | --- |
 | `--core` | A core module: the app cannot work without it (modules:check fails when it is missing, it cannot be switched off). Asked when left out |
 | `--title=TEXT` | The name shown on the fallback page (default: the module name in words) |
-| `--tier=NAME` | The plan it belongs to (professional, enterprise ...; one of modules.tiers). Core modules are always in the first plan |
 | `--model` | Also create a model class for the module |
 | `--no-config` | Do not touch config/modules.php |
 | `--force` | Overwrite files that exist |
@@ -762,7 +761,7 @@ php cast modules:list   # every module and its state
 
 ## `modules:table`
 
-Write the migration for the modules table (database-controlled modules and plan).
+Write the migration for the modules table (database-controlled modules).
 
 ```
 php cast modules:table [options]
@@ -774,23 +773,6 @@ php cast modules:table [options]
 
 ```bash
 php cast modules:table --migration   # then  php cast migrate  and  'store' => 'database'  in config/modules.php
-```
-
-## `modules:tier`
-
-Show the plan (tier) this install is on and what each plan unlocks, or set it.
-
-```
-php cast modules:tier [tier]
-```
-
-| Argument | |
-| --- | --- |
-| `tier` (optional) | The plan to switch to (one of modules.tiers). Leave out to show the current one |
-
-```bash
-php cast modules:tier   # the current plan and which modules each plan adds
-php cast modules:tier professional   # move this install to the Professional plan
 ```
 
 ## `requirements`

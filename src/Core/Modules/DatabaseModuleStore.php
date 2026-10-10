@@ -4,17 +4,16 @@ declare(strict_types=1);
 
 namespace Cast\Core\Modules;
 
-use Cast\Contracts\{ModuleStore, TierStore};
+use Cast\Contracts\ModuleStore;
 use Cast\Core\QueryBuilder;
 
 /**
- * Module switches and the plan kept in a database table, so an admin screen (or your own SQL) controls them. Turn it on with
+ * Module switches kept in a database table, so an admin screen (or your own SQL) controls them. Turn it on with
  * `'store' => 'database'` in config/modules.php and create the table with  php cast modules:table --migration  (or --run).
  *
- * One row per module: name, enabled (true/false, null = follow the config). The plan is the row named "@tier", its value column holding
- * e.g. "professional". Rows are read once per request. A missing table is treated as "no opinion", so the app still runs while you migrate.
+ * One row per module: name, enabled (true/false, null = follow the config). Rows are read once per request. A missing table is treated as "no opinion", so the app still runs while you migrate.
  */
-final class DatabaseModuleStore implements ModuleStore, TierStore
+final class DatabaseModuleStore implements ModuleStore
 {
     /** @var array<string, array<string, mixed>>|null */
     private ?array $rows = null;
@@ -32,17 +31,6 @@ final class DatabaseModuleStore implements ModuleStore, TierStore
         $this->save($module, ['enabled' => $enabled ? 1 : 0]);
     }
 
-    public function tier(): ?string
-    {
-        $value = $this->rows()['@tier']['value'] ?? null;
-        return is_string($value) && $value !== '' ? $value : null;
-    }
-
-    public function setTier(string $tier): void
-    {
-        $this->save('@tier', ['value' => $tier]);
-    }
-
     /** @param array<string, mixed> $data */
     private function save(string $name, array $data): void
     {
@@ -50,7 +38,7 @@ final class DatabaseModuleStore implements ModuleStore, TierStore
         if ($existing) {
             QueryBuilder::table($this->table)->where('name', $name)->update($data);
         } else {
-            QueryBuilder::table($this->table)->insert($data + ['name' => $name, 'enabled' => null, 'value' => null]);
+            QueryBuilder::table($this->table)->insert($data + ['name' => $name, 'enabled' => null]);
         }
         $this->rows = null;
     }
@@ -79,8 +67,7 @@ declare(strict_types=1);
 use Cast\\Database\\{Blueprint, Migration, Schema};
 
 /*
- * The modules table: one row per module (name, enabled: 1 on, 0 off, NULL follows config/modules.php) and one row named "@tier" whose
- * value is the plan this install is on (essentials, professional, enterprise ...). Used when config/modules.php has 'store' => 'database'.
+ * The modules table: one row per module (name, enabled: 1 on, 0 off, NULL follows config/modules.php). Used when config/modules.php has 'store' => 'database'.
  */
 return new class extends Migration
 {
@@ -90,7 +77,6 @@ return new class extends Migration
             \$table->id();
             \$table->string('name', 120)->unique();
             \$table->boolean('enabled')->nullable();
-            \$table->string('value', 120)->nullable();
             \$table->timestamps();
         });
     }
