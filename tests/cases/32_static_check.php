@@ -123,3 +123,23 @@ test('serve: refuses to start when something already listens on the port', funct
     ok(str_contains($out, '--port=' . ($port + 1)), 'suggests the next port: ' . $out);
     fclose($sock);
 });
+
+test('Application::detectBasePath: sub-folder with and without /public in the address', function () {
+    eq('/cast-app/public', \Cast\App\Application::detectBasePath('/cast-app/public/index.php', '/cast-app/public/login?x=1'));
+    eq('/cast-app', \Cast\App\Application::detectBasePath('/cast-app/public/index.php', '/cast-app/login'));
+    eq('/cast-app', \Cast\App\Application::detectBasePath('/cast-app/public/index.php', '/cast-app/'));
+    eq('', \Cast\App\Application::detectBasePath('/index.php', '/login'));
+    eq('', \Cast\App\Application::detectBasePath('/public/index.php', '/other'));
+});
+
+test('init writes a root .htaccess that hands every request to public/', function () {
+    $dir = sys_get_temp_dir() . '/cast_init_' . bin2hex(random_bytes(4));
+    mkdir($dir);
+    file_put_contents("$dir/composer.json", '{"name":"a/b","require":{}}');
+    $app = new \Cast\App\Application($dir);
+    $out = new \Cast\Console\Output(fopen('php://memory', 'w+'), false);
+    (new \Cast\Console\Commands\InitCommand($app))->handle(new \Cast\Console\Input(['init', '--no-migrate', '--yes']), $out);
+    ok(is_file("$dir/.htaccess"), 'root .htaccess created');
+    ok(str_contains((string) file_get_contents("$dir/.htaccess"), 'public/$1'));
+    ok(is_file("$dir/public/.htaccess"));
+});

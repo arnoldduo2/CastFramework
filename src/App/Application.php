@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '2.0.4-alpha';
+    public const VERSION = '2.0.5-alpha';
 
     private static ?self $instance = null;
 
@@ -54,6 +54,25 @@ final class Application
         Config::reset();
         Config::defaults(self::defaultConfig($this->paths));
         Config::load($this->configPath());
+
+        // APP_BASE_PATH left empty on a real web server (Apache, nginx): work it out from the address, so a sub-folder just works
+        if (Config::get('app.base_path', '') === '' && !in_array(PHP_SAPI, ['cli', 'cli-server', 'phpdbg'], true)) {
+            Config::set('app.base_path', self::detectBasePath((string) ($_SERVER['SCRIPT_NAME'] ?? ''), (string) ($_SERVER['REQUEST_URI'] ?? '')));
+        }
+    }
+
+    /**
+     * The URL folder the app lives in, from the front controller's script (`/cast-app/public/index.php`) and the requested address.
+     * Reached as /cast-app/public/... gives "/cast-app/public"; reached as /cast-app/... (a root .htaccess sends it to public/) gives "/cast-app".
+     */
+    public static function detectBasePath(string $scriptName, string $requestUri): string
+    {
+        $dir = rtrim(str_replace('\\', '/', dirname($scriptName)), '/');
+        $path = (string) (parse_url($requestUri, PHP_URL_PATH) ?: '/');
+        $inside = static fn(string $base): bool => $base !== '' && ($path === $base || str_starts_with($path, $base . '/'));
+        if ($inside($dir)) return $dir;
+        if (str_ends_with($dir, '/public') && $inside($parent = substr($dir, 0, -7))) return $parent;
+        return '';
     }
 
     public static function instance(): ?self

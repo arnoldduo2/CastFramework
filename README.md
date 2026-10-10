@@ -532,7 +532,7 @@ Under XAMPP (`C:\xampp\htdocs\my-app`):
 
 1. Use PHP 8.1+ and enable `extension=pdo_sqlite`, `extension=mbstring` (and `pdo_mysql` for MySQL) in `php.ini`; restart Apache. Install [Composer](https://getcomposer.org).
 2. In `C:\xampp\htdocs`: `mkdir my-app`, `cd my-app`, `composer init --name=me/my-app --no-interaction`, `composer require anode/cast-framework` (answer `y` to the plugin question), `php cast init --demo`.
-3. Either point a virtual host's `DocumentRoot` at `my-app/public` (then nothing else to configure), or browse to `http://localhost/my-app/public/` and set `APP_BASE_PATH=/my-app/public` in `.env`.
+3. Open `http://localhost/my-app/`: no `/public` in the address. `php cast init` writes a root `.htaccess` that hands every request to `public/`, and the framework works out the folder (`/my-app`) from the address, so `APP_BASE_PATH` can stay empty. (An older app: copy the root `.htaccess` from the [starter](starter/.htaccess), and leave `APP_BASE_PATH` empty or set it to `/my-app`.) A virtual host whose `DocumentRoot` is `my-app/public` works too, with nothing to configure and no root `.htaccess`.
    `public/.htaccess` sends every request that is not a real file to `index.php`, so `mod_rewrite` must be on and `AllowOverride All` set for the folder. `storage/` must be writable.
 4. The app's URLs, assets and the SPA client all use `APP_BASE_PATH`; use `route('/items')` in views instead of hand-written paths.
 
@@ -966,11 +966,11 @@ BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
 
 ## Upgrading
 
-[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^1.1` for the stable line, or `composer require anode/cast-framework:2.0.4-alpha` to try the alpha (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
+[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^1.1` for the stable line, or `composer require anode/cast-framework:2.0.5-alpha` to try the alpha (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
 
 ## Versioning
 
-**2.0.0 is in alpha** (`v2.0.4-alpha`): more changes are coming, so until the stable 2.0.0 the API can change between alpha versions. Apps that need a stable base stay on `^1.1`. To try the alpha: `composer require anode/cast-framework:2.0.4-alpha` (Composer asks for `"minimum-stability": "alpha"` or the exact `2.0.4-alpha` constraint).
+**2.0.0 is in alpha** (`v2.0.5-alpha`): more changes are coming, so until the stable 2.0.0 the API can change between alpha versions. Apps that need a stable base stay on `^1.1`. To try the alpha: `composer require anode/cast-framework:2.0.5-alpha` (Composer asks for `"minimum-stability": "alpha"` or the exact `2.0.5-alpha` constraint).
 
 [Semantic Versioning](https://semver.org). The public API is what this README documents: the helper names, the config keys, the contracts, the route/middleware spec,
 the response shapes and the console commands. See [CHANGELOG.md](CHANGELOG.md). Migrating an existing app: [docs/ERP-PORTING.md](docs/ERP-PORTING.md).

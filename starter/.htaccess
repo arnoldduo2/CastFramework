@@ -1,0 +1,6 @@
+# Apache (XAMPP, shared hosting): lets the app answer at http://localhost/my-app/ without "/public" in the address.
+# Every request is handed to the public/ folder, whose own .htaccess sends what is not a real file to index.php.
+# Needs mod_rewrite and AllowOverride All. Do not use this file when the web server's document root already is public/.
+RewriteEngine On
+RewriteRule ^$ public/ [L]
+RewriteRule ^(.*)$ public/$1 [L]
