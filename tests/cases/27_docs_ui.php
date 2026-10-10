@@ -218,3 +218,19 @@ test('the dock: added to HTML pages in development, never in production, Cast/JS
     $js = (string) file_get_contents(dirname(__DIR__, 2) . '/src/Resources/dock.js');
     ok(str_contains($js, 'attachShadow') && str_contains($js, 'documentElement.appendChild'), 'lives on <html> in a shadow root');
 });
+
+test('the dock probe: a development page checks that the framework\'s files load, and warns (with the fix) when they do not', function () {
+    $boot = new \Cast\Boot\Bootstrap(boot_app([], boot: false));
+    Config::set('app.env', 'development');
+    Config::set('dock.enabled', true);
+    $html = (string) $boot->decorate(new \Cast\Http\Response('<html><body>x</body></html>', 200, ['Content-Type' => 'text/html']), new Request('GET', '/'))->body();
+    has('data-cast-dock-probe', $html);
+    has('/cast/logo.svg', $html);
+    has('php cast serve', $html, 'the fix is in the message');
+    has('public/index.php', $html);
+    has('static:check', $html);
+    ok(strpos($html, 'data-cast-dock-probe') < strpos($html, '</body>'), 'inside the body');
+    Config::set('app.env', 'production');
+    lacks('data-cast-dock-probe', (string) $boot->decorate(new \Cast\Http\Response('<html><body>x</body></html>', 200, ['Content-Type' => 'text/html']), new Request('GET', '/'))->body(), 'never in production');
+    Config::set('app.env', 'development');
+});

@@ -128,7 +128,11 @@ final class StaticCheckCommand extends Command
             return;
         }
         $this->row($output, $status === 200, "page: $status " . ($headers['content-type'] ?? '') . ', ' . strlen($body) . ' bytes');
-        if ($status !== 200) return;
+        if ($status !== 200) {
+            if (preg_match('#\.\w{2,5}/?$#', (string) ($parts['path'] ?? ''))) $output->warn('  note  --url is the address of a page of your app (for example ' . $origin . '/), not of a file: ' . $url . ' looks like a file');
+            if (str_contains($body, 'was not found on this server')) $output->warn('  note  that 404 page is PHP\'s own (the built-in server\'s), not the app\'s: if you started the server yourself, start it with the router script:  php cast serve   or   php -S 127.0.0.1:8000 -t public public/index.php');
+            return;
+        }
 
         if ($folder !== $configured) {
             $this->row($output, false, "APP_BASE_PATH is \"$configured\" but the address has the folder \"$folder\": set  APP_BASE_PATH=$folder  in .env (links to CSS and JS are built from it)", false);
@@ -149,6 +153,7 @@ final class StaticCheckCommand extends Command
             $ok = $code === 200 && ($expected === '' || str_contains($type, $expected)) && $content !== '';
             $note = '';
             if ($code === 0) $note = ' (no answer)';
+            elseif ($code === 404 && str_contains($content, 'was not found on this server')) $note = ' (this 404 is PHP\'s own: the built-in server was started without the router script. Stop it and run  php cast serve  or  php -S 127.0.0.1:8000 -t public public/index.php)';
             elseif ($code === 404) $note = $folder !== $configured ? ' (404: the address folder and APP_BASE_PATH differ)' : ' (404: the web server did not send this to index.php, or the file is not in the static folder)';
             elseif ($code === 200 && $expected !== '' && !str_contains($type, $expected)) $note = ' (a ' . ($type ?: 'page') . ' was returned for a file: the web server answered with another page, usually the home page; check the rewrite rules and APP_BASE_PATH)';
             elseif ($code === 200 && $content === '') $note = ' (empty answer: output compression or a proxy cut it; try the file in the browser address bar)';

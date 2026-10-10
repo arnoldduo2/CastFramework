@@ -752,6 +752,8 @@ They load at boot, after the framework's.
 
 ## Static files
 
+**Pages work but there are no styles, the dock is missing and `/cdocs` says "No documentation yet"?** The PHP built-in server was started without the router script: `php -S 127.0.0.1:8000 -t public` answers every URL that ends in `.css`, `.js`, `.svg` ... with its own 404 before the app sees it, while pages (which have no extension) still reach `index.php`. Start it with `php cast serve` (or `php -S 127.0.0.1:8000 -t public public/index.php`); editor "PHP Server" extensions need their router setting pointed at `public/index.php`. In development a red bar at the bottom of the page now says this when the framework's own files do not load.
+
 **Something not loading (no styles, a blank documentation page)?** Run `php cast static:check`, and `php cast static:check --url=http://localhost/my-app/public/` with the address you open the app at. It lists the static folders, asks the framework whether each file would be served, then loads your page and requests every stylesheet and script it links to, and `/cdocs/`, on the real web server. It names the usual causes: `APP_BASE_PATH` not matching the folder in the address (the page's links are built from it), the web server answering a `.css` URL with the home page or a 404 (the rewrite rules), a cut or empty answer.
 
 Before routing, `/css/...`, `/js/...`, `/styles/...`, `/fonts/...`, `/images/...` and `/public/...` are served from the folders in `config('static')`:

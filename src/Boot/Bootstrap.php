@@ -56,9 +56,30 @@ final class Bootstrap
         $tag = '<script src="' . htmlspecialchars($url('/cast/dock.js'), ENT_QUOTES) . '" data-cast-dock-script data-cast="off"'
             . ' data-demo="' . htmlspecialchars($url((string) Config::get('dock.demo_url', '/demo')), ENT_QUOTES) . '"'
             . ' data-docs="' . htmlspecialchars($url('/cdocs/'), ENT_QUOTES) . '" defer></script>';
+        $tag .= self::probe($url('/cast/logo.svg'), $url('/'));
         $pos = strripos($body, '</body>');
         $response->body($pos === false ? $body . $tag : substr($body, 0, $pos) . $tag . substr($body, $pos));
         return $response;
+    }
+
+    /**
+     * An inline script (it must not depend on the files it tests) that asks for one of the framework's own files. When that file does not come
+     * back, the page is unstyled and the docs are blank, and the cause is the server, not the app: the PHP built-in server started without the router
+     * script (`php -S 127.0.0.1:8000 -t public` instead of `php cast serve`), or a web server that does not send missing files to index.php.
+     * It says so in a red bar at the bottom of the page, once per tab until dismissed. Development only, like the dock.
+     */
+    private static function probe(string $logo, string $home): string
+    {
+        $message = 'The framework\'s CSS, JS and /cdocs are not being served (this page loaded, but ' . $logo . ' did not). '
+            . 'If you started PHP\'s built-in server yourself, start it with the router script: php cast serve   (or: php -S 127.0.0.1:8000 -t public public/index.php). '
+            . 'On Apache or nginx the rewrite rules must send files that do not exist in public/ to index.php. Run: php cast static:check --url=<this address>';
+        return '<script data-cast-dock-probe data-cast="off">(function(){try{if(sessionStorage.getItem("cast.probe.off"))return}catch(e){}'
+            . 'fetch(' . json_encode($logo, JSON_UNESCAPED_SLASHES) . ',{method:"HEAD",cache:"no-store"}).then(function(r){if(r.ok)return;'
+            . 'var d=document.createElement("div");d.setAttribute("data-cast-static-warning","");'
+            . 'd.style.cssText="position:fixed;left:0;right:0;bottom:0;z-index:2147483647;background:#b3261e;color:#fff;font:14px/1.45 system-ui,sans-serif;padding:12px 44px 12px 16px;box-shadow:0 -4px 20px rgba(0,0,0,.3)";'
+            . 'var t=document.createElement("span");t.textContent=' . json_encode($message, JSON_UNESCAPED_SLASHES) . ';d.appendChild(t);'
+            . 'var x=document.createElement("button");x.textContent="\u00d7";x.setAttribute("aria-label","Dismiss");x.style.cssText="position:absolute;right:12px;top:8px;background:none;border:0;color:#fff;font-size:22px;cursor:pointer";'
+            . 'x.onclick=function(){try{sessionStorage.setItem("cast.probe.off","1")}catch(e){}d.remove()};d.appendChild(x);document.body.appendChild(d)}).catch(function(){})})()</script>';
     }
 
     /**
