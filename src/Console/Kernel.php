@@ -20,6 +20,7 @@ final class Kernel
         Commands\ViewsCheckCommand::class,
         Commands\IdeHelpersCommand::class,
         Commands\KeyGenerateCommand::class,
+        Commands\StaticCheckCommand::class,
         Commands\ModulesTableCommand::class,
         Commands\MakeModuleCommand::class,
         Commands\MakeServiceCommand::class,

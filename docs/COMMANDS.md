@@ -826,6 +826,25 @@ php cast serve --port=9000   # another port
 php cast serve --host=0.0.0.0   # reachable from the network
 ```
 
+## `static:check`
+
+Check that CSS, JS and the documentation are served: in-process, and against your real web server with --url.
+
+```
+php cast static:check [options]
+```
+
+| Option | |
+| --- | --- |
+| `--url=URL` | The address your app is open at (e.g. http://localhost/my-app/public/): every CSS and JS file the page links to is requested there |
+| `--timeout=SECONDS` | How long to wait for the web server (default 10) |
+
+```bash
+php cast static:check   # the framework's own view: folders, mappings, would each file be served
+php cast static:check --url=http://localhost/my-app/public/   # also the real requests, for Apache/XAMPP, nginx or php cast serve
+php cast static:check --url=http://127.0.0.1:8000   # against php cast serve
+```
+
 ## `token:create`
 
 Create an API token for a user (shown once).

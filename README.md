@@ -752,6 +752,8 @@ They load at boot, after the framework's.
 
 ## Static files
 
+**Something not loading (no styles, a blank documentation page)?** Run `php cast static:check`, and `php cast static:check --url=http://localhost/my-app/public/` with the address you open the app at. It lists the static folders, asks the framework whether each file would be served, then loads your page and requests every stylesheet and script it links to, and `/cdocs/`, on the real web server. It names the usual causes: `APP_BASE_PATH` not matching the folder in the address (the page's links are built from it), the web server answering a `.css` URL with the home page or a 404 (the rewrite rules), a cut or empty answer.
+
 Before routing, `/css/...`, `/js/...`, `/styles/...`, `/fonts/...`, `/images/...` and `/public/...` are served from the folders in `config('static')`:
 
 ```php
@@ -816,6 +818,7 @@ Output is coloured on a terminal (green commands, blue arguments, orange heading
 | `env:check` | Checks PHP, extensions, `.env`, debug in production, writable `storage/`, folders |
 | `make:config <name>`, `key:generate` | A documented config file for a section; the app key |
 | `make:service <Name> [--example=printer\|barcode\|qrcode]` | A service class, blank or a working printer / barcode / QR example |
+| `static:check [--url=URL]` | Why is CSS, JS or the documentation not showing? Checks the static folders in-process and, with `--url`, every file the page links to on your real web server (Apache/XAMPP, nginx, `cast serve`) |
 | `requirements [--production] [--json]` | Does this PHP have the extensions, limits and settings the framework needs |
 | `make:module <Name> [--core] [--model]`, `modules:list`, `modules:check`, `modules:table --migration`, `modules:enable <name>`, `modules:disable <name>` | [Modules](#modules-optional-gating) |
 | `deploy:init`, `deploy:check`, `deploy:scan`, `deploy:optimize` | [Deploying to production](#deploying-to-production) |

@@ -1,0 +1,100 @@
+<?php
+
+declare(strict_types=1);
+
+use Cast\Console\Commands\StaticCheckCommand;
+
+function static_check(array $args, ?\Cast\App\Application $app = null): array
+{
+    $app ??= boot_app(['resources/css/app.css' => 'a{}', 'resources/js/app/app.module.js' => 'x', 'public/index.php' => '<?php', 'public/.htaccess' => '']);
+    $screen = fopen('php://memory', 'w+');
+    $cmd = new StaticCheckCommand($app);
+    $code = $cmd->handle(new \Cast\Console\Input(['static:check', ...$args]), new \Cast\Console\Output($screen, false));
+    rewind($screen);
+    return [$code, (string) stream_get_contents($screen)];
+}
+
+/** A tiny web server (php -S) answering with the given router script; returns [process, port]. */
+function tiny_server(string $router): array
+{
+    $dir = app_dir(['router.php' => $router]);
+    for ($port = 8300 + random_int(0, 500); ; $port++) {
+        $sock = @stream_socket_server("tcp://127.0.0.1:$port");
+        if ($sock) {
+            fclose($sock);
+            break;
+        }
+    }
+    $proc = proc_open([PHP_BINARY, '-S', "127.0.0.1:$port", "$dir/router.php"], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, $dir);
+    for ($i = 0; $i < 50; $i++) {
+        if (@fsockopen('127.0.0.1', $port, $e, $s, 0.1)) break;
+        usleep(100000);
+    }
+    return [$proc, $port];
+}
+
+test('static:check: in-process, it lists the folders and says each file would be served', function () {
+    [$code, $out] = static_check([]);
+    eq(0, $code, $out);
+    foreach (['Static folders', '/css/app.css: 200 text/css', '/js/app/app.module.js: 200', '/cast/cast.module.js: 200', '/cdocs/: 200', '/cdocs/data.js: 200', 'the documentation data (data.js) is'] as $needle) has($needle, $out);
+    has('To test your web server too', $out);
+});
+
+test('static:check: a missing core folder or a missing .htaccess is reported', function () {
+    $app = boot_app(['public/index.php' => '<?php'], ['paths' => ['resources' => 'nope']]);
+    [$code, $out] = static_check([], $app);
+    has('note  public/.htaccess exists', $out, 'a missing .htaccess is a note');
+    has('--    /styles/', $out, 'optional folders are not failures');
+});
+
+test('static:check --url: every CSS and JS the page links to is requested at the real address', function () {
+    [$proc, $port] = tiny_server(<<<'PHP'
+<?php
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if ($path === '/') { echo '<html><head><link rel="stylesheet" href="/css/app.css?v=1"><script src="/js/app.js"></script><script src="https://cdn.example.com/x.js"></script></head></html>'; return; }
+if ($path === '/css/app.css') { header('Content-Type: text/css'); echo 'a{}'; return; }
+if ($path === '/js/app.js') { header('Content-Type: application/javascript'); echo 'var a=1;'; return; }
+if ($path === '/cdocs/') { echo '<html>docs</html>'; return; }
+if ($path === '/cdocs/data.js') { header('Content-Type: application/javascript'); echo 'window.CAST_DOCS={}'; return; }
+http_response_code(404); echo 'missing';
+PHP);
+    try {
+        [$code, $out] = static_check(["--url=http://127.0.0.1:$port/"]);
+        has("Your web server (http://127.0.0.1:$port/)", $out);
+        has('ok    page: 200', $out);
+        has('/css/app.css?v=1: 200 text/css', $out);
+        has('/js/app.js: 200 application/javascript', $out);
+        lacks('cdn.example.com', $out, 'other sites are not ours');
+        has('/cdocs/data.js: 200', $out);
+    } finally {
+        proc_terminate($proc);
+        proc_close($proc);
+    }
+});
+
+test('static:check --url: it explains a web server that answers a stylesheet with the home page, a 404, and a wrong APP_BASE_PATH', function () {
+    [$proc, $port] = tiny_server(<<<'PHP'
+<?php
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if ($path === '/shop/public/') { echo '<html><head><link rel="stylesheet" href="/shop/public/css/app.css"><script src="/shop/public/js/app.js"></script></head></html>'; return; }
+if ($path === '/shop/public/js/app.js') { http_response_code(404); echo 'nope'; return; }
+echo '<html>the home page again</html>';        // everything else: the rewrite sends it to the home page
+PHP);
+    try {
+        [$code, $out] = static_check(["--url=http://127.0.0.1:$port/shop/public/"]);
+        eq(1, $code);
+        has('APP_BASE_PATH is "" but the address has the folder "/shop/public": set  APP_BASE_PATH=/shop/public', $out);
+        has('/shop/public/css/app.css: 200 text/html', $out);
+        has('a text/html', $out);
+        has('another page, usually the home page', $out);
+        has('/shop/public/js/app.js: 404', $out);
+        has('differ', $out);
+    } finally {
+        proc_terminate($proc);
+        proc_close($proc);
+    }
+    [$bad] = static_check(['--url=http://127.0.0.1:1/']);
+    eq(1, $bad, 'a server that is not running is reported');
+    [$syntax] = static_check(['--url=localhost']);
+    eq(1, $syntax);
+});

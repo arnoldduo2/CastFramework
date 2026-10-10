@@ -4,6 +4,7 @@ This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, w
 
 ## 2.0.0-alpha
 
+- **`php cast static:check [--url=URL]`**: finds why CSS, JS or the documentation do not show on a real install. In-process it checks the static folders and whether each file would be served; with `--url` it loads your page and requests every linked stylesheet and script, `/cdocs/` and its data on the real web server, and explains a wrong `APP_BASE_PATH`, a rewrite that returns the home page for a file, a 404, or a cut answer.
 The next major version, in alpha while more changes land. It carries everything below that was written after 1.1.0 (error handler 1.3 support, errors for SPA and API clients, the dock's error count):
 
 ### The dock counts development errors
