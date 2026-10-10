@@ -80,7 +80,7 @@ test('init: creates a working minimal app, adds the App\\ autoload and names it 
 
 test('init: the app name comes from the folder, and existing files are kept unless --force', function () {
     $dir = init_dir();
-    $named = dirname($dir) . '/blue-sky_shop';
+    $named = app_dir() . '/blue-sky_shop';       // a folder of its own: a fixed name in /tmp could be left over from an earlier run
     rename($dir, $named);
     $GLOBALS['tmp_dirs'][] = $named;
     cast_in($named, 'init');

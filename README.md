@@ -522,7 +522,7 @@ app('view')->share('appName', 'My App');             // data every view receives
 Inside a view the data is available as variables and as `$data`. Components: a `.cast.php` component receives camelCased props and `$children`;
 a legacy `.php` component receives `$data`. A view that is not found in your folder falls back to the framework's own (error pages).
 
-**The `@` shorthand (template engine 1.1.0 and newer).** Instead of `<?php foreach (...): ?>` and `<?= $x ?>` you can write `@foreach ($users as $user):` ... `@endforeach`, `@{ $user->name }`, `@forelse` / `@empty` / `@endforelse`, `@for`, `@while`, `@if` / `@elseif` / `@else` / `@endif`, `@unless`, `@isset`, `@switch`, `@break`, `@continue` and `@php` ... `@endphp`. `@{ }` prints as it is, like `<?= ?>` (use `htchars()` for user text). Plain PHP keeps working in the same file. Full table: the [template engine README](https://github.com/arnoldduo2/CastTemplateEngine#the--shorthand-for-php). Update with `composer update anode/cast-template-engine`.
+**The `@` shorthand (template engine 1.1.0 and newer; see [Template engine](docs/TEMPLATE-ENGINE.md)).** Instead of `<?php foreach (...): ?>` and `<?= $x ?>` you can write `@foreach ($users as $user):` ... `@endforeach`, `@{ $user->name }`, `@forelse` / `@empty` / `@endforelse`, `@for`, `@while`, `@if` / `@elseif` / `@else` / `@endif`, `@unless`, `@isset`, `@switch`, `@break`, `@continue` and `@php` ... `@endphp`. `@{ }` prints as it is, like `<?= ?>` (use `htchars()` for user text). Plain PHP keeps working in the same file. Full table: the [template engine README](https://github.com/arnoldduo2/CastTemplateEngine#the--shorthand-for-php). Update with `composer update anode/cast-template-engine`.
 
 ## Running on Windows / XAMPP, or in a sub-folder
 
@@ -764,6 +764,8 @@ CORS headers are sent only for exact origins in `CORS_ALLOWED_ORIGINS`, never `*
 
 ## Errors, maintenance and updates
 
+The error handler is **Anode Error Handler**, installed with the framework: options, logs and your own pages are in [docs/ERROR-HANDLER.md](docs/ERROR-HANDLER.md). Views are compiled by **CastTemplateEngine**, also installed with it: [docs/TEMPLATE-ENGINE.md](docs/TEMPLATE-ENGINE.md).
+
 **Error pages.** `abort(404)`, a missing route, a wrong verb, a bad CSRF token and a permission failure all end in an error page (HTML) or `{status:'error', msg}` (JSON clients).
 The default is one small, self-contained page (no external files, dark-mode aware) in `Views/errors/error.cast.php`. Override it with `resources/views/errors/error.cast.php`,
 or per code with `errors/404.cast.php`, `errors/419.cast.php`, ... The view gets `$code`, `$title`, `$message`, `$appName`, `$homeUrl`. Uncaught exceptions go to
@@ -955,7 +957,7 @@ BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
 
 ## Upgrading
 
-[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^0.3` (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
+[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^1.0` (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
 
 ## Versioning
 

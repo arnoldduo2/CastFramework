@@ -1,12 +1,15 @@
 # Changelog
 
-This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
+This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version.
 
-## 0.12.1
+## 1.0.1
 
-- Docs: the template engine's new `@` shorthand for PHP (`@{ $x }`, `@foreach ... @endforeach`, `@forelse`, `@if`, ...; engine 1.1.0). Nothing else changed.
+- Docs: the template engine's new `@` shorthand for PHP (`@{ $x }`, `@foreach ... @endforeach`, `@forelse`, `@if`, ...; engine 1.1.0).
+- `Application::VERSION` (what `php cast version` and the welcome page show) is 1.0.1. The `v1.0.0` tag was made on the commit whose constant still said `0.12.0`; use 1.0.1 or newer.
 
-## 0.12.0
+## 1.0.0
+
+The first stable release: everything in 0.1 to 0.12 (below), with the public API frozen as the README documents it. The last 0.x changes, which are the ones to know when moving from 0.11:
 
 - **Plans (tiers) moved out of the framework**: they are app lifecycle, so they now live in the app (a ready-made package for a cast-app: `PlanService`, `PlanServiceProvider`, `php cast plan`, `plan_allows()`). Removed from the framework: `modules.tiers` / `tier` / `upgrade_url`, `modules:tier`, `TierStore`, `plan_allows()`, `module_tier()`, `make:module --tier` and the plan row of the database store.
 - **`Modules::resolveUsing()`**: the one hook the app needs. A rule gets each module and returns `null` or a status (`state`, `reason`, `http`, `fault`, `message`, `headline`, `detail`, `action`) that replaces the framework's checks; extra keys in a module's config arrive as `$m['options']` (`Modules::options($name)`). A `fault => false` status is not reported by `modules:check` / `deploy:check`. The module gate and the fallback page use the status code and texts.

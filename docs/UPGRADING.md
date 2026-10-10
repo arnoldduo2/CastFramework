@@ -7,6 +7,14 @@ description: Moving an app to a newer version, adopting migrations, keeping the 
 
 # Upgrading
 
+## 0.x to 1.0
+
+`composer require anode/cast-framework:^1.0` (Composer's `^0.12` does not reach 1.0). The only break since 0.11: **plans (tiers) are not in the framework any more**. If you used `modules.tiers`, `modules:tier`, `plan_allows()` or `module_tier()` from 0.11, move them into your app: a small service plus a rule registered with `app('modules')->resolveUsing(...)` (README, Modules). If you never turned on plans, nothing else needs changing. Run `php cast env:check` afterwards.
+
+## 0.x to 1.0
+
+`composer require anode/cast-framework:^1.0` (Composer's `^0.12` does not reach 1.0). The only break since 0.11: **plans (tiers) are not in the framework any more**. If you used `modules.tiers`, `modules:tier`, `plan_allows()` or `module_tier()` from 0.11, move them into your app: they are a small service plus a rule registered with `app('modules')->resolveUsing(...)` (see README, Modules). If you never turned on plans, nothing else needs changing. Run `php cast env:check` afterwards.
+
 Run the commands in your app's folder (for XAMPP: `cd D:\xampp\htdocs\my-app`).
 
 ## 0.x to 0.3 (an app made with `cast init --demo` on 0.2.x)
