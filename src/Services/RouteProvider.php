@@ -9,7 +9,8 @@ use Cast\Core\Config;
 use Cast\Core\Router;
 
 /**
- * Loads every `*.php` file in the routes folder (route files call `Router::get(...)` etc.).
+ * Loads every `*.php` file in the routes folder (route files call `Router::get(...)` etc.), then every file in `routes/modules/`
+ * (one per module, made by `php cast make:module`: each wraps its routes in `Router::module('name', ...)`).
  * `routes/api.php` is special: its routes are registered under the API prefix (`config('api.prefix')`, default `/api`)
  * and inside the `api.middleware` group, so `Router::get('/items', ...)` there answers `GET /api/items`.
  */
@@ -23,6 +24,8 @@ final class RouteProvider extends ServiceProvider
             if ($api !== null && realpath($file) === $api) continue;
             require_once $file;
         }
+
+        foreach (glob($this->app->routesPath('modules/*.php')) ?: [] as $file) require_once $file;
 
         if ($api !== null) $this->loadApiRoutes($api);
     }

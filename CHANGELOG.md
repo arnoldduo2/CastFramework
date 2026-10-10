@@ -2,6 +2,11 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.10.0
+
+- **Module gating** (opt in, off by default: `CAST_MODULES=true`). List modules as core or optional in `config/modules.php` and put a group of routes behind a gate with `Router::module('reports', fn() => ...)` (a `ModuleGate` middleware). A module that is inactive, unbuilt (a `requires` class or file is missing) or unlisted answers `503` with a "module inactive or unavailable" page (`errors/module`, overridable; JSON envelope for APIs and the SPA client) instead of breaking the app. `module_active('name')` hides menu items.
+- **Commands**: `make:module <Name> [--core] [--model]` (controller, views, `routes/modules/<name>.php`, config entry), `modules:list`, `modules:check` (fails when a core module is not active), `modules:enable|disable <name>` (core modules cannot be switched off). `deploy:check` includes the modules. `routes/modules/*.php` is loaded automatically. Switches are kept in `storage/framework/modules.json`, or bind your own `Cast\Contracts\ModuleStore` (`module_store`) for a database.
+
 ## 0.9.1
 
 - **Leftover debugging is checked before you deploy.** `php cast deploy:scan` (and `deploy:check`) read your PHP, views and JavaScript for `dd()`, `dump()`, `var_dump()`, `print_r()`, `console.log()`, `debugger` and friends. `console.error()` is allowed. Opt out: `cast:keep` in a comment keeps one line, `--allow-debug` / `DEPLOY_ALLOW_DEBUG=true` skips the scan when you debug in production on purpose (`deploy:init` asks).

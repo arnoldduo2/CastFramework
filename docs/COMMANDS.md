@@ -461,6 +461,31 @@ php cast make:model <Name> [options]
 php cast make:model Invoice
 ```
 
+## `make:module`
+
+Create a module: controller, pages, a gated routes file, and its entry in config/modules.php.
+
+```
+php cast make:module <Name> [options]
+```
+
+| Argument | |
+| --- | --- |
+| `Name` | The module name, e.g. Reports or purchase-orders |
+
+| Option | |
+| --- | --- |
+| `--core` | A core module: the app cannot work without it (modules:check fails when it is missing, it cannot be switched off). Asked when left out |
+| `--title=TEXT` | The name shown on the fallback page (default: the module name in words) |
+| `--model` | Also create a model class for the module |
+| `--no-config` | Do not touch config/modules.php |
+| `--force` | Overwrite files that exist |
+
+```bash
+php cast make:module Reports   # an optional module with a controller, two views and routes/modules/reports.php
+php cast make:module Billing --core --model   # a core module with a Billing model too
+```
+
 ## `make:rule`
 
 Create a new rule class.
@@ -672,6 +697,66 @@ php cast migrate:sync   # every table without a migration
 php cast migrate:sync users   # one table
 php cast migrate:sync --except=logs,cache   # skip some
 php cast migrate:sync --pretend   # look before writing
+```
+
+## `modules:check`
+
+Fail when a core module is not active (for CI and deploys); optional ones only warn.
+
+```
+php cast modules:check
+```
+
+```bash
+php cast modules:check   # exit code 1 when a core module is inactive, unbuilt or missing
+```
+
+## `modules:disable`
+
+Switch an optional module off (core modules cannot be switched off).
+
+```
+php cast modules:disable <name>
+```
+
+| Argument | |
+| --- | --- |
+| `name` | The module, as listed in config/modules.php |
+
+```bash
+php cast modules:disable reports   # its routes show the "module inactive" page
+```
+
+## `modules:enable`
+
+Switch a module on (kept in storage/framework/modules.json).
+
+```
+php cast modules:enable <name>
+```
+
+| Argument | |
+| --- | --- |
+| `name` | The module, as listed in config/modules.php |
+
+```bash
+php cast modules:enable reports   # turn the reports module on
+```
+
+## `modules:list`
+
+List the modules, core or optional, and whether each is active, inactive or unbuilt.
+
+```
+php cast modules:list [options]
+```
+
+| Option | |
+| --- | --- |
+| `--json` | Print the modules as JSON |
+
+```bash
+php cast modules:list   # every module and its state
 ```
 
 ## `requirements`

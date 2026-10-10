@@ -28,7 +28,7 @@ New here? Read **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)** first: the
 | **Data** | [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Legacy databases](#legacy-databases-migratesync) · [Another ORM](#using-another-orm) |
 | **Front end and API** | [SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api) |
 | **Tooling** | [Console](#console) ([all commands](docs/COMMANDS.md)) · [Editor support](#editor-support) · [Testing](#testing) |
-| **Running it** | [Windows / XAMPP](#running-on-windows--xampp-or-in-a-sub-folder) · [Deploying](#deploying-to-production) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Contracts](#contracts) · [Upgrading](#upgrading) · [Versioning](#versioning) |
+| **Running it** | [Windows / XAMPP](#running-on-windows--xampp-or-in-a-sub-folder) · [Modules](#modules-optional-gating) · [Deploying](#deploying-to-production) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Contracts](#contracts) · [Upgrading](#upgrading) · [Versioning](#versioning) |
 
 ## Install
 
@@ -809,6 +809,7 @@ Output is coloured on a terminal (green commands, blue arguments, orange heading
 | `make:config <name>`, `key:generate` | A documented config file for a section; the app key |
 | `make:service <Name> [--example=printer\|barcode\|qrcode]` | A service class, blank or a working printer / barcode / QR example |
 | `requirements [--production] [--json]` | Does this PHP have the extensions, limits and settings the framework needs |
+| `make:module <Name> [--core] [--model]`, `modules:list`, `modules:check`, `modules:enable <name>`, `modules:disable <name>` | [Modules](#modules-optional-gating) |
 | `deploy:init`, `deploy:check`, `deploy:scan`, `deploy:optimize` | [Deploying to production](#deploying-to-production) |
 | `demo:strip [--pack=clean\|shell\|crud\|auth\|auth-crud]` | Remove the demo and keep a starter pack |
 | `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
@@ -845,6 +846,34 @@ Interfaces in `Cast\Contracts` where an app plugs in its own behaviour:
 | `MaintenanceStore` | `FileMaintenanceStore` (default) | Where maintenance state lives |
 | `Updater` | `CallbackUpdater` or your own | Pending updates |
 | `Command` | `Console\Command` | Console commands |
+
+## Modules (optional gating)
+
+Off by default. Turn it on (`CAST_MODULES=true`, or `modules.enabled` in `config/modules.php`) and every group of routes can sit behind a **module gate**, so a part of the app that is switched off or not built yet answers with a "module inactive or unavailable" page instead of breaking the app.
+
+```bash
+php cast make:config modules            # config/modules.php: list your modules as core or optional
+php cast make:module Reports            # controller, views, routes/modules/reports.php, and its entry in config/modules.php
+php cast make:module Billing --core --model
+php cast modules:list                   # every module: core/optional, active / inactive / unbuilt
+php cast modules:check                  # exit 1 when a core module is not active (deploy:check runs it too)
+php cast modules:disable reports        # switch an optional module off (storage/framework/modules.json)
+php cast modules:enable reports
+```
+
+```php
+// config/modules.php
+'enabled' => env('CAST_MODULES', false),
+'core'     => ['billing' => ['title' => 'Billing', 'requires' => [App\Controllers\BillingController::class]]],   // the app cannot work without them
+'optional' => ['reports', 'printing' => ['requires' => [App\Services\PrinterService::class]], 'archive' => ['active' => false]],
+
+// routes/modules/reports.php (every file in routes/modules/ is loaded for you)
+Router::module('reports', function () {            // = Router::middleware([ModuleGate::class, 'reports'], ...)
+    Router::get('/reports', ReportsController::class);
+});
+```
+
+A module is **active**, **inactive** (`'active' => false`, a function returning a bool, `modules:disable`, or your own `module_store`), **unbuilt** (a class or file in its `requires` list does not exist yet) or **unregistered** (the gate names a module that is not listed). Anything but active answers `503` with the page `errors/module` (the framework has one; make `errors/module.cast.php` in your views to replace it), `Retry-After` set, and the usual JSON envelope for APIs and the SPA client. **Core** modules are the ones the app cannot work without: they cannot be switched off, `modules:check` and `deploy:check` fail when one is not active, and optional ones only warn. Hide a menu item while its module is off with `module_active('reports')`. To keep switches in a database implement `Cast\Contracts\ModuleStore` (`isEnabled($module): ?bool`, `set()`) and bind it as `module_store`. With gating off every gate lets everything through, so the same code runs either way.
 
 ## Deploying to production
 

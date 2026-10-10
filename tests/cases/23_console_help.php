@@ -6,7 +6,7 @@ use Cast\Console\Command;
 
 test('help: every built-in command documents its arguments, options and an example, and every option it reads', function () {
     $app = console_app();
-    $skip = ['MigrationCommand', 'MakeCommand'];
+    $skip = ['MigrationCommand', 'MakeCommand', 'ModulesCommand'];
     $checked = 0;
     foreach (glob(dirname(__DIR__, 2) . '/src/Console/Commands/*Command.php') as $file) {
         $short = basename($file, '.php');

@@ -20,6 +20,7 @@ final class Kernel
         Commands\ViewsCheckCommand::class,
         Commands\IdeHelpersCommand::class,
         Commands\KeyGenerateCommand::class,
+        Commands\MakeModuleCommand::class,
         Commands\MakeServiceCommand::class,
         Commands\DeployInitCommand::class,
         Commands\DeployCheckCommand::class,
@@ -64,6 +65,9 @@ final class Kernel
             $this->add(new $class($app));
         }
         // make:* commands share one class with several names
+        foreach (Commands\ModulesCommand::actions() as $action) {
+            $this->add(new Commands\ModulesCommand($app, $action));
+        }
         foreach (Commands\MakeCommand::kinds() as $kind) {
             $this->add(new Commands\MakeCommand($app, $kind));
         }

@@ -78,6 +78,14 @@ final class DeployCheckCommand extends Command
             }
         }
 
+        if ($this->app->has('modules') && $this->app->make('modules')->enabled()) {
+            $output->line($output->color('Modules', 'orange'));
+            foreach ($this->app->make('modules')->all() as $m) {
+                $label = ($m['core'] ? 'core' : 'optional') . " module {$m['name']} is {$m['state']}" . ($m['reason'] !== '' ? " ({$m['reason']})" : '');
+                $report($m['state'] === 'active' ? 'ok' : ($m['core'] ? 'fail' : 'warn'), $label, $m['state'] === 'active' ? '' : 'php cast modules:list');
+            }
+        }
+
         $output->line($output->color('Leftover debugging', 'orange'));
         if ($input->hasOption('allow-debug') || \Cast\Core\Env::bool('DEPLOY_ALLOW_DEBUG', false)) {
             $report('warn', 'debug scan skipped (--allow-debug or DEPLOY_ALLOW_DEBUG=true): dd(), console.log() and friends may run in production');

@@ -35,6 +35,7 @@ final class MakeConfigCommand extends Command
         'database' => 'connection, migrations table, seeder',
         'session' => 'the session cookie (name, lifetime, secure, httponly, samesite)',
         'cors' => 'origins allowed to call the app from another site',
+        'modules' => 'module gating: core and optional modules, the fallback page',
         'hashing' => 'password hashing (argon2id or bcrypt)',
         'dock' => 'the floating dock with links to the demo and the docs',
         'cdocs' => 'the framework documentation viewer at /cdocs',

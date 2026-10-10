@@ -108,6 +108,15 @@ final class Router
         }
     }
 
+    /**
+     * Routes inside belong to a module: they run only while the module is active. Module gating is opt in (config/modules.php,
+     * CAST_MODULES=true); with it off this is just a group that runs `$callback`. List modules in config/modules.php as core or optional.
+     */
+    public static function module(string $name, callable $callback): void
+    {
+        self::middleware([\Cast\Http\Middleware\ModuleGate::class, $name], $callback);
+    }
+
     /** Handler for unmatched GET routes (receives the request input array). */
     public static function _404(callable $handler): void
     {

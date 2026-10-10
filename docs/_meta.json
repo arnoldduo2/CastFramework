@@ -113,6 +113,10 @@
       "Running it",
       2
     ],
+    "Modules (optional gating)": [
+      "Build",
+      4
+    ],
     "Deploying to production": [
       "Running it",
       3

@@ -317,3 +317,12 @@ if (!function_exists('__prev')) {
         echo '</pre>';
     }
 }
+
+if (!function_exists('module_active')) {
+    /** Is this module on? Always true while module gating is off. Use it to hide a menu item: `<?php if (module_active('reports')) : ?>`. */
+    function module_active(string $name): bool
+    {
+        $app = Application::instance();
+        return !$app || !$app->has('modules') || $app->make('modules')->isActive($name);
+    }
+}
