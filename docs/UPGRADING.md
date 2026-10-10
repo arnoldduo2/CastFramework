@@ -7,6 +7,10 @@ description: Moving an app to a newer version, adopting migrations, keeping the 
 
 # Upgrading
 
+## 1.x to 2.0.0-alpha
+
+`composer require anode/cast-framework:2.0.0-alpha` (a pre-release: Composer needs the exact version, or `"minimum-stability": "alpha"` with `^2.0@alpha`). Nothing you wrote for 1.1 has to change; what is new is additive: error handler 1.3 support (the failing code underlined, *Open in editor* links, readable logs), development errors for SPA and API clients (`data.debug`, the overlay), the dock's error count, module gating, the `@` shorthand in views, deploy commands and the clean demo pack. Run `composer update anode/error-handler anode/cast-template-engine` for the new handler and engine, then `php cast env:check`. Because this is an alpha, later alpha versions can still change things: read the CHANGELOG before each update.
+
 ## 0.x to 1.0
 
 `composer require anode/cast-framework:^1.0` (Composer's `^0.12` does not reach 1.0). The only break since 0.11: **plans (tiers) are not in the framework any more**. If you used `modules.tiers`, `modules:tier`, `plan_allows()` or `module_tier()` from 0.11, move them into your app: a small service plus a rule registered with `app('modules')->resolveUsing(...)` (README, Modules). If you never turned on plans, nothing else needs changing. Run `php cast env:check` afterwards.

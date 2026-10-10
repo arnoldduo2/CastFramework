@@ -1,18 +1,19 @@
 # Changelog
 
-This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version.
+This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
-## 1.3.1
+## 2.0.0-alpha
 
+The next major version, in alpha while more changes land. It carries everything below that was written after 1.1.0 (error handler 1.3 support, errors for SPA and API clients, the dock's error count):
+
+### The dock counts development errors
 - **Errors stay one click away after the overlay is closed.** The development error overlay remembers the errors of the tab (last 25, one entry per error with a count). The floating dock shows a red count on its button, lists them in its menu (click to reopen) and can clear them; without a dock (a front end of your own) a small "N errors - open" button appears in the corner. `CastErrorOverlay.errors()` / `.clear()` and the `cast:dev-errors` event for code.
 
-## 1.3.0
-
+### Development errors for SPA pages and front-end frameworks
 - **Development errors reach SPA pages and front-end frameworks.** A server error (an exception, a PHP warning, a fatal error, an error in a view) used to give a Cast or API client only a message. In development (`APP_DEBUG=true`, not production) the JSON now has `data.debug`: the file and line, the code around it, which part failed, the stack, an *Open in editor* link and `url`, the full error page (`GET /cast/error/<id>`, the last 25 are kept in `storage/framework/errors/`). The Cast client shows it as an **overlay** (`/cast/error-overlay.js`, loaded only when needed; a shadow root; Esc closes); a React / Vue / Next.js front end can load the same script or read `data.debug`. In production nothing of this is sent. Full page and editor links need `anode/error-handler` 1.3.
 - The demo has a `/_crash` route to see it. Docs: the *Error handler* page has screenshots of the error page and the overlay. `docs:build` copies `docs/images/` and the viewer shows `![alt](images/x.png)` images.
 
-## 1.2.0
-
+### Error handler 1.3 support
 - **Error handler 1.3.0 support**: the development error page shows the failing code underlined in red with an *Open in editor* link and the code of every stack step, and logs are one readable file per day with request, code and stack. The framework passes `root_path` and `editor` (`CAST_EDITOR`), `config/error-handler.php` (`make:config error-handler`) lists the new options (`editor`, `editor_path_map`, `snippet_lines`, `log_style`, `log_format`, `log_code_lines`), and `env:check` advises error-handler 1.3.0. Update with `composer update anode/error-handler`. Docs: the *Error handler* page.
 
 ## 1.1.0

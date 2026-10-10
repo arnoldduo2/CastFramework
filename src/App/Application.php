@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '1.3.1';
+    public const VERSION = '2.0.0-alpha';
 
     private static ?self $instance = null;
 
