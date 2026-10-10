@@ -4,6 +4,8 @@ This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, w
 
 ## 2.0.0-alpha
 
+- `cast serve` now starts PHP without a shell (argument array via `proc_open`), so Windows `cmd.exe`/Git Bash quoting can no longer drop the router script (`public/index.php`); it prints the router it uses and refuses to start when it is missing.
+
 - **A page with no styles, no dock and an empty `/cdocs` now explains itself.** When PHP's built-in server is started without the router script (`php -S 127.0.0.1:8000 -t public`), every `.css`, `.js` and `.svg` URL gets PHP's own 404 while pages still work. In development an inline check on each page asks for one of the framework's files and, if it does not come back, shows a red bar with the fix (`php cast serve`, or `php -S ... public/index.php`; on Apache/nginx the rewrite rules). `static:check` recognises PHP's own 404 and a `--url` that is a file instead of the app's address.
 - **`php cast static:check [--url=URL]`**: finds why CSS, JS or the documentation do not show on a real install. In-process it checks the static folders and whether each file would be served; with `--url` it loads your page and requests every linked stylesheet and script, `/cdocs/` and its data on the real web server, and explains a wrong `APP_BASE_PATH`, a rewrite that returns the home page for a file, a 404, or a cut answer.
 The next major version, in alpha while more changes land. It carries everything below that was written after 1.1.0 (error handler 1.3 support, errors for SPA and API clients, the dock's error count):

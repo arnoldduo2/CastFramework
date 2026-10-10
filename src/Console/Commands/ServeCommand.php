@@ -26,14 +26,27 @@ final class ServeCommand extends Command
         $host = (string) $input->option('host', '127.0.0.1');
         $port = (string) $input->option('port', '8000');
         $public = $this->app->publicPath();
-        $command = sprintf('%s -S %s:%s -t %s %s', escapeshellarg(PHP_BINARY), $host, $port, escapeshellarg($public), escapeshellarg($public . DIRECTORY_SEPARATOR . 'index.php'));
+        $router = $public . DIRECTORY_SEPARATOR . 'index.php';
+        // The router script (the last argument) sends every request to the framework, so css/js/cast/cdocs files are served.
+        $argv = [PHP_BINARY, '-S', "$host:$port", '-t', $public, $router];
 
         if ($input->hasOption('dry')) {
-            $output->line($command);
+            $output->line(implode(' ', array_map(static fn(string $a): string => preg_match('/[\s"\']/', $a) ? '"' . $a . '"' : $a, $argv)));
             return 0;
         }
+        if (!is_file($router)) {
+            $output->error("Router script not found: $router (run this from the project folder)");
+            return 1;
+        }
         $output->info("Serving on http://$host:$port (Ctrl+C to stop)");
-        passthru($command, $code);
-        return $code;
+        $output->line("Router script: $router");
+
+        // An argument array is started without a shell, so Windows (cmd.exe, Git Bash) cannot mangle the quotes and drop the router.
+        $process = proc_open($argv, [0 => STDIN, 1 => STDOUT, 2 => STDERR], $pipes);
+        if (!is_resource($process)) {
+            $output->error('Could not start the PHP server.');
+            return 1;
+        }
+        return proc_close($process);
     }
 }

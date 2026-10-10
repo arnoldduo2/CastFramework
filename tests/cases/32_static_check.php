@@ -98,3 +98,14 @@ PHP);
     [$syntax] = static_check(['--url=localhost']);
     eq(1, $syntax);
 });
+
+test('serve --dry: always passes public/index.php as the router script (last argument)', function () {
+    $app = boot_app(['public/index.php' => '<?php']);
+    $screen = fopen('php://memory', 'w+');
+    $code = (new \Cast\Console\Commands\ServeCommand($app))->handle(new \Cast\Console\Input(['serve', '--dry']), new \Cast\Console\Output($screen, false));
+    rewind($screen);
+    $out = trim((string) stream_get_contents($screen));
+    eq(0, $code);
+    ok(str_contains($out, ' -S 127.0.0.1:8000 -t '), $out);
+    ok(str_ends_with($out, 'index.php') || str_ends_with($out, 'index.php"'), 'router script is the last argument: ' . $out);
+});
