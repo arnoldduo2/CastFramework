@@ -522,6 +522,8 @@ app('view')->share('appName', 'My App');             // data every view receives
 Inside a view the data is available as variables and as `$data`. Components: a `.cast.php` component receives camelCased props and `$children`;
 a legacy `.php` component receives `$data`. A view that is not found in your folder falls back to the framework's own (error pages).
 
+**The `@` shorthand (template engine 1.1.0 and newer).** Instead of `<?php foreach (...): ?>` and `<?= $x ?>` you can write `@foreach ($users as $user):` ... `@endforeach`, `@{ $user->name }`, `@forelse` / `@empty` / `@endforelse`, `@for`, `@while`, `@if` / `@elseif` / `@else` / `@endif`, `@unless`, `@isset`, `@switch`, `@break`, `@continue` and `@php` ... `@endphp`. `@{ }` prints as it is, like `<?= ?>` (use `htchars()` for user text). Plain PHP keeps working in the same file. Full table: the [template engine README](https://github.com/arnoldduo2/CastTemplateEngine#the--shorthand-for-php). Update with `composer update anode/cast-template-engine`.
+
 ## Running on Windows / XAMPP, or in a sub-folder
 
 Quick try (no Apache needed): `php cast serve` serves `public/` on http://127.0.0.1:8000.

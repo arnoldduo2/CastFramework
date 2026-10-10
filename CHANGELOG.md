@@ -2,6 +2,10 @@
 
 This project follows [Semantic Versioning](https://semver.org). Until 1.0.0 minor versions may change behaviour.
 
+## 0.12.1
+
+- Docs: the template engine's new `@` shorthand for PHP (`@{ $x }`, `@foreach ... @endforeach`, `@forelse`, `@if`, ...; engine 1.1.0). Nothing else changed.
+
 ## 0.12.0
 
 - **Plans (tiers) moved out of the framework**: they are app lifecycle, so they now live in the app (a ready-made package for a cast-app: `PlanService`, `PlanServiceProvider`, `php cast plan`, `plan_allows()`). Removed from the framework: `modules.tiers` / `tier` / `upgrade_url`, `modules:tier`, `TierStore`, `plan_allows()`, `module_tier()`, `make:module --tier` and the plan row of the database store.
