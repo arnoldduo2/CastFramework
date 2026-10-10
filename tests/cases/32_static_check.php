@@ -109,3 +109,15 @@ test('serve --dry: always passes public/index.php as the router script (last arg
     ok(str_contains($out, ' -S 127.0.0.1:8000 -t '), $out);
     ok(str_ends_with($out, 'index.php') || str_ends_with($out, 'index.php"'), 'router script is the last argument: ' . $out);
 });
+
+test('serve: refuses to start when something already listens on the port', function () {
+    $sock = stream_socket_server('tcp://127.0.0.1:0');
+    $port = (int) substr(strrchr((string) stream_socket_get_name($sock, false), ':'), 1);
+    $app = boot_app(['public/index.php' => '<?php']);
+    $screen = fopen('php://memory', 'w+');
+    $code = (new \Cast\Console\Commands\ServeCommand($app))->handle(new \Cast\Console\Input(['serve', "--port=$port"]), new \Cast\Console\Output($screen, false));
+    rewind($screen);
+    eq(1, $code);
+    ok(str_contains((string) stream_get_contents($screen), 'already listening'));
+    fclose($sock);
+});

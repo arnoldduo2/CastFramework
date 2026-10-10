@@ -2,9 +2,9 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
-## 2.0.1-alpha
+## 2.0.2-alpha
 
-The next alpha after `2.0.0-alpha`: everything below, plus `static:check`, the dev-server warning bar and the shell-free `cast serve`.
+The next alpha after `2.0.0-alpha`: everything below, plus `static:check`, the dev-server warning bar, the shell-free `cast serve`, and `cast serve` refusing to start when the port is already taken (on Windows an old server could keep answering while the new one got no requests).
 
 - `cast serve` now starts PHP without a shell (argument array via `proc_open`), so Windows `cmd.exe`/Git Bash quoting can no longer drop the router script (`public/index.php`); it prints the router it uses and refuses to start when it is missing.
 

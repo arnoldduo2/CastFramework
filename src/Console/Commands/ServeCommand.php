@@ -38,6 +38,14 @@ final class ServeCommand extends Command
             $output->error("Router script not found: $router (run this from the project folder)");
             return 1;
         }
+        // On Windows a second server can bind a port that is already taken and then never receives a request,
+        // while the old one (maybe started with an older framework) keeps answering. Refuse instead of pretending.
+        $probe = @stream_socket_client("tcp://$host:$port", $errno, $errstr, 1);
+        if ($probe !== false) {
+            fclose($probe);
+            $output->error("Something is already listening on $host:$port, so a new server would never get the requests. Stop the old one (Windows: taskkill /F /IM php.exe) or use --port=8090.");
+            return 1;
+        }
         $output->info("Serving on http://$host:$port (Ctrl+C to stop)");
         $output->line("Router script: $router");
 
