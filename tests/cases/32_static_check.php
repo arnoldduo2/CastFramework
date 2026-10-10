@@ -118,6 +118,8 @@ test('serve: refuses to start when something already listens on the port', funct
     $code = (new \Cast\Console\Commands\ServeCommand($app))->handle(new \Cast\Console\Input(['serve', "--port=$port"]), new \Cast\Console\Output($screen, false));
     rewind($screen);
     eq(1, $code);
-    ok(str_contains((string) stream_get_contents($screen), 'already listening'));
+    $out = (string) stream_get_contents($screen);
+    ok(str_contains($out, 'already listening'));
+    ok(str_contains($out, '--port=' . ($port + 1)), 'suggests the next port: ' . $out);
     fclose($sock);
 });

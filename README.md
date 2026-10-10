@@ -966,11 +966,11 @@ BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
 
 ## Upgrading
 
-[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^1.1` for the stable line, or `composer require anode/cast-framework:2.0.3-alpha` to try the alpha (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
+[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^1.1` for the stable line, or `composer require anode/cast-framework:2.0.4-alpha` to try the alpha (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
 
 ## Versioning
 
-**2.0.0 is in alpha** (`v2.0.3-alpha`): more changes are coming, so until the stable 2.0.0 the API can change between alpha versions. Apps that need a stable base stay on `^1.1`. To try the alpha: `composer require anode/cast-framework:2.0.3-alpha` (Composer asks for `"minimum-stability": "alpha"` or the exact `2.0.3-alpha` constraint).
+**2.0.0 is in alpha** (`v2.0.4-alpha`): more changes are coming, so until the stable 2.0.0 the API can change between alpha versions. Apps that need a stable base stay on `^1.1`. To try the alpha: `composer require anode/cast-framework:2.0.4-alpha` (Composer asks for `"minimum-stability": "alpha"` or the exact `2.0.4-alpha` constraint).
 
 [Semantic Versioning](https://semver.org). The public API is what this README documents: the helper names, the config keys, the contracts, the route/middleware spec,
 the response shapes and the console commands. See [CHANGELOG.md](CHANGELOG.md). Migrating an existing app: [docs/ERP-PORTING.md](docs/ERP-PORTING.md).
