@@ -143,3 +143,36 @@ test('init writes a root .htaccess that hands every request to public/', functio
     ok(str_contains((string) file_get_contents("$dir/.htaccess"), 'public/$1'));
     ok(is_file("$dir/public/.htaccess"));
 });
+
+test('static:check --url: the web server\'s own 404 (Apache) is not blamed on PHP\'s router script', function () {
+    [$proc, $port] = tiny_server(<<<'PHP'
+<?php
+$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+if ($path === '/') { echo '<html><head></head></html>'; return; }
+http_response_code(404); header('Content-Type: text/html; charset=iso-8859-1'); echo '<!DOCTYPE HTML><html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL was not found on this server.</p><hr><address>Apache/2.4.58 Server at localhost Port 80</address></body></html>';
+PHP);
+    try {
+        [$code, $out] = static_check(["--url=http://127.0.0.1:$port/"]);
+        has("the web server's own 404", $out);
+        lacks('router script', $out);
+    } finally {
+        proc_terminate($proc);
+        proc_close($proc);
+    }
+});
+
+test('static:check --url: Apache\'s folder listing is recognised as "nothing reached index.php"', function () {
+    [$proc, $port] = tiny_server(<<<'PHP'
+<?php
+header('Content-Type: text/html;charset=UTF-8');
+echo '<html><head><title>Index of /cast-app</title></head><body><h1>Index of /cast-app</h1></body></html>';
+PHP);
+    try {
+        [$code, $out] = static_check(["--url=http://127.0.0.1:$port/cast-app/"]);
+        has("web server's folder listing", $out);
+        has('.htaccess', $out);
+    } finally {
+        proc_terminate($proc);
+        proc_close($proc);
+    }
+});
