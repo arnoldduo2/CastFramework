@@ -2,6 +2,10 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version.
 
+## 1.3.1
+
+- **Errors stay one click away after the overlay is closed.** The development error overlay remembers the errors of the tab (last 25, one entry per error with a count). The floating dock shows a red count on its button, lists them in its menu (click to reopen) and can clear them; without a dock (a front end of your own) a small "N errors - open" button appears in the corner. `CastErrorOverlay.errors()` / `.clear()` and the `cast:dev-errors` event for code.
+
 ## 1.3.0
 
 - **Development errors reach SPA pages and front-end frameworks.** A server error (an exception, a PHP warning, a fatal error, an error in a view) used to give a Cast or API client only a message. In development (`APP_DEBUG=true`, not production) the JSON now has `data.debug`: the file and line, the code around it, which part failed, the stack, an *Open in editor* link and `url`, the full error page (`GET /cast/error/<id>`, the last 25 are kept in `storage/framework/errors/`). The Cast client shows it as an **overlay** (`/cast/error-overlay.js`, loaded only when needed; a shadow root; Esc closes); a React / Vue / Next.js front end can load the same script or read `data.debug`. In production nothing of this is sent. Full page and editor links need `anode/error-handler` 1.3.

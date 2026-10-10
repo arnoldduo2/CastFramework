@@ -189,6 +189,47 @@ const step = async (name, fn) => {
     assert.equal(await page.locator("[data-cast-error-overlay]").count(), 0, "Esc closes it");
   });
 
+  await step("after closing the overlay the dock keeps the error: a count, and a way to open it again", async () => {
+    const badge = page.locator("[data-cast-dock] .n");
+    assert.equal(await badge.innerText(), "1", "one error counted");
+    await page.locator("[data-cast-dock] .b").click();
+    assert.ok(await page.locator("[data-cast-dock] .e h4:has-text('Errors (1)')").count(), "listed in the dock menu");
+    assert.ok(await page.locator("[data-cast-dock] .e button.i:has-text('Undefined variable $price')").count());
+    await page.locator("[data-cast-dock] .e button.i").click();
+    await page.locator("[data-cast-error-overlay]").waitFor({ state: "attached" });
+    assert.equal(await page.locator("[data-cast-error-overlay] .u").first().innerText(), "$price", "the same error, reopened");
+    assert.equal(await badge.innerText(), "1", "reopening does not count it again");
+    await page.keyboard.press("Escape");
+    // the same error again: counted once, with a multiplier
+    await page.evaluate(() => Cast.load("/_crash"));
+    await page.locator("[data-cast-error-overlay]").waitFor({ state: "attached" });
+    await page.keyboard.press("Escape");
+    assert.equal(await badge.innerText(), "1", "the same error is one entry");
+    await page.locator("[data-cast-dock] .b").click();
+    assert.ok(await page.locator("[data-cast-dock] .e .k:has-text('×2')").count(), "seen twice");
+    await page.locator("[data-cast-dock] .e button:has-text('Clear errors')").click();
+    assert.equal(await page.locator("[data-cast-dock] .n").isHidden(), true, "cleared");
+    assert.equal(await marker(), "alive", "no reload");
+  });
+
+  await step("without a dock (a front end of your own) a small button reopens the error", async () => {
+    const other = await browser.newPage();
+    await other.goto("about:blank"); // a page with no dock (sessionStorage is blocked there: the overlay keeps the errors in memory)
+    await other.addScriptTag({ content: require("node:fs").readFileSync(require("node:path").join(__dirname, "../../src/Resources/error-overlay.js"), "utf8") });
+    await other.evaluate(() => CastErrorOverlay.show({ id: "abc12345", kind: "RuntimeException", message: "Boom from an API", file: "app/Api.php", line: 7, code: [{ n: 7, text: "throw new Boom();", error: true }], trace: [] }));
+    assert.ok(await other.locator("[data-cast-error-overlay] >> text=Boom from an API").count());
+    await other.keyboard.press("Escape");
+    assert.equal(await other.locator("[data-cast-error-overlay]").count(), 0);
+    assert.ok(await other.locator("[data-cast-error-pill] button:has-text('1 error')").count(), "the pill with the count");
+    await other.locator("[data-cast-error-pill] button:has-text('open')").click();
+    assert.ok(await other.locator("[data-cast-error-overlay] >> text=Boom from an API").count(), "opens it again");
+    assert.equal(await other.locator("[data-cast-error-pill]").count(), 0, "the pill is gone while the overlay is open");
+    await other.keyboard.press("Escape");
+    await other.locator("[data-cast-error-pill] button.x").click();
+    assert.equal(await other.locator("[data-cast-error-pill]").count(), 0, "forgotten");
+    await other.close();
+  });
+
   await step("logging out (a Cast form) returns to the public layout without a reload", async () => {
     await page.click("button[title='admin@example.com']");
     await page.waitForSelector("text=Log in");

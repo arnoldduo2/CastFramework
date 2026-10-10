@@ -10,12 +10,61 @@
  *   if (body.data && body.data.debug) CastErrorOverlay.show(body.data.debug);
  *
  * It lives in a shadow root, so your CSS cannot break it, and everything is inserted as text. Esc or a click outside closes it.
+ *
+ * Errors are remembered (this browser tab, the last 25): after you close the overlay the Cast dock (bottom right) shows a red count and lists
+ * them, and where there is no dock a small "N errors" button appears in the same corner. Either one opens the error again.
+ *   CastErrorOverlay.errors()   the remembered errors, newest first        CastErrorOverlay.clear()   forget them
+ *   window event "cast:dev-errors" (detail: {count, errors}) fires whenever the list changes
  */
 (function () {
   "use strict";
   if (window.CastErrorOverlay) return;
 
   var HOST = null;
+  var PILL = null;
+  var KEY = "cast.dev.errors";
+  var MAX = 25;
+
+  // ---- the remembered errors: sessionStorage (one browser tab), newest first, one entry per error id with a count
+  var MEM = []; // used when sessionStorage is blocked
+  function read() {
+    try {
+      var list = JSON.parse(sessionStorage.getItem(KEY) || "[]");
+      return Array.isArray(list) ? list : [];
+    } catch (e) {
+      return MEM;
+    }
+  }
+  function write(list) {
+    MEM = list;
+    try {
+      sessionStorage.setItem(KEY, JSON.stringify(list));
+    } catch (e) {
+      /* storage full or blocked: the count then lives only until the page is reloaded */
+    }
+    try {
+      window.dispatchEvent(new CustomEvent("cast:dev-errors", { detail: { count: list.length, errors: list } }));
+    } catch (e) {
+      /* very old browsers */
+    }
+    renderPill();
+  }
+  function record(debug) {
+    var list = read();
+    var id = String(debug.id || debug.message || "");
+    var found = -1;
+    for (var i = 0; i < list.length; i++) if (list[i].id === id) found = i;
+    var entry = { id: id, kind: debug.kind || "", message: debug.message || "", file: debug.file || "", line: debug.line || 0, time: Date.now(), count: 1, debug: debug };
+    if (found >= 0) {
+      entry.count = (list[found].count || 1) + 1;
+      list.splice(found, 1);
+    }
+    list.unshift(entry);
+    write(list.slice(0, MAX));
+  }
+  function clear() {
+    write([]);
+  }
   // links: only addresses that open an editor or a page; never javascript:
   function safe(url) {
     return typeof url === "string" && /^(https?:\/\/|[a-z][a-z0-9+.-]*:\/\/|\/)/i.test(url) && !/^javascript:/i.test(url) ? url : null;
@@ -69,14 +118,52 @@
       HOST = null;
     }
     document.removeEventListener("keydown", onKey, true);
+    renderPill();
+  }
+
+  // ---- where there is no Cast dock (a front end of your own): a small button in the corner that opens the latest error again
+  function renderPill() {
+    if (PILL) {
+      PILL.remove();
+      PILL = null;
+    }
+    var list = read();
+    if (HOST || !list.length || document.querySelector("[data-cast-dock]")) return; // the dock shows the count itself
+    PILL = document.createElement("div");
+    PILL.setAttribute("data-cast-error-pill", "");
+    PILL.setAttribute("data-cast", "off");
+    var root = PILL.attachShadow({ mode: "open" });
+    var style = el("style");
+    style.textContent =
+      ":host{all:initial}.p{position:fixed;right:18px;bottom:18px;z-index:2147483000;display:flex;gap:6px;align-items:center;font:600 13px system-ui,sans-serif}" +
+      "button{font:inherit;cursor:pointer;border:1px solid #e5173f;background:#e5173f;color:#fff;border-radius:99px;padding:7px 14px;box-shadow:0 6px 20px rgba(0,0,0,.35)}" +
+      "button.x{background:#fff;color:#e5173f;padding:7px 10px}";
+    var wrap = el("div", "p");
+    var open = el("button", "", list.length + (list.length === 1 ? " error" : " errors") + " — open");
+    open.type = "button";
+    open.addEventListener("click", function () {
+      show(list[0].debug, { record: false });
+    });
+    var x = el("button", "x", "×");
+    x.type = "button";
+    x.setAttribute("aria-label", "Forget these errors");
+    x.addEventListener("click", clear);
+    wrap.append(open, x);
+    root.append(style, wrap);
+    document.documentElement.appendChild(PILL);
   }
   function onKey(e) {
     if (e.key === "Escape") close();
   }
 
-  function show(debug) {
+  function show(debug, options) {
     if (!debug || typeof debug !== "object") return;
+    if (!options || options.record !== false) record(debug);
     close();
+    if (PILL) {
+      PILL.remove();
+      PILL = null;
+    }
     HOST = document.createElement("div");
     HOST.setAttribute("data-cast-error-overlay", "");
     HOST.setAttribute("data-cast", "off");
@@ -154,5 +241,6 @@
     closeBtn.focus();
   }
 
-  window.CastErrorOverlay = { show: show, close: close };
+  window.CastErrorOverlay = { show: show, close: close, errors: read, clear: clear };
+  renderPill(); // errors remembered from before a page reload
 })();

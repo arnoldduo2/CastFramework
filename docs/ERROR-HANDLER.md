@@ -95,6 +95,7 @@ A browser page gets the full error page above. A Cast (SPA) page or a React / Vu
 ![The error overlay the Cast client shows in development: the code, the failing part underlined, Open in editor, Full error page, and the stack](images/error-overlay.png)
 
 - **Cast (SPA) pages:** the client shows an **overlay** on top of the page (a failing form submit or navigation too): the message, the code with the failing part underlined, *Open in editor*, *Full error page* and the stack. Esc closes it; the page underneath stays as it was. Nothing to set up. (`CAST_EDITOR` chooses the editor.)
+- **Closed it? The error is not lost.** The overlay remembers the errors of the tab (the last 25; the same error twice is one entry with `×2`). The floating **Cast dock** (bottom right) shows a **red count** on its button, lists the errors in its menu (click one to open it again) and has *Clear errors*. Where there is no dock (a front end of your own), a small **"N errors — open"** button appears in the same corner (× forgets them). `CastErrorOverlay.errors()` and `.clear()` do the same from code, and the window event `cast:dev-errors` fires whenever the list changes.
 - **A front end of your own** (React, Vue, Next.js, Svelte ...): the same overlay is one script, served by the framework, that you can load while developing, or you can read `data.debug` and draw your own:
 
 ```html
