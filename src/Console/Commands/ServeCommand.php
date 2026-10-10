@@ -55,6 +55,41 @@ final class ServeCommand extends Command
             $output->error('Could not start the PHP server.');
             return 1;
         }
-        return proc_close($process);
+
+        // Stop the server together with this command. On Windows (Git Bash, VS Code) Ctrl+C can end `php cast` and leave
+        // the server running in the background, still answering on the port.
+        $stop = static function () use ($process): void {
+            $status = proc_get_status($process);
+            if (!empty($status['running'])) {
+                if (PHP_OS_FAMILY === 'Windows') {
+                    @exec('taskkill /F /T /PID ' . (int) $status['pid'] . ' 2>&1');
+                } else {
+                    proc_terminate($process);
+                }
+            }
+        };
+        register_shutdown_function($stop);
+        if (function_exists('sapi_windows_set_ctrl_handler')) {
+            sapi_windows_set_ctrl_handler(static function () use ($stop): void {
+                $stop();
+                exit(0);
+            });
+        } elseif (function_exists('pcntl_signal')) {
+            pcntl_async_signals(true);
+            foreach ([SIGINT, SIGTERM] as $signal) {
+                pcntl_signal($signal, static function () use ($stop): void {
+                    $stop();
+                    exit(0);
+                });
+            }
+        }
+
+        // poll instead of blocking in proc_close(), so the handlers above can run
+        while (($status = proc_get_status($process)) && $status['running']) {
+            usleep(200000);
+        }
+        $code = (int) $status['exitcode'];
+        proc_close($process);
+        return $code;
     }
 }
