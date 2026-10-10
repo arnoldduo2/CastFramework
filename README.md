@@ -729,6 +729,8 @@ A Marketplace extension (with prop completion, diagnostics and rename) will foll
 
 Write a docblock in a component file (`@var string|null $label The text to show`) and the extension shows it on hover, completes props and values, and warns about unknown or missing props. `php cast components --json` gives the same information to AI tools, and `php cast make:component` starts new components documented. See [docs/COMPONENTS.md](docs/COMPONENTS.md).
 
+The extension also colours the engine's `@` syntax (`@{ $x }`, `@foreach`, `@if`, `@switch` ...) and **indents** a view as a whole: *Format Document*, *Format Selection* and the command *Cast: Fix indentation* understand HTML tags, component tags, PHP's `<?php if (...): ?> ... <?php endif ?>`, multi-line `<?php ?>` blocks and the `@` directives together (leading whitespace only; `<script>`, `<style>`, `<pre>`, comments and heredocs are left alone). With `cast.autoIndent` (on by default) the indent also stays right while you type. Run `php cast editor:install` again after updating the framework to get it.
+
 ## Helpers
 
 Installing the package loads these global functions (each wrapped in `function_exists`, so you can define your own first). Names are unchanged from the apps they came from.

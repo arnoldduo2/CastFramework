@@ -2,7 +2,7 @@
   "name": "cast-framework",
   "displayName": "CastFramework",
   "description": "Highlighting, navigation and prop-aware completion for CastFramework views (.cast.php): component tags, docblock props and types, Ctrl+click to open a component's file.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "publisher": "anode",
   "license": "MIT",
   "repository": {
@@ -30,13 +30,21 @@
   "main": "./extension.js",
   "activationEvents": [
     "onLanguage:php",
-    "workspaceContains:**/*.cast.php"
+    "workspaceContains:**/*.cast.php",
+    "onCommand:cast.fixIndentation"
   ],
   "contributes": {
     "grammars": [
       {
         "scopeName": "cast.injection",
         "path": "./syntaxes/cast-injection.tmLanguage.json",
+        "injectTo": [
+          "text.html.php"
+        ]
+      },
+      {
+        "scopeName": "cast.injection.echo",
+        "path": "./syntaxes/cast-echo.tmLanguage.json",
         "injectTo": [
           "text.html.php"
         ]
@@ -100,9 +108,20 @@
           ],
           "default": "camel",
           "markdownDescription": "How prop names are written when completed: `hasLabel`, `has-label` or `has_label` (the engine treats all three the same)."
+        },
+        "cast.autoIndent": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Keep the indentation right while typing in `.cast.php` files: after Enter, and when a line starts with a closing tag, `<?php endif ?>`, `@endif` or `@else`. `Format Document` and `Cast: Fix indentation` re-indent a whole view."
         }
       }
-    }
+    },
+    "commands": [
+      {
+        "command": "cast.fixIndentation",
+        "title": "Cast: Fix indentation"
+      }
+    ]
   },
   "scripts": {
     "test": "node --test \"test/*.test.js\"",

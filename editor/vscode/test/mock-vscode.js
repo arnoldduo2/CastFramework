@@ -78,6 +78,15 @@ class CodeAction {
     this.kind = kind;
   }
 }
+class TextEdit {
+  constructor(range, newText) {
+    this.range = range;
+    this.newText = newText;
+  }
+  static replace(range, newText) {
+    return new TextEdit(range, newText);
+  }
+}
 class WorkspaceEdit {
   constructor() {
     this.edits = [];
@@ -93,6 +102,8 @@ class WorkspaceEdit {
 function create({ root, settings = {} }) {
   const providers = {};
   const collections = {};
+  const handlers = {};
+  const applied = [];
   const api = {
     Position,
     Range,
@@ -103,6 +114,9 @@ function create({ root, settings = {} }) {
     Hover,
     providers,
     collections,
+    handlers,
+    applied,
+    commands: { registerCommand: (id, fn) => ((handlers[id] = fn), { dispose() {} }) },
     CompletionItem,
     CompletionItemKind: { Class: 6, Property: 9, EnumMember: 19, Field: 4 },
     SnippetString,
@@ -110,12 +124,15 @@ function create({ root, settings = {} }) {
     CodeAction,
     CodeActionKind: { QuickFix: "quickfix" },
     WorkspaceEdit,
+    TextEdit,
     languages: {
       registerDocumentLinkProvider: (selector, p) => ((providers.links = p), { dispose() {} }),
       // several providers of a kind may register: tests look at them by role
       registerDefinitionProvider: (selector, p) => ((providers[p.constructor.name === "PropDefinitions" ? "propDefinition" : "definition"] = p), { dispose() {} }),
       registerHoverProvider: (selector, p) => ((providers[p.constructor.name === "ComponentHovers" ? "componentHover" : "hover"] = p), { dispose() {} }),
       registerCompletionItemProvider: (selector, p) => ((providers.completion = p), { dispose() {} }),
+      registerDocumentFormattingEditProvider: (selector, p) => ((providers.formatting = p), { dispose() {} }),
+      registerDocumentRangeFormattingEditProvider: (selector, p) => ((providers.rangeFormatting = p), { dispose() {} }),
       registerCodeActionsProvider: (selector, p) => ((providers.codeActions = p), { dispose() {} }),
       createDiagnosticCollection: (name) => {
         const store = new Map();
@@ -124,6 +141,8 @@ function create({ root, settings = {} }) {
       },
     },
     workspace: {
+      onDidChangeTextDocument: (fn) => ((handlers.change = fn), { dispose() {} }),
+      applyEdit: async (edit) => (applied.push(edit), true),
       getWorkspaceFolder: () => (root ? { uri: Uri.file(root) } : undefined),
       getConfiguration: () => ({ get: (key, fallback) => (key in settings ? settings[key] : fallback) }),
     },

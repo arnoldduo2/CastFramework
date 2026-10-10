@@ -23,7 +23,7 @@ function project(files, settings = {}) {
   const extension = require("../extension");
   Module._load = original;
   extension.activate({ subscriptions: [] });
-  return { root, providers: vscode.providers, extension };
+  return { root, providers: vscode.providers, extension, vscode, handlers: vscode.handlers, applied: vscode.applied };
 }
 
 const VIEW = "resources/views/items/items.cast.php";
@@ -150,4 +150,60 @@ test("a view with components in { } values and PHP code resolves each one on the
     [2, "go.cast.php"],
     [3, "panel.cast.php"],
   ]);
+});
+
+// ------------------------------------------------------------------------------------------------ indentation
+
+const apply = (text, edits) => {
+  const lines = text.split("\n");
+  for (const e of edits.slice().sort((a, b) => b.range.start.line - a.range.start.line)) {
+    const l = e.range.start.line;
+    lines[l] = lines[l].slice(0, e.range.start.character) + e.newText + lines[l].slice(e.range.end.character);
+  }
+  return lines.join("\n");
+};
+
+test("Format Document re-indents the whole view and only touches leading whitespace", () => {
+  const { providers } = project({});
+  const src = '<div>\n<?php if ($a): ?>\n<p>x</p>\n<?php endif ?>\n@foreach ($l as $i)\n<li>@{ $i }</li>\n@endforeach\n</div>';
+  const doc = document("/p/" + VIEW, src);
+  const out = apply(src, providers.formatting.provideDocumentFormattingEdits(doc, { tabSize: 2, insertSpaces: true }));
+  assert.equal(out, '<div>\n  <?php if ($a): ?>\n    <p>x</p>\n  <?php endif ?>\n  @foreach ($l as $i)\n    <li>@{ $i }</li>\n  @endforeach\n</div>');
+  assert.deepEqual(providers.formatting.provideDocumentFormattingEdits(document("/p/" + VIEW, out), { tabSize: 2, insertSpaces: true }), [], "nothing to do when it is right");
+});
+
+test("Format Selection only changes the selected lines", () => {
+  const { providers } = project({});
+  const src = "<div>\n<p>a</p>\n<p>b</p>\n<p>c</p>\n</div>";
+  const doc = document("/p/" + VIEW, src);
+  const range = new (require("./mock-vscode").Range)(new Position(1, 0), new Position(2, 3));
+  const out = apply(src, providers.rangeFormatting.provideDocumentRangeFormattingEdits(doc, range, { tabSize: 4, insertSpaces: true }));
+  assert.equal(out, "<div>\n    <p>a</p>\n    <p>b</p>\n<p>c</p>\n</div>");
+});
+
+test("typing: Enter indents the new line, and the line just finished is corrected", async () => {
+  const { handlers, applied, vscode } = project({});
+  const text = "<div>\n<?php if ($a): ?>\n";
+  const doc = { ...document("/p/" + VIEW, text), getText: () => text };
+  handlers.change({ document: doc, contentChanges: [{ text: "\n", rangeLength: 0, range: new (require("./mock-vscode").Range)(new Position(1, 23), new Position(1, 23)) }] });
+  await new Promise((r) => setImmediate(r));
+  assert.equal(applied.length, 1);
+  const wanted = applied[0].edits.map((e) => [e.range.start.line, e.text]);
+  assert.deepEqual(wanted, [[2, "        "], [1, "    "]], "new line two levels in; the <?php if line itself one level in");
+});
+
+test("typing: a line that becomes </div>, <?php endif ?> or @endif moves back by itself; ordinary typing is left alone", async () => {
+  const { handlers, applied } = project({});
+  const text = "<div>\n    <p>\n        x\n        </p>";
+  const doc = { ...document("/p/" + VIEW, text), getText: () => text };
+  const R = require("./mock-vscode").Range;
+  handlers.change({ document: doc, contentChanges: [{ text: ">", rangeLength: 0, range: new R(new Position(3, 12), new Position(3, 12)) }] });
+  await new Promise((r) => setImmediate(r));
+  assert.deepEqual(applied.at(-1).edits.map((e) => e.text), ["    "]);
+  const before = applied.length;
+  handlers.change({ document: doc, contentChanges: [{ text: "x", rangeLength: 0, range: new R(new Position(2, 9), new Position(2, 9)) }] });
+  assert.equal(applied.length, before, "typing a letter inside a normal line changes nothing");
+  const off = project({}, { autoIndent: false });
+  off.handlers.change({ document: doc, contentChanges: [{ text: ">", rangeLength: 0, range: new R(new Position(3, 12), new Position(3, 12)) }] });
+  assert.equal(off.applied.length, 0, "the setting turns it off");
 });

@@ -73,5 +73,83 @@
     "scope": "php",
     "body": "<?= __modules(\"\\$parentName.\\$pageName\", '${1|css,js|}') ?>",
     "description": "Link the page's css or js module"
+  },
+  "Cast @foreach": {
+    "prefix": "aforeach",
+    "body": [
+      "@foreach ($${1:items} as $${2:item})",
+      "\t$0",
+      "@endforeach"
+    ],
+    "description": "@foreach ... @endforeach (template engine 1.1.0)"
+  },
+  "Cast @forelse": {
+    "prefix": "aforelse",
+    "body": [
+      "@forelse ($${1:items} as $${2:item})",
+      "\t$0",
+      "@empty",
+      "\t${3:<p>Nothing here.</p>}",
+      "@endforelse"
+    ],
+    "description": "@forelse ... @empty ... @endforelse"
+  },
+  "Cast @if": {
+    "prefix": "aif",
+    "body": [
+      "@if (${1:$condition})",
+      "\t$0",
+      "@endif"
+    ],
+    "description": "@if ... @endif"
+  },
+  "Cast @if/@else": {
+    "prefix": "aifelse",
+    "body": [
+      "@if (${1:$condition})",
+      "\t$0",
+      "@else",
+      "\t",
+      "@endif"
+    ],
+    "description": "@if ... @else ... @endif"
+  },
+  "Cast @for": {
+    "prefix": "afor",
+    "body": [
+      "@for ($${1:i} = 0; $${1:i} < ${2:10}; $${1:i}++)",
+      "\t$0",
+      "@endfor"
+    ],
+    "description": "@for ... @endfor"
+  },
+  "Cast @while": {
+    "prefix": "awhile",
+    "body": [
+      "@while (${1:$condition})",
+      "\t$0",
+      "@endwhile"
+    ],
+    "description": "@while ... @endwhile"
+  },
+  "Cast @switch": {
+    "prefix": "aswitch",
+    "body": [
+      "@switch ($${1:value})",
+      "\t@case (${2:1})",
+      "\t\t$0",
+      "\t\t@break",
+      "\t@default",
+      "\t\t",
+      "@endswitch"
+    ],
+    "description": "@switch / @case / @default"
+  },
+  "Cast @{ }": {
+    "prefix": "aecho",
+    "body": [
+      "@{ $0 }"
+    ],
+    "description": "print a PHP expression (same as <?= ?>)"
   }
 }

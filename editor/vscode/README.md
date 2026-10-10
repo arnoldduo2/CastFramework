@@ -12,7 +12,9 @@ Highlighting and navigation for the views of a [CastFramework](https://github.co
   - a module: `__modules('app.app', 'js')` opens `resources/js/app/app.module.js`.
 
   Hover shows the file and the props the component reads (`$title ??= ...`); for a name with no file it lists the paths it looked for.
-- **Snippets** (in PHP files): `ccomp`, `ccomp1`, `cslot`, `cprop`, `cfor`, `cif`, `cpage`, `cinc`, `cmod`; in JavaScript `cpagejs` (the `Cast.page({ mount, destroy })` lifecycle).
+- **The engine's `@` syntax** (`@{ $x }`, `@foreach`, `@forelse`, `@if`, `@switch`, `@php` ... ) is coloured too, with the PHP inside its parentheses.
+- **Indentation**: *Format Document*, *Format Selection* and **Cast: Fix indentation** re-indent a view, and `cast.autoIndent` (on by default) keeps it right while you type (Enter, and lines that become `</div>`, `<?php endif ?>`, `@endif`, `@else`). It understands HTML and component tags (also with attributes over several lines), PHP's `if (...): ... endif` syntax, multi-line `<?php ?>` blocks and the `@` directives together, and changes only leading whitespace; `<script>`, `<style>`, `<pre>`, comments and heredocs are left alone. Choose it as the formatter for `.cast.php` if another PHP formatter asks (*Format Document With...*).
+- **Snippets** (in PHP files): `ccomp`, `ccomp1`, `cslot`, `cprop`, `cfor`, `cif`, `cpage`, `cinc`, `cmod`, and for the `@` syntax `aforeach`, `aforelse`, `aif`, `aifelse`, `afor`, `awhile`, `aswitch`, `aecho`; in JavaScript `cpagejs` (the `Cast.page({ mount, destroy })` lifecycle).
 
 ## Install
 
@@ -34,6 +36,8 @@ A packaged `.vsix` (`npm run package`) can also be installed with *Extensions: I
 | `cast.viewsPath` | `resources/views` | Where `__includes()` / `views()` names are looked up. |
 | `cast.resourcesPath` | `resources` | Where `css/` and `js/` modules are. |
 | `cast.extension` | `.cast.php` | The extension of view and component files. |
+| `cast.autoIndent` | `true` | Keep the indentation right while typing in `.cast.php` files (after Enter; lines that become `</div>`, `<?php endif ?>`, `@endif`, `@else`). |
+| `cast.diagnostics`, `cast.propCase` | `hint`, `camel` | Problems in component tags; how prop names are written when completed. |
 
 ## What it does not do (yet)
 

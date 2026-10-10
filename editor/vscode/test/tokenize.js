@@ -14,6 +14,7 @@ const files = {
   "source.css": path.join(grammars, "css.tmLanguage.json"),
   "source.js": path.join(grammars, "js.tmLanguage.json"),
   "cast.injection": path.join(__dirname, "..", "syntaxes", "cast-injection.tmLanguage.json"),
+  "cast.injection.echo": path.join(__dirname, "..", "syntaxes", "cast-echo.tmLanguage.json"),
 };
 
 function available() {
@@ -30,12 +31,12 @@ function registry(withCast = true) {
   return new vsctm.Registry({
     onigLib,
     loadGrammar: async (scopeName) => {
-      if (scopeName === "cast.injection" && !withCast) return null;
+      if (scopeName.startsWith("cast.injection") && !withCast) return null;
       const file = files[scopeName];
       if (!file || !fs.existsSync(file)) return null;
       return vsctm.parseRawGrammar(fs.readFileSync(file, "utf8"), file);
     },
-    getInjections: (scopeName) => (withCast && scopeName === "text.html.php" ? ["cast.injection"] : undefined),
+    getInjections: (scopeName) => (withCast && scopeName === "text.html.php" ? ["cast.injection", "cast.injection.echo"] : undefined),
   });
 }
 

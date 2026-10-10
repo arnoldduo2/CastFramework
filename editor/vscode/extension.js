@@ -11,6 +11,7 @@ const { resolveComponent, resolveLegacyComponent, resolveView, resolveModule, pr
 const { lookup, listComponents, findProp, specOf } = require("./lib/components");
 const { contextAt, diagnose } = require("./lib/complete");
 const { camel } = require("./lib/docblock");
+const { computeIndents, indentFor, indentString } = require("./lib/indent");
 
 const SELECTOR = { scheme: "file", pattern: "**/*.cast.php" };
 
@@ -346,6 +347,98 @@ function edit(title, document, diagnostic, apply) {
   return action;
 }
 
+// ---------------------------------------------------------------------------------------------------------------- indentation
+
+/** Tab settings: the editor's own for the document being formatted, else the workspace's. */
+function tabOptions(options) {
+  if (options && options.tabSize) return { tabSize: Number(options.tabSize), insertSpaces: options.insertSpaces !== false };
+  const editor = vscode.window && vscode.window.activeTextEditor;
+  if (editor && editor.options && editor.options.tabSize) return { tabSize: Number(editor.options.tabSize), insertSpaces: editor.options.insertSpaces !== false };
+  return { tabSize: 4, insertSpaces: true };
+}
+
+/** Edits that change only the leading whitespace of the lines in [first, last] (all lines when omitted). */
+function indentEdits(document, options, first = 0, last = Infinity) {
+  const lines = document.getText().split(/\r?\n/);
+  const { depths } = computeIndents(lines);
+  const edits = [];
+  for (let i = first; i <= Math.min(last, lines.length - 1); i++) {
+    const old = /^[ \t]*/.exec(lines[i])[0];
+    if (/^\s*$/.test(lines[i])) {
+      if (lines[i].length) edits.push(vscode.TextEdit.replace(new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, lines[i].length)), ""));
+      continue;
+    }
+    if (depths[i] === null) continue;
+    const wanted = indentString(depths[i], tabOptions(options));
+    if (wanted !== old) edits.push(vscode.TextEdit.replace(new vscode.Range(new vscode.Position(i, 0), new vscode.Position(i, old.length)), wanted));
+  }
+  return edits;
+}
+
+class Formatter {
+  provideDocumentFormattingEdits(document, options) {
+    return indentEdits(document, options);
+  }
+  provideDocumentRangeFormattingEdits(document, range, options) {
+    return indentEdits(document, options, range.start.line, range.end.line);
+  }
+}
+
+const CLOSING_LINE = /^\s*(<\/[A-Za-z]|<\?(php|=)?\s*(end\w+|else\w*|\})|@(endif|endfor|endforeach|endforelse|endwhile|endunless|endisset|endswitch|endphp|else|elseif|empty|case|default)\b)/;
+
+/**
+ * Keeps the indent right while typing, whether or not `editor.formatOnType` is on: after Enter the new line gets the right indent
+ * (and the line just finished is corrected: you typed `@endif` or `</div>` and pressed Enter), and a line that starts with a closing tag,
+ * `<?php endif ?>` or `@endif` / `@else` moves back as soon as it is typed.
+ */
+function autoIndent(event) {
+  const document = event.document;
+  if (!document.uri || !String(document.uri.fsPath).endsWith(".cast.php")) return;
+  if (!vscode.workspace.getConfiguration("cast", document.uri).get("autoIndent", true)) return;
+  if (autoIndent.busy || event.contentChanges.length !== 1) return;
+  const change = event.contentChanges[0];
+  const lines = document.getText().split(/\r?\n/);
+
+  const targets = [];
+  if (/^\r?\n[ \t]*$/.test(change.text)) {
+    const next = change.range.start.line + 1;
+    targets.push(next);
+    if (next - 1 >= 0) targets.push(next - 1);
+  } else if (change.text.length === 1 && /[>a-z}]/i.test(change.text)) {
+    const line = change.range.start.line;
+    if (CLOSING_LINE.test(lines[line] || "")) targets.push(line);
+  }
+  if (!targets.length) return;
+
+  const options = tabOptions(null);
+  const edit = new vscode.WorkspaceEdit();
+  let any = false;
+  for (const line of targets) {
+    const wanted = indentFor(lines, line, options);
+    if (wanted === null) continue;
+    const old = /^[ \t]*/.exec(lines[line])[0];
+    if (wanted !== old) {
+      edit.replace(document.uri, new vscode.Range(new vscode.Position(line, 0), new vscode.Position(line, old.length)), wanted);
+      any = true;
+    }
+  }
+  if (!any) return;
+  autoIndent.busy = true;
+  Promise.resolve(vscode.workspace.applyEdit(edit)).finally(() => (autoIndent.busy = false));
+}
+
+/** "Cast: Fix indentation": the selection, or the whole view. */
+async function fixIndentation() {
+  const editor = vscode.window.activeTextEditor;
+  if (!editor || !String(editor.document.uri.fsPath).endsWith(".cast.php")) return;
+  const selection = editor.selection;
+  const options = tabOptions(editor.options);
+  const edits = selection && !selection.isEmpty ? indentEdits(editor.document, options, selection.start.line, selection.end.line) : indentEdits(editor.document, options);
+  const edit = new vscode.WorkspaceEdit();
+  for (const e of edits) edit.replace(editor.document.uri, e.range, e.newText);
+  await vscode.workspace.applyEdit(edit);
+}
+
 function activate(context) {
   const diagnostics = vscode.languages.createDiagnosticCollection("cast");
   context.subscriptions.push(
@@ -358,6 +451,17 @@ function activate(context) {
     vscode.languages.registerCodeActionsProvider(SELECTOR, new Fixes(), { providedCodeActionKinds: [vscode.CodeActionKind.QuickFix] }),
     diagnostics
   );
+  const formatter = new Formatter();
+  if (vscode.languages.registerDocumentFormattingEditProvider) {
+    context.subscriptions.push(
+      vscode.languages.registerDocumentFormattingEditProvider(SELECTOR, formatter),
+      vscode.languages.registerDocumentRangeFormattingEditProvider(SELECTOR, formatter)
+    );
+  }
+  if (vscode.commands && vscode.commands.registerCommand) context.subscriptions.push(vscode.commands.registerCommand("cast.fixIndentation", fixIndentation));
+  if (vscode.workspace.onDidChangeTextDocument && !vscode.workspace.onDidOpenTextDocument) {
+    context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(autoIndent)); // (the diagnostics block below registers its own)
+  }
 
   // problems are refreshed when a file opens or changes (a short delay while typing), and when settings change
   const timers = new Map();
@@ -368,7 +472,10 @@ function activate(context) {
   if (vscode.workspace.onDidOpenTextDocument) {
     context.subscriptions.push(
       vscode.workspace.onDidOpenTextDocument(refresh),
-      vscode.workspace.onDidChangeTextDocument((e) => refresh(e.document)),
+      vscode.workspace.onDidChangeTextDocument((e) => {
+        refresh(e.document);
+        autoIndent(e);
+      }),
       vscode.workspace.onDidCloseTextDocument((d) => diagnostics.delete(d.uri)),
       vscode.workspace.onDidSaveTextDocument(refresh),
       vscode.workspace.onDidChangeConfiguration(() => (vscode.workspace.textDocuments || []).forEach(refresh))
@@ -379,4 +486,4 @@ function activate(context) {
 
 function deactivate() {}
 
-module.exports = { activate, deactivate, references, locations, publishDiagnostics, spell };
+module.exports = { activate, deactivate, references, locations, publishDiagnostics, spell, indentEdits, autoIndent, Formatter };

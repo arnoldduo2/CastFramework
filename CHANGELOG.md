@@ -2,6 +2,11 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version.
 
+## 1.1.0
+
+- **VS Code extension 0.3.0** (`php cast editor:install`): colours the template engine's `@` syntax (`@{ $x }`, `@foreach`, `@forelse`, `@if`, `@switch`, `@php` ...), and indents a whole view: Format Document, Format Selection and *Cast: Fix indentation* understand HTML tags, component tags, PHP's `if (...): ... endif` syntax, multi-line `<?php ?>` blocks and the `@` directives together, and the indent stays right while you type (`cast.autoIndent`). Snippets for the `@` directives.
+- Test fix: `init` test no longer shares a fixed folder in `/tmp`.
+
 ## 1.0.1
 
 - Docs: the template engine's new `@` shorthand for PHP (`@{ $x }`, `@foreach ... @endforeach`, `@forelse`, `@if`, ...; engine 1.1.0).

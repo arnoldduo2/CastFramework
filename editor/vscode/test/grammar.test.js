@@ -83,3 +83,41 @@ test("the grammar files are valid JSON with the expected scope", () => {
     for (const [name, snippet] of Object.entries(snippets)) assert.ok(snippet.prefix && snippet.body, name);
   }
 });
+
+test("@ directives: keyword, PHP in the parentheses, the optional colon, nested parentheses", { skip }, async () => {
+  const t = await tokenize("@foreach ($users as $user):\n  <p>@{ $user->name }</p>\n@endforeach\n@if (in_array($a, [1, (2 + 3)])) x @elseif ($b) y @else z @endif");
+  assert.ok(has(find(t, "foreach"), "keyword.control.directive.cast"));
+  assert.ok(has(find(t, "endforeach"), "keyword.control.directive.cast"));
+  assert.ok(has(find(t, "elseif"), "keyword.control.directive.cast"));
+  assert.ok(has(find(t, "else"), "keyword.control.directive.cast"));
+  assert.ok(has(find(t, "endif"), "keyword.control.directive.cast"));
+  assert.ok(has(find(t, "@"), "punctuation.definition.directive.cast"));
+  assert.ok(has(find(t, "users"), "meta.embedded.expression.cast"), "PHP inside the parentheses");
+  assert.ok(has(find(t, "in_array"), "meta.embedded.expression.cast"));
+  assert.ok(has(find(t, ":"), "punctuation.separator.directive.cast"), "the colon");
+  assert.ok(find(t, "x").every((s) => !s.includes("meta.directive.cast")), "text after the closing parenthesis is plain again");
+  assert.ok(find(t, "y").every((s) => !s.includes("meta.directive.cast")));
+});
+
+test("@{ } is PHP, also inside attribute values and in a component prop string", { skip }, async () => {
+  const t = await tokenize('<p>@{ $a["k"] + 1 }</p><a href="/u/@{ $id }" class="x">l</a><Card title="Hi @{ $n }" />');
+  assert.ok(has(find(t, "a"), "meta.directive.echo.cast"));
+  assert.ok(has(find(t, "a"), "meta.embedded.expression.cast"));
+  assert.ok(has(find(t, "id"), "meta.directive.echo.cast"), "inside an href");
+  assert.ok(has(find(t, "n"), "meta.directive.echo.cast"), "inside a component string prop");
+  assert.ok(has(find(t, "Card"), "entity.name.tag.component.cast"));
+});
+
+test("@ that is not a directive: e-mail addresses, CSS rules, @@, unknown words, PHP blocks", { skip }, async () => {
+  const t = await tokenize(['me@example.com and hello@for.com', '<style>@media (min-width: 1px) { a { color: red } }</style>', '@import @unknown @@for', "<?php echo '@foreach (x)'; ?>"].join("\n"));
+  assert.equal(t.filter((x) => x.scopes.includes("keyword.control.directive.cast")).length, 0, "no directive anywhere above");
+  assert.ok(has(find(t, "@@"), "constant.character.escape.directive.cast"));
+});
+
+test("a directive next to a component and PHP in the same view", { skip }, async () => {
+  const t = await tokenize(['<Card title="List">', '@forelse ($items as $i):', '  <Btns.Button label={"n-$i"} />', '@empty', '  <?php echo 1; ?>', '@endforelse', '</Card>'].join("\n"));
+  assert.ok(has(find(t, "forelse"), "keyword.control.directive.cast"));
+  assert.ok(has(find(t, "empty"), "keyword.control.directive.cast"));
+  assert.ok(has(find(t, "Button"), "entity.name.tag.component.cast"));
+  assert.equal(find(t, "Card").length, 2);
+});
