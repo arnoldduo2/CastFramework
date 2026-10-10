@@ -49,6 +49,9 @@ final class ErrorProvider extends ServiceProvider
             'base_url' => Config::get('app.base_path', '') . '/',
             'log_directory' => $app->storagePath('logs') . DIRECTORY_SEPARATOR,
             'dev_logs' => false,
+            // 1.3 of the handler: short paths, links that open the file in your editor (env CAST_EDITOR: vscode, cursor, phpstorm, none ...)
+            'root_path' => $app->basePath(),
+            'editor' => (string) (\Cast\Core\Env::get('CAST_EDITOR') ?: 'vscode'),
         ];
     }
 }

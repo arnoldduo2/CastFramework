@@ -17,5 +17,11 @@ return [
     'email_logging_subject' => 'Error Log',
     'email_logging_mailer' => null,
     'email_logging_mailer_options' => [],
+    'log_style' => 'daily',                        // daily: one errors-DATE.log with every error of the day; per_error: a file for each error
+    'log_format' => 'text',                        // text (readable) or json (one object per line, errors-DATE.jsonl)
+    'log_code_lines' => 3,                         // lines of code kept above and below the failing line in a log entry
+    'editor' => 'vscode',                          // the "Open in editor" links on the error page: vscode, cursor, phpstorm, sublime, none (env CAST_EDITOR)
+    'editor_path_map' => [],                       // code on Docker, WSL or a VM: ['/var/www/html' => 'C:/xampp/htdocs/app']
+    'snippet_lines' => 6,                          // lines of code shown around the failing line on the error page
     'error_view' => null,                          // path of a PHP file shown to visitors in production (null = the package's page)
 ];

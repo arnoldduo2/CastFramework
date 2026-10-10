@@ -2,6 +2,10 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version.
 
+## 1.2.0
+
+- **Error handler 1.3.0 support**: the development error page shows the failing code underlined in red with an *Open in editor* link and the code of every stack step, and logs are one readable file per day with request, code and stack. The framework passes `root_path` and `editor` (`CAST_EDITOR`), `config/error-handler.php` (`make:config error-handler`) lists the new options (`editor`, `editor_path_map`, `snippet_lines`, `log_style`, `log_format`, `log_code_lines`), and `env:check` advises error-handler 1.3.0. Update with `composer update anode/error-handler`. Docs: the *Error handler* page.
+
 ## 1.1.0
 
 - **VS Code extension 0.3.0** (`php cast editor:install`): colours the template engine's `@` syntax (`@{ $x }`, `@foreach`, `@forelse`, `@if`, `@switch`, `@php` ...), and indents a whole view: Format Document, Format Selection and *Cast: Fix indentation* understand HTML tags, component tags, PHP's `if (...): ... endif` syntax, multi-line `<?php ?>` blocks and the `@` directives together, and the indent stays right while you type (`cast.autoIndent`). Snippets for the `@` directives.

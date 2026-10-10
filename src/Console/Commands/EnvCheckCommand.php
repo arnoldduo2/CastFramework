@@ -42,7 +42,7 @@ final class EnvCheckCommand extends Command
             : $advise($hasKey, 'APP_KEY is set (sign(), encrypt())', 'php cast key:generate');
 
         // the two packages the framework is built on: older versions have known problems
-        foreach (['anode/cast-template-engine' => ['1.0.3', 'errors in views name the compiled cache file, not your view'], 'anode/error-handler' => ['1.0.19', '']] as $package => [$minimum, $why]) {
+        foreach (['anode/cast-template-engine' => ['1.0.3', 'errors in views name the compiled cache file, not your view'], 'anode/error-handler' => ['1.3.0', 'the error page shows the failing code with an open-in-editor link and the log is readable only from 1.3']] as $package => [$minimum, $why]) {
             if (!class_exists(\Composer\InstalledVersions::class) || !\Composer\InstalledVersions::isInstalled($package)) continue;
             $have = ltrim((string) \Composer\InstalledVersions::getPrettyVersion($package), 'v');
             $advise(version_compare($have, $minimum, '>='), "$package $have is current (>= $minimum)", "composer update $package" . ($why !== '' ? "; older: $why" : ''));
