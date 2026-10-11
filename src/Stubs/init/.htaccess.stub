@@ -3,4 +3,8 @@
 # Needs mod_rewrite and AllowOverride All. Do not use this file when the web server's document root already is public/.
 RewriteEngine On
 RewriteRule ^$ public/ [L]
-RewriteRule ^(.*)$ public/$1 [L]
+RewriteRule ^(.\*)$ public/$1 [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.php [QSA,L]
+
