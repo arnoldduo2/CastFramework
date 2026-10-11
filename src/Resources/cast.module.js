@@ -15,11 +15,22 @@
   if (window.Cast) return;
 
   const script = document.currentScript;
-  const settings = Object.assign({ castRoot: "body", castView: "#cast-view", castGuard: "", castBase: "" }, script ? script.dataset : {});
+  const settings = Object.assign(
+    { castRoot: "body", castView: "#cast-view", castGuard: "", castBase: "" },
+    script ? script.dataset : {},
+  );
   const base = String(settings.castBase || "").replace(/\/+$/, ""); // the folder the app lives in (APP_BASE_PATH), "" at the web root
 
   /** A root-relative app path ("/items") with the app's base folder in front. Other URLs are returned as they are. */
-  const url = (path) => (typeof path === "string" && path.startsWith("/") && !path.startsWith("//") && base && path !== base && !path.startsWith(base + "/") ? base + path : path);
+  const url = (path) =>
+    typeof path === "string" &&
+    path.startsWith("/") &&
+    !path.startsWith("//") &&
+    base &&
+    path !== base &&
+    !path.startsWith(base + "/")
+      ? base + path
+      : path;
 
   const config = {
     root: settings.castRoot,
@@ -49,16 +60,22 @@
   let overlay = null;
   function showDebug(debug) {
     if (!debug || typeof debug !== "object") return;
-    if (window.CastErrorOverlay) return void window.CastErrorOverlay.show(debug);
+    if (window.CastErrorOverlay)
+      return void window.CastErrorOverlay.show(debug);
     if (!overlay) {
       overlay = new Promise((resolve) => {
         const el = document.createElement("script");
-        el.src = script && script.src ? script.src.replace(/[^/]*(\?.*)?$/, "error-overlay.js") : url("/cast/error-overlay.js");
+        el.src =
+          script && script.src
+            ? script.src.replace(/[^/]*(\?.*)?$/, "error-overlay.js")
+            : url("/cast/error-overlay.js");
         el.onload = el.onerror = () => resolve();
         document.head.appendChild(el);
       });
     }
-    overlay.then(() => window.CastErrorOverlay && window.CastErrorOverlay.show(debug));
+    overlay.then(
+      () => window.CastErrorOverlay && window.CastErrorOverlay.show(debug),
+    );
   }
 
   // ------------------------------------------------------------------ helpers
@@ -79,7 +96,10 @@
       const key = "cast:fallback";
       const last = JSON.parse(sessionStorage.getItem(key) || "null");
       const now = Date.now();
-      sessionStorage.setItem(key, JSON.stringify({ url: String(url), at: now }));
+      sessionStorage.setItem(
+        key,
+        JSON.stringify({ url: String(url), at: now }),
+      );
       return !!last && last.url === String(url) && now - last.at < 5000;
     } catch (e) {
       return false;
@@ -102,7 +122,9 @@
   };
 
   function emit(el, name, detail) {
-    (el || document).dispatchEvent(new CustomEvent(name, { bubbles: true, detail }));
+    (el || document).dispatchEvent(
+      new CustomEvent(name, { bubbles: true, detail }),
+    );
   }
 
   function busy(on) {
@@ -120,7 +142,9 @@
     if (!value) return;
     const meta = $('meta[name="csrf-token"]');
     if (meta) meta.content = value;
-    document.querySelectorAll('input[name="_token"], #_global_csrf_token').forEach((input) => (input.value = value));
+    document
+      .querySelectorAll('input[name="_token"], #_global_csrf_token')
+      .forEach((input) => (input.value = value));
   }
 
   // --------------------------------------------------------------------- http
@@ -133,7 +157,9 @@
   async function http(options) {
     if (config.http) return config.http(options);
 
-    const method = String(options.method || options.type || "POST").toUpperCase();
+    const method = String(
+      options.method || options.type || "POST",
+    ).toUpperCase();
     const headers = Object.assign(
       {
         Accept: "application/json",
@@ -143,7 +169,7 @@
         "X-Cast-Request": "1",
         "X-Cast-Guard": state.guard || "",
       },
-      options.headers || {}
+      options.headers || {},
     );
 
     let target = url(options.url);
@@ -151,10 +177,15 @@
     if (options.data != null) {
       if (method === "GET" || method === "HEAD") {
         const u = abs(target);
-        Object.entries(options.data).forEach(([k, v]) => u.searchParams.set(k, v));
+        Object.entries(options.data).forEach(([k, v]) =>
+          u.searchParams.set(k, v),
+        );
         target = u.pathname + u.search;
       } else if (options.isform || options.data instanceof FormData) {
-        body = options.data instanceof FormData ? options.data : new FormData(options.data);
+        body =
+          options.data instanceof FormData
+            ? options.data
+            : new FormData(options.data);
         if (method !== "POST") {
           body.append("_method", method); // a multipart body is only parsed by PHP for POST
         }
@@ -176,13 +207,21 @@
       });
       res = await parse(response);
     } catch (e) {
-      res = e && e.name === "AbortError" ? { status: "aborted", msg: "", data: {} } : { status: "error", msg: "The server could not be reached.", data: { type: "error", code: 0 } };
+      res =
+        e && e.name === "AbortError"
+          ? { status: "aborted", msg: "", data: {} }
+          : {
+              status: "error",
+              msg: "The server could not be reached.",
+              data: { type: "error", code: 0 },
+            };
     } finally {
       if (options.busy !== false) busy(false);
     }
 
     if (res.data && res.data.csrf) setToken(res.data.csrf);
-    if (res.status === "error" && res.data && res.data.debug) showDebug(res.data.debug);
+    if (res.status === "error" && res.data && res.data.debug)
+      showDebug(res.data.debug);
     if (options.follow !== false) await follow(res);
     return res;
   }
@@ -201,7 +240,11 @@
     const failed = response.status >= 400;
     return {
       status: "error",
-      msg: failed ? "The server could not complete the request (error " + response.status + "). Check the application log." : "Unexpected response from the server.",
+      msg: failed
+        ? "The server could not complete the request (error " +
+          response.status +
+          "). Check the application log."
+        : "Unexpected response from the server.",
       data: { type: "error", code: response.status },
       http: response.status,
       raw: true,
@@ -221,7 +264,10 @@
 
   // ------------------------------------------------------------------- assets
 
-  const hasStyle = (url) => Array.from(document.querySelectorAll("link[rel=stylesheet]")).some((l) => normalise(l.href) === normalise(url));
+  const hasStyle = (url) =>
+    Array.from(document.querySelectorAll("link[rel=stylesheet]")).some(
+      (l) => normalise(l.href) === normalise(url),
+    );
 
   function loadStyle(url, pageLevel) {
     if (hasStyle(url)) return Promise.resolve();
@@ -258,10 +304,12 @@
     const own = new Set((env.own || []).map(normalise)); // this page's own files (the rest belong to the layout)
     const pageLevel = (url) => own.has(normalise(url));
 
-    document.querySelectorAll("link[data-cast-page], script[data-cast-page]").forEach((el) => {
-      const url = el.href || el.src;
-      if (url && !keep.has(normalise(url))) el.remove();
-    });
+    document
+      .querySelectorAll("link[data-cast-page], script[data-cast-page]")
+      .forEach((el) => {
+        const url = el.href || el.src;
+        if (url && !keep.has(normalise(url))) el.remove();
+      });
 
     await Promise.all(css.map((url) => loadStyle(url, pageLevel(url))));
     for (const url of js) await loadScript(url, pageLevel(url)); // in order: page modules may depend on each other
@@ -282,7 +330,8 @@
     if (!key || !def) return;
     pages.set(key, def);
     // the page script of the first visit can finish after the container was filled: mount it now
-    if (state.started && state.ctx && state.ctx.key === key && !state.ctx.def) mountContext(state.ctx);
+    if (state.started && state.ctx && state.ctx.key === key && !state.ctx.def)
+      mountContext(state.ctx);
   }
 
   function currentKey() {
@@ -303,10 +352,14 @@
       controller,
       listeners,
       on(type, selector, handler) {
-        const fn = typeof selector === "function" ? selector : (event) => {
-          const hit = event.target.closest && event.target.closest(selector);
-          if (hit && el.contains(hit)) handler.call(hit, event, hit);
-        };
+        const fn =
+          typeof selector === "function"
+            ? selector
+            : (event) => {
+                const hit =
+                  event.target.closest && event.target.closest(selector);
+                if (hit && el.contains(hit)) handler.call(hit, event, hit);
+              };
         el.addEventListener(type, fn);
         listeners.push([el, type, fn]);
       },
@@ -326,9 +379,12 @@
     state.ctx = null;
     emit(ctx.el, "cast:destroy", { page: ctx.key });
     try {
-      if (ctx.def && typeof ctx.def.destroy === "function") ctx.def.destroy(ctx);
+      if (ctx.def && typeof ctx.def.destroy === "function")
+        ctx.def.destroy(ctx);
     } finally {
-      ctx.listeners.forEach(([target, type, fn]) => target.removeEventListener(type, fn));
+      ctx.listeners.forEach(([target, type, fn]) =>
+        target.removeEventListener(type, fn),
+      );
       ctx.controller.abort();
     }
   }
@@ -383,7 +439,11 @@
     setTimeout(() => (live.textContent = title || document.title), 50);
 
     // the container itself has no box (display: contents), so focus the first heading, or the first element, inside it
-    const start = container && container.isConnected ? container.querySelector("[autofocus], h1, h2, h3") || container.firstElementChild : null;
+    const start =
+      container && container.isConnected
+        ? container.querySelector("[autofocus], h1, h2, h3") ||
+          container.firstElementChild
+        : null;
     if (start) {
       if (!start.hasAttribute("tabindex")) start.setAttribute("tabindex", "-1");
       start.setAttribute("data-cast-focus", "");
@@ -412,17 +472,30 @@
     if (data.guard != null) state.guard = data.guard;
     if (data.csrf) setToken(data.csrf);
 
-    if (opts.push !== false && data.url) history.pushState({ cast: 1 }, "", data.url);
-    else if (opts.replace && data.url) history.replaceState({ cast: 1 }, "", data.url);
+    if (opts.push !== false && data.url)
+      history.pushState({ cast: 1 }, "", data.url);
+    else if (opts.replace && data.url)
+      history.replaceState({ cast: 1 }, "", data.url);
 
     if (opts.scroll != null) window.scrollTo(0, opts.scroll);
     else if (opts.push !== false && !opts.initial) window.scrollTo(0, 0);
 
     // for a whole page, the content container is inside the new body
     const container = isPage ? $(config.view) || target : target;
-    mount(data.page || (container && container.getAttribute("data-cast-page")) || "", container, data.type);
-    if (opts.push !== false || opts.scroll != null) announce(container, data.title); // a navigation, not a refresh
-    emit(document, "cast:navigate", { url: data.url, page: data.page, type: data.type });
+    mount(
+      data.page ||
+        (container && container.getAttribute("data-cast-page")) ||
+        "",
+      container,
+      data.type,
+    );
+    if (opts.push !== false || opts.scroll != null)
+      announce(container, data.title); // a navigation, not a refresh
+    emit(document, "cast:navigate", {
+      url: data.url,
+      page: data.page,
+      type: data.type,
+    });
   }
 
   // --------------------------------------------------------------------- modal
@@ -496,7 +569,11 @@
       res = await parse(response);
     } catch (e) {
       if (e && e.name === "AbortError") return;
-      res = { status: "error", msg: "The server could not be reached.", data: { type: "error", code: 0 } };
+      res = {
+        status: "error",
+        msg: "The server could not be reached.",
+        data: { type: "error", code: 0 },
+      };
     } finally {
       busy(false);
       if (state.nav === controller) state.nav = null;
@@ -507,7 +584,13 @@
     // not a Cast answer (a proxy page, an old server): fall back to a normal page load
     // (an HTTP error without a Cast body is shown as an error: reloading it would fail the same way, and loop; a page that loaded the shell
     // and fell back within the last few seconds is not retried either)
-    if (res.raw && opts.type !== "modal" && !(res.http >= 400) && !recentFallback(url)) return void location.assign(url);
+    if (
+      res.raw &&
+      opts.type !== "modal" &&
+      !(res.http >= 400) &&
+      !recentFallback(url)
+    )
+      return void location.assign(url);
 
     const data = res.data || {};
     if (res.status === "error") {
@@ -517,7 +600,9 @@
 
     switch (data.type) {
       case "redirect":
-        return sameOrigin(data.url) ? load(data.url, { replace: opts.replace }) : void location.assign(data.url);
+        return sameOrigin(data.url)
+          ? load(data.url, { replace: opts.replace })
+          : void location.assign(data.url);
       case "reload":
         return void location.assign(data.url || url);
       case "modal":
@@ -531,7 +616,10 @@
 
   function saveScroll() {
     try {
-      history.replaceState(Object.assign({}, history.state, { cast: 1, scroll: window.scrollY }), "");
+      history.replaceState(
+        Object.assign({}, history.state, { cast: 1, scroll: window.scrollY }),
+        "",
+      );
     } catch (e) {
       /* history may be unavailable in sandboxed frames */
     }
@@ -539,13 +627,24 @@
 
   window.addEventListener("popstate", (event) => {
     if (!event.state || !event.state.cast) return; // an anchor (#hash) change
-    load(location.pathname + location.search, { push: false, scroll: event.state.scroll || 0 });
+    load(location.pathname + location.search, {
+      push: false,
+      scroll: event.state.scroll || 0,
+    });
   });
 
   // --------------------------------------------------------------------- links
 
   document.addEventListener("click", (event) => {
-    if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey
+    )
+      return;
     const link = event.target.closest && event.target.closest("a[href]");
     if (!link || !state.started) return;
 
@@ -555,8 +654,14 @@
     if (targetAttr && targetAttr !== "_self") return;
 
     const url = abs(link.href);
-    if (!/^https?:$/.test(url.protocol) || url.origin !== location.origin) return;
-    if (url.pathname === location.pathname && url.search === location.search && url.hash) return; // in-page anchor
+    if (!/^https?:$/.test(url.protocol) || url.origin !== location.origin)
+      return;
+    if (
+      url.pathname === location.pathname &&
+      url.search === location.search &&
+      url.hash
+    )
+      return; // in-page anchor
 
     // only inside a Cast page; a link marked data-cast always goes through Cast
     if (!state.key && !mode) return;
@@ -574,7 +679,9 @@
     const errors = (res.data && res.data.errors) || {};
     form.querySelectorAll("[data-cast-invalid]").forEach((el) => el.remove());
     Object.entries(errors).forEach(([field, message]) => {
-      const holder = form.querySelector('[data-cast-error="' + CSS.escape(field) + '"]');
+      const holder = form.querySelector(
+        '[data-cast-error="' + CSS.escape(field) + '"]',
+      );
       const text = Array.isArray(message) ? message[0] : message;
       if (holder) {
         holder.textContent = text;
@@ -594,19 +701,29 @@
 
   document.addEventListener("submit", async (event) => {
     const form = event.target;
-    if (!(form instanceof HTMLFormElement) || !form.hasAttribute("data-cast-form") || event.defaultPrevented) return;
+    if (
+      !(form instanceof HTMLFormElement) ||
+      !form.hasAttribute("data-cast-form") ||
+      event.defaultPrevented
+    )
+      return;
     event.preventDefault();
 
     const method = (form.getAttribute("method") || "POST").toUpperCase();
     const res = await (config.http || http)({
       url: form.getAttribute("action") || location.pathname + location.search,
       method: method === "GET" ? "GET" : "POST",
-      data: method === "GET" ? Object.fromEntries(new FormData(form)) : new FormData(form),
+      data:
+        method === "GET"
+          ? Object.fromEntries(new FormData(form))
+          : new FormData(form),
       isform: method !== "GET",
     });
 
     const note = form.querySelector("[data-cast-message]");
-    if (note) note.textContent = res.status === "error" && res.http !== 422 ? res.msg || "" : "";
+    if (note)
+      note.textContent =
+        res.status === "error" && res.http !== 422 ? res.msg || "" : "";
 
     if (res.status === "error") {
       if (res.http === 422) showFieldErrors(form, res);
@@ -621,7 +738,9 @@
 
   function start() {
     state.started = true;
-    document.querySelectorAll("script[src]").forEach((s) => state.scripts.add(normalise(s.src)));
+    document
+      .querySelectorAll("script[src]")
+      .forEach((s) => state.scripts.add(normalise(s.src)));
     try {
       history.replaceState(Object.assign({}, history.state, { cast: 1 }), "");
     } catch (e) {
@@ -634,14 +753,18 @@
     const key = view.getAttribute("data-cast-page");
     state.key = key;
     if (view.hasAttribute("data-cast-lazy")) {
-      load(view.getAttribute("data-cast-url") || location.pathname + location.search, { replace: true, push: false, initial: true });
+      load(
+        view.getAttribute("data-cast-url") ||
+          location.pathname + location.search,
+        { replace: true, push: false, initial: true },
+      );
     } else {
       mount(key, view, "partial");
     }
   }
 
   window.Cast = {
-    version: "2.0.6-alpha",
+    version: "2.0.7",
     load,
     http: (options) => http(options),
     page,
@@ -659,6 +782,7 @@
     },
   };
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", start);
   else start();
 })();

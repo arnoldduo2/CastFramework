@@ -20,15 +20,15 @@ Requires PHP 8.1 or newer and `ext-pdo`, `ext-mbstring`, `ext-json`.
 
 New here? Read **[docs/GETTING-STARTED.md](docs/GETTING-STARTED.md)** first: the workflow of a page, where every file goes, and how to wire a feature. The full index of guides is [docs/README.md](docs/README.md).
 
-| | |
-| --- | --- |
-| **Start** | [Install](#install) · [A first app](#a-first-app) · [Configuration](#configuration) |
-| **Build pages** | [Routing](#routing) · [Controllers](#controllers) · [Views](#views) · [Helpers](#helpers) · [Static files](#static-files) |
-| **Requests and safety** | [Request and Response](#request-and-response) · [CSRF](#csrf) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Security notes](#security-notes) |
-| **Data** | [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Legacy databases](#legacy-databases-migratesync) · [Another ORM](#using-another-orm) |
-| **Front end and API** | [SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api) |
-| **Tooling** | [Console](#console) ([all commands](docs/COMMANDS.md)) · [Editor support](#editor-support) · [Testing](#testing) |
-| **Running it** | [Windows / XAMPP](#running-on-windows--xampp-or-in-a-sub-folder) · [Modules](#modules-optional-gating) · [Deploying](#deploying-to-production) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Contracts](#contracts) · [Upgrading](#upgrading) · [Versioning](#versioning) |
+|                         |                                                                                                                                                                                                                                                                                                     |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Start**               | [Install](#install) · [A first app](#a-first-app) · [Configuration](#configuration)                                                                                                                                                                                                                 |
+| **Build pages**         | [Routing](#routing) · [Controllers](#controllers) · [Views](#views) · [Helpers](#helpers) · [Static files](#static-files)                                                                                                                                                                           |
+| **Requests and safety** | [Request and Response](#request-and-response) · [CSRF](#csrf) · [Validation](#validation) · [Auth and services](#auth-and-services) · [Security notes](#security-notes)                                                                                                                             |
+| **Data**                | [Models and the query builder](#models-and-the-query-builder) · [Migrations](#migrations) · [Legacy databases](#legacy-databases-migratesync) · [Another ORM](#using-another-orm)                                                                                                                   |
+| **Front end and API**   | [SPA](#spa-pages-without-full-reloads) · [JSON API](#json-api)                                                                                                                                                                                                                                      |
+| **Tooling**             | [Console](#console) ([all commands](docs/COMMANDS.md)) · [Editor support](#editor-support) · [Testing](#testing)                                                                                                                                                                                    |
+| **Running it**          | [Windows / XAMPP](#running-on-windows--xampp-or-in-a-sub-folder) · [Modules](#modules-optional-gating) · [Deploying](#deploying-to-production) · [Errors, maintenance and updates](#errors-maintenance-and-updates) · [Contracts](#contracts) · [Upgrading](#upgrading) · [Versioning](#versioning) |
 
 ## Install
 
@@ -43,7 +43,7 @@ php cast serve                      # http://127.0.0.1:8000
 `cast init` writes `public/`, `bootstrap/`, `config/`, `routes/`, a home page, `.env` (named after the folder), `storage/` and the `.gitignore` lines, and adds the `App\` namespace to
 your `composer.json` (the app works right away: the framework maps `App\` to `app/` itself; `composer dump-autoload -o` is for production). It never overwrites a file you already have unless you pass `--force` (and never `.env`).
 
-`php cast init --demo` copies the [`starter/`](starter) app instead: it keeps the welcome page and adds **Log in / Register** (top right), CRUD on an items table with `PUT`/`DELETE` and an edit popup, a stats page, and a JSON API with bearer tokens, on SQLite (log in as `admin@example.com` / `password`, or register). Both start on a welcome page with the menu *Docs* and *Demo the Cast Framework*; every file the commands write explains itself in comments. When you have seen enough, `php cast demo:strip` removes the demo and leaves a starter pack (shell, crud, auth or auth-crud). While you build, a small floating dock (bottom right) links to the demo and the docs; it only appears in development and `CAST_DOCK=false` turns it off.
+`php cast init --demo` copies the [`starter/`](starter) app instead: it keeps the welcome page and adds **Log in / Register** (top right), CRUD on an items table with `PUT`/`DELETE` and an edit popup, a stats page, and a JSON API with bearer tokens, on SQLite (log in as `admin@example.com` / `password`, or register). Both start on a welcome page with the menu _Docs_ and _Demo the Cast Framework_; every file the commands write explains itself in comments. When you have seen enough, `php cast demo:strip` removes the demo and leaves a starter pack (shell, crud, auth or auth-crud). While you build, a small floating dock (bottom right) links to the demo and the docs; it only appears in development and `CAST_DOCK=false` turns it off.
 
 **The `cast` launcher.** The package includes a small Composer plugin that puts the console launcher, a file named `cast`, in your project root after every install or update (it never overwrites
 an existing one). That is what makes `php cast <command>` work from the first command. Composer asks you once to trust it; non-interactively, allow it first:
@@ -123,24 +123,24 @@ Env::int('PORT', 8000);
 Env::set('FEATURE', 'on');       // updates memory and rewrites only that line of the file
 ```
 
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `APP_NAME` | `Cast App` | Name used in pages and logs |
-| `APP_KEY` | none | Secret for `sign()` and `encrypt()`. `php cast key:generate` (`php cast init` makes one) |
-| `APP_ENV` | `production` | `development` recompiles views when files change |
-| `APP_DEBUG` | `false` | Debug output and fresh `?v=` asset versions |
-| `APP_VERSION` | none | Asset cache-busting version (production) |
-| `APP_BASE_PATH` | empty | URL folder when not at the web root, e.g. `/my-app` |
-| `APP_TIMEZONE` | `UTC` | Used by `getDateTime()` |
-| `APP_VIEWS_EXT` | `.cast.php` | View file extension |
-| `DB_CONN`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | mysql, 127.0.0.1 | Database (`DB_CONN` may be `mysql`, `pgsql`, `sqlite`; a trailing `:` is accepted) |
-| `SESSION_NAME` | `cast_session` | Name of the session cookie |
-| `COOKIE_LIFE` | `0` | Seconds the cookie lives; 0 = until the browser closes |
-| `COOKIE_PATH`, `COOKIE_DOMAIN` | `/`, empty | Where the cookie is sent |
-| `COOKIE_SECURE` | `false` | `true` when the site is served over https (cookie only sent over https) |
-| `COOKIE_HTTP_ONLY` | `true` | Scripts cannot read the cookie |
-| `COOKIE_SITE` | `Lax` | `Lax`, `Strict` or `None` (`None` needs `COOKIE_SECURE=true`) |
-| `CORS_ALLOWED_ORIGINS` | none | Comma separated exact origins |
+| Key                                                              | Default          | Meaning                                                                                  |
+| ---------------------------------------------------------------- | ---------------- | ---------------------------------------------------------------------------------------- |
+| `APP_NAME`                                                       | `Cast App`       | Name used in pages and logs                                                              |
+| `APP_KEY`                                                        | none             | Secret for `sign()` and `encrypt()`. `php cast key:generate` (`php cast init` makes one) |
+| `APP_ENV`                                                        | `production`     | `development` recompiles views when files change                                         |
+| `APP_DEBUG`                                                      | `false`          | Debug output and fresh `?v=` asset versions                                              |
+| `APP_VERSION`                                                    | none             | Asset cache-busting version (production)                                                 |
+| `APP_BASE_PATH`                                                  | empty            | URL folder when not at the web root, e.g. `/my-app`                                      |
+| `APP_TIMEZONE`                                                   | `UTC`            | Used by `getDateTime()`                                                                  |
+| `APP_VIEWS_EXT`                                                  | `.cast.php`      | View file extension                                                                      |
+| `DB_CONN`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASS` | mysql, 127.0.0.1 | Database (`DB_CONN` may be `mysql`, `pgsql`, `sqlite`; a trailing `:` is accepted)       |
+| `SESSION_NAME`                                                   | `cast_session`   | Name of the session cookie                                                               |
+| `COOKIE_LIFE`                                                    | `0`              | Seconds the cookie lives; 0 = until the browser closes                                   |
+| `COOKIE_PATH`, `COOKIE_DOMAIN`                                   | `/`, empty       | Where the cookie is sent                                                                 |
+| `COOKIE_SECURE`                                                  | `false`          | `true` when the site is served over https (cookie only sent over https)                  |
+| `COOKIE_HTTP_ONLY`                                               | `true`           | Scripts cannot read the cookie                                                           |
+| `COOKIE_SITE`                                                    | `Lax`            | `Lax`, `Strict` or `None` (`None` needs `COOKIE_SECURE=true`)                            |
+| `CORS_ALLOWED_ORIGINS`                                           | none             | Comma separated exact origins                                                            |
 
 `php cast init` writes a `.env` with every setting above (and its own `APP_KEY`) and a `.env.example` with the same settings and no key, safe to commit.
 
@@ -157,26 +157,26 @@ config(['app.debug' => true]);       // set
 Cast\Core\Config::has('auth.login_path');
 ```
 
-| Key | Default | Meaning |
-| --- | --- | --- |
-| `app.providers` | `[]` | Your service providers (the core ones always load) |
-| `app.middleware` | `[Maintenance::class]` | Global middleware, run before routing |
-| `app.base_path` | `''` | Stripped from the request path, added by `route()` |
-| `app.auto_update` | `false` | Run a bound `updater` automatically |
-| `app.error_handler` | `true` | Register `anode/error-handler` on web requests: `false` for off, or an options array; the same options can live in `config/error-handler.php` (`php cast make:config error-handler`) |
-| `app.error_pages` | `framework` | `custom`: you build `<views>/errors/{404,403,500...}.cast.php`; an empty one falls back to the framework's page (with a note in development) |
-| `app.key` | `APP_KEY` | The app key |
-| `app.namespace`, `app.source_path` | `App`, `app` | Where `make:*` commands create classes (`php cast init` sets `src`) |
-| `request.sanitizer` | `null` | Callable that sanitises `getPost()` data |
-| `auth.session_key`, `login_path`, `home_path`, `permissions_key` | `login`, `/login`, `/`, `permissions` | Auth defaults |
-| `view.ext`, `view.components` | `.cast.php`, `components` | Views |
-| `static` | css, js, styles, fonts, images, public | [Static file map](#static-files) |
-| `cors.allowed_origins` | `[]` | Exact origins allowed |
-| `spa.enabled`, `initial`, `root`, `view` | `true`, `lazy`, `body`, `#cast-view` | [SPA](#spa-pages-without-full-reloads) |
-| `api.prefix`, `api.middleware`, `api.tokens.table` | `/api`, `[]`, `api_tokens` | [JSON API](#json-api) |
-| `models.namespace` | `App\Models` | Where `getModelInstance()` looks |
-| `helpers.custom` | `null` | Folder of your own helper files |
-| `database.*` | from `.env` | `driver`, `host`, `port`, `name`, `user`, `pass`, `charset`, `dsn`, `connection` (a callable returning your own PDO), `migrations.table` / `.path`, `seeder` |
+| Key                                                              | Default                                | Meaning                                                                                                                                                                              |
+| ---------------------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `app.providers`                                                  | `[]`                                   | Your service providers (the core ones always load)                                                                                                                                   |
+| `app.middleware`                                                 | `[Maintenance::class]`                 | Global middleware, run before routing                                                                                                                                                |
+| `app.base_path`                                                  | `''`                                   | Stripped from the request path, added by `route()`                                                                                                                                   |
+| `app.auto_update`                                                | `false`                                | Run a bound `updater` automatically                                                                                                                                                  |
+| `app.error_handler`                                              | `true`                                 | Register `anode/error-handler` on web requests: `false` for off, or an options array; the same options can live in `config/error-handler.php` (`php cast make:config error-handler`) |
+| `app.error_pages`                                                | `framework`                            | `custom`: you build `<views>/errors/{404,403,500...}.cast.php`; an empty one falls back to the framework's page (with a note in development)                                         |
+| `app.key`                                                        | `APP_KEY`                              | The app key                                                                                                                                                                          |
+| `app.namespace`, `app.source_path`                               | `App`, `app`                           | Where `make:*` commands create classes (`php cast init` sets `src`)                                                                                                                  |
+| `request.sanitizer`                                              | `null`                                 | Callable that sanitises `getPost()` data                                                                                                                                             |
+| `auth.session_key`, `login_path`, `home_path`, `permissions_key` | `login`, `/login`, `/`, `permissions`  | Auth defaults                                                                                                                                                                        |
+| `view.ext`, `view.components`                                    | `.cast.php`, `components`              | Views                                                                                                                                                                                |
+| `static`                                                         | css, js, styles, fonts, images, public | [Static file map](#static-files)                                                                                                                                                     |
+| `cors.allowed_origins`                                           | `[]`                                   | Exact origins allowed                                                                                                                                                                |
+| `spa.enabled`, `initial`, `root`, `view`                         | `true`, `lazy`, `body`, `#cast-view`   | [SPA](#spa-pages-without-full-reloads)                                                                                                                                               |
+| `api.prefix`, `api.middleware`, `api.tokens.table`               | `/api`, `[]`, `api_tokens`             | [JSON API](#json-api)                                                                                                                                                                |
+| `models.namespace`                                               | `App\Models`                           | Where `getModelInstance()` looks                                                                                                                                                     |
+| `helpers.custom`                                                 | `null`                                 | Folder of your own helper files                                                                                                                                                      |
+| `database.*`                                                     | from `.env`                            | `driver`, `host`, `port`, `name`, `user`, `pass`, `charset`, `dsn`, `connection` (a callable returning your own PDO), `migrations.table` / `.path`, `seeder`                         |
 
 ### Providers
 
@@ -290,14 +290,14 @@ class ItemsController extends Controller
 }
 ```
 
-| Member | Purpose |
-| --- | --- |
-| `$this->request` | The current `Request` (works even if your constructor does not call `parent::__construct()`) |
-| `view($view, $data, $status)` | Render a view as a `Response` |
-| `success()`, `error()`, `redirect()` | Response shortcuts (`redirect` goes through `route()`) |
-| `validate($rules, $messages, $labels)` | Validate the request input, return the clean data |
-| `authorize($slug \| array)` | 403 unless the `Guard` grants it |
-| `getModelInstance($name)` | Find a model class by name (`config('models.namespace')`) |
+| Member                                 | Purpose                                                                                      |
+| -------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `$this->request`                       | The current `Request` (works even if your constructor does not call `parent::__construct()`) |
+| `view($view, $data, $status)`          | Render a view as a `Response`                                                                |
+| `success()`, `error()`, `redirect()`   | Response shortcuts (`redirect` goes through `route()`)                                       |
+| `validate($rules, $messages, $labels)` | Validate the request input, return the clean data                                            |
+| `authorize($slug \| array)`            | 403 unless the `Guard` grants it                                                             |
+| `getModelInstance($name)`              | Find a model class by name (`config('models.namespace')`)                                    |
 
 Business logic belongs in services, not in the controller.
 
@@ -319,18 +319,18 @@ $data = $v->validate();                         // clean data, or throws Validat
 
 Fields that are empty and not `required` skip their other rules. `sometimes` skips a field that is not in the data. `required` stops further rules for that field.
 
-| Rule | Meaning |
-| --- | --- |
-| `required`, `required_if:field,value` | Present and not blank |
-| `string`, `int` / `integer`, `numeric` / `number`, `float`, `bool` / `boolean`, `array`, `json` | Types |
-| `email`, `url`, `ip` | Formats |
-| `min:n`, `max:n`, `between:a,b`, `length:n` | Numbers by value, strings by length, arrays by count (`length` is characters) |
-| `in:a,b`, `not_in:a,b`, `regex:/.../`, `alpha`, `alpha_num` | Values and patterns |
-| `date`, `date:d/m/Y`, `before:date`, `after:date` | Dates |
-| `same:field`, `confirmed` (`field_confirmation`) | Matching fields |
-| `unique:table,column[,ignoreId[,idColumn]]`, `exists:table,column` | Database checks (bound queries) |
-| `file`, `max_kb:n`, `mimes:png,jpg` | Uploaded files |
-| `password`, `password:len=10,uc=2` | Strength (see `PasswordPolicy`) |
+| Rule                                                                                            | Meaning                                                                       |
+| ----------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `required`, `required_if:field,value`                                                           | Present and not blank                                                         |
+| `string`, `int` / `integer`, `numeric` / `number`, `float`, `bool` / `boolean`, `array`, `json` | Types                                                                         |
+| `email`, `url`, `ip`                                                                            | Formats                                                                       |
+| `min:n`, `max:n`, `between:a,b`, `length:n`                                                     | Numbers by value, strings by length, arrays by count (`length` is characters) |
+| `in:a,b`, `not_in:a,b`, `regex:/.../`, `alpha`, `alpha_num`                                     | Values and patterns                                                           |
+| `date`, `date:d/m/Y`, `before:date`, `after:date`                                               | Dates                                                                         |
+| `same:field`, `confirmed` (`field_confirmation`)                                                | Matching fields                                                               |
+| `unique:table,column[,ignoreId[,idColumn]]`, `exists:table,column`                              | Database checks (bound queries)                                               |
+| `file`, `max_kb:n`, `mimes:png,jpg`                                                             | Uploaded files                                                                |
+| `password`, `password:len=10,uc=2`                                                              | Strength (see `PasswordPolicy`)                                               |
 
 **Messages:** defaults like "Email is required."; `:field` is the label (`first_name` => "First Name"), `:0`/`:1` are the rule parameters.
 Override per rule (`['required' => '...']`), per field and rule (`['email.required' => '...']`), and set labels with the fourth argument.
@@ -357,7 +357,7 @@ $auth->user(); $auth->check(); $auth->logout();
 Auth::hash($password);                                         // Hash::make(): Argon2id, or bcrypt where PHP has no Argon2; $2a$ hashes from older apps verify too
 ```
 
-**Passwords and secrets.** Passwords are *hashed* (one way): `Cast\Support\Hash::make()` / `check()` / `needsRehash()` (and the helpers `hashPassword()` / `verifyPassword()`) use **Argon2id** when your PHP has it and **bcrypt** otherwise; the algorithm is read from the stored hash, so old bcrypt hashes keep working. When a user logs in with a weaker hash than `config/hashing.php` asks for (`HASH_DRIVER`, bcrypt `cost`, Argon2 `memory`/`time`), `Auth` stores a new one if your user provider has a `rehash(array $user, string $newHash)` method. Values you must read back (a token, a card number) are *encrypted* with the **app key** instead: `encrypt()` / `decrypt()` (AES-256-GCM) and `sign()` / `unsign()` (HMAC-SHA256) from `Cast\Support\Crypt`, keyed by `APP_KEY` (`php cast key:generate`). Never encrypt a password; never hash something you need back.
+**Passwords and secrets.** Passwords are _hashed_ (one way): `Cast\Support\Hash::make()` / `check()` / `needsRehash()` (and the helpers `hashPassword()` / `verifyPassword()`) use **Argon2id** when your PHP has it and **bcrypt** otherwise; the algorithm is read from the stored hash, so old bcrypt hashes keep working. When a user logs in with a weaker hash than `config/hashing.php` asks for (`HASH_DRIVER`, bcrypt `cost`, Argon2 `memory`/`time`), `Auth` stores a new one if your user provider has a `rehash(array $user, string $newHash)` method. Values you must read back (a token, a card number) are _encrypted_ with the **app key** instead: `encrypt()` / `decrypt()` (AES-256-GCM) and `sign()` / `unsign()` (HMAC-SHA256) from `Cast\Support\Crypt`, keyed by `APP_KEY` (`php cast key:generate`). Never encrypt a password; never hash something you need back.
 
 **Your own services.** `php cast make:service Mailer` writes `<source>/Services/MailerService.php` with a how-to in its comment. For things older apps need there are working examples: `--example=printer` (ESC/POS receipt printing over the network or USB), `--example=barcode` (Code 128 as SVG, no library), `--example=qrcode` (QR codes through `chillerlan/php-qrcode`). Bind one in your provider (`$this->app->singleton('printer', fn() => new ReceiptService('192.168.1.50:9100'))`) and call `app('printer')` anywhere.
 
@@ -441,12 +441,12 @@ return new class extends Migration
 };
 ```
 
-| Area | Methods |
-| --- | --- |
-| Tables | `create`, `table` (change), `drop`, `dropIfExists`, `rename`, `hasTable`, `hasColumn`, `columns`, `tables`, `statement($sql, $bindings)` (anything else), `pretend(fn)` |
-| Columns | `id`, `increments`, `string($n, $len)`, `char`, `text`, `mediumText`, `longText`, `integer`, `bigInteger`, `smallInteger`, `tinyInteger`, `boolean`, `decimal($n, $p, $s)`, `float`, `double`, `date`, `time`, `dateTime`, `timestamp`, `timestamps`, `softDeletes`, `json`, `uuid`, `binary`, `enum($n, [...])`, `foreignId` |
-| Modifiers | `nullable`, `default($v)` (a value or `Schema::raw('CURRENT_TIMESTAMP')`), `useCurrent`, `unsigned`, `unique`, `index`, `primary`, `after($col)` (MySQL), `comment($t)`, `constrained($table = null)` |
-| Keys | `index`, `unique`, `primary`, `foreign($col)->references('id')->on('t')->onDelete('cascade')` / `cascadeOnDelete` / `nullOnDelete`, `dropIndex`, `dropUnique`, `dropPrimary`, `dropForeign`, `dropColumn`, `renameColumn` |
+| Area      | Methods                                                                                                                                                                                                                                                                                                                       |
+| --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tables    | `create`, `table` (change), `drop`, `dropIfExists`, `rename`, `hasTable`, `hasColumn`, `columns`, `tables`, `statement($sql, $bindings)` (anything else), `pretend(fn)`                                                                                                                                                       |
+| Columns   | `id`, `increments`, `string($n, $len)`, `char`, `text`, `mediumText`, `longText`, `integer`, `bigInteger`, `smallInteger`, `tinyInteger`, `boolean`, `decimal($n, $p, $s)`, `float`, `double`, `date`, `time`, `dateTime`, `timestamp`, `timestamps`, `softDeletes`, `json`, `uuid`, `binary`, `enum($n, [...])`, `foreignId` |
+| Modifiers | `nullable`, `default($v)` (a value or `Schema::raw('CURRENT_TIMESTAMP')`), `useCurrent`, `unsigned`, `unique`, `index`, `primary`, `after($col)` (MySQL), `comment($t)`, `constrained($table = null)`                                                                                                                         |
+| Keys      | `index`, `unique`, `primary`, `foreign($col)->references('id')->on('t')->onDelete('cascade')` / `cascadeOnDelete` / `nullOnDelete`, `dropIndex`, `dropUnique`, `dropPrimary`, `dropForeign`, `dropColumn`, `renameColumn`                                                                                                     |
 
 - Columns are `NOT NULL` unless you say `nullable()`. Every name is checked and quoted for the database, every default is escaped: nothing from a migration is put in SQL unchecked.
 - PostgreSQL and SQLite run each migration in a transaction, so a failed one leaves nothing behind. **MySQL commits every `CREATE`/`ALTER` itself**, so a migration that fails half way
@@ -555,27 +555,42 @@ Layout (`resources/views/layouts/header.cast.php`): add the client once in `<hea
 <?= __modules("$parentName.$pageName", 'css') ?>
 ```
 
-The page file stays the shell (header, content partial, footer). The partial named `{parentName}.partials.{pageName}` is the *content area*:
+The page file stays the shell (header, content partial, footer). The partial named `{parentName}.partials.{pageName}` is the _content area_:
 it is what gets fetched and swapped, so keep everything that changes from page to page in it.
 
 ### What the server does
 
-| Request | Response |
-| --- | --- |
-| Browser, page without `spa` | The full page, as before |
-| Browser, `spa` page | The full layout; the content area is `<div id="cast-view" data-cast-page="items.items" data-cast-lazy>` with a skeleton (`spa.initial` = `lazy`, default), or the real content (`inline`, no extra request) |
-| Cast request (`X-Cast-Request: 1`) for a `spa` page | JSON envelope with the content (below) |
-| Cast request for a page that is not `spa` | `{type: 'reload'}`: the client does a normal page load |
-| Cast request to a redirect | `{type: 'redirect', url}` (an XHR cannot follow a login redirect cleanly) |
-| Cast request that fails | HTTP status + `{status: 'error', msg, data: {type: 'error', code}}`; a 503 (maintenance) is `type: 'reload'` |
+| Request                                             | Response                                                                                                                                                                                                    |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Browser, page without `spa`                         | The full page, as before                                                                                                                                                                                    |
+| Browser, `spa` page                                 | The full layout; the content area is `<div id="cast-view" data-cast-page="items.items" data-cast-lazy>` with a skeleton (`spa.initial` = `lazy`, default), or the real content (`inline`, no extra request) |
+| Cast request (`X-Cast-Request: 1`) for a `spa` page | JSON envelope with the content (below)                                                                                                                                                                      |
+| Cast request for a page that is not `spa`           | `{type: 'reload'}`: the client does a normal page load                                                                                                                                                      |
+| Cast request to a redirect                          | `{type: 'redirect', url}` (an XHR cannot follow a login redirect cleanly)                                                                                                                                   |
+| Cast request that fails                             | HTTP status + `{status: 'error', msg, data: {type: 'error', code}}`; a 503 (maintenance) is `type: 'reload'`                                                                                                |
 
 The envelope follows the app-wide `{status, msg, data}` shape:
 
 ```json
-{ "status": "success", "msg": "",
-  "data": { "type": "partial", "target": "#cast-view", "title": "App | Items", "html": "<section>...</section>",
-            "css": ["/css/items/items.css?v=..."], "js": ["/js/items/items.module.js?v=..."], "own": ["...the page's own files..."],
-            "guard": "private", "url": "/items", "page": "items.items", "modalClass": null, "form": null, "csrf": "..." } }
+{
+  "status": "success",
+  "msg": "",
+  "data": {
+    "type": "partial",
+    "target": "#cast-view",
+    "title": "App | Items",
+    "html": "<section>...</section>",
+    "css": ["/css/items/items.css?v=..."],
+    "js": ["/js/items/items.module.js?v=..."],
+    "own": ["...the page's own files..."],
+    "guard": "private",
+    "url": "/items",
+    "page": "items.items",
+    "modalClass": null,
+    "form": null,
+    "csrf": "..."
+  }
+}
 ```
 
 - **`type`** is chosen by `View`: `partial` fills a container (`target`, default `#cast-view`); `page` replaces the whole body (used when the page's `authguard` is not the one the client sent in
@@ -591,29 +606,39 @@ The envelope follows the app-wide `{status, msg, data}` shape:
 Plain JavaScript, no dependencies. Links and forms are picked up automatically.
 
 ```html
-<a href="/items">Items</a>                                   <!-- same-origin link on a Cast page: swaps the content, updates the URL and title -->
-<a href="/report.pdf" download>PDF</a>                       <!-- download, target=_blank, modifier keys, other origins: normal -->
-<a href="/legacy" data-cast="off">Old page</a>               <!-- opt out: a full load -->
-<a href="/items/5/edit" data-cast="modal">Edit</a>           <!-- open the response in a modal; data-cast="page" swaps the whole body -->
-<a href="/items/top" data-cast-target="#side">Top</a>        <!-- fill another container -->
-<form method="post" action="/items" data-cast-form>          <!-- submitted with fetch; 422 errors appear under the fields -->
-    <?= __csrf() ?>
-    <input name="name"><p data-cast-message role="alert"></p>   <!-- other errors (e.g. a wrong password) go here -->
+<a href="/items">Items</a>
+<!-- same-origin link on a Cast page: swaps the content, updates the URL and title -->
+<a href="/report.pdf" download>PDF</a>
+<!-- download, target=_blank, modifier keys, other origins: normal -->
+<a href="/legacy" data-cast="off">Old page</a>
+<!-- opt out: a full load -->
+<a href="/items/5/edit" data-cast="modal">Edit</a>
+<!-- open the response in a modal; data-cast="page" swaps the whole body -->
+<a href="/items/top" data-cast-target="#side">Top</a>
+<!-- fill another container -->
+<form method="post" action="/items" data-cast-form>
+  <!-- submitted with fetch; 422 errors appear under the fields -->
+  <?= __csrf() ?>
+  <input name="name" />
+  <p data-cast-message role="alert"></p>
+  <!-- other errors (e.g. a wrong password) go here -->
 </form>
 ```
 
 ```js
-Cast.load("/items?page=2");                         // load into the content area (type: "partial" | "page" | "modal", target, push, replace)
-const res = await Cast.http({ url: "/items/5", type: "PUT", data: { qty: 3 } });   // JSON, CSRF header, resolves with {status, msg, data}
-if (res.status === "success") Cast.load(location.pathname, { push: false });       // refresh the current page
+Cast.load("/items?page=2"); // load into the content area (type: "partial" | "page" | "modal", target, push, replace)
+const res = await Cast.http({ url: "/items/5", type: "PUT", data: { qty: 3 } }); // JSON, CSRF header, resolves with {status, msg, data}
+if (res.status === "success") Cast.load(location.pathname, { push: false }); // refresh the current page
 
 // resources/js/items/items.module.js: loaded once, mount() runs on every visit, destroy() when the page is left
 Cast.page({
-    mount(ctx) {
-        ctx.on("click", ".js-delete", async (event, button) => { /* delegated, removed automatically on leave */ });
-        // ctx.el = the container, ctx.signal aborts on leave (pass it to fetch)
-    },
-    destroy(ctx) {},
+  mount(ctx) {
+    ctx.on("click", ".js-delete", async (event, button) => {
+      /* delegated, removed automatically on leave */
+    });
+    // ctx.el = the container, ctx.signal aborts on leave (pass it to fetch)
+  },
+  destroy(ctx) {},
 });
 ```
 
@@ -651,16 +676,16 @@ Router::middleware([ApiAuth::class], function () {                              
 });
 ```
 
-| Status | When |
-| --- | --- |
-| 200, 201 | `Response::success($msg, $data, $status)` (a returned array is also sent as JSON) |
-| 401 | No credentials, or a bad / revoked / expired token (`WWW-Authenticate: Bearer`) |
-| 403 | A missing ability or permission |
-| 404, 405 | Unknown path, wrong verb (`Allow` header) |
-| 419 | A cookie-authenticated write without the CSRF token (see below) |
-| 422 | Validation: `{status: 'error', msg, data: {errors: {field: 'message'}}}` |
-| 429 | Rate limit (`Retry-After`, `X-RateLimit-*`) |
-| 500 | `{status: 'error', msg}`; the real message only when `APP_DEBUG=true` (it is always logged) |
+| Status   | When                                                                                        |
+| -------- | ------------------------------------------------------------------------------------------- |
+| 200, 201 | `Response::success($msg, $data, $status)` (a returned array is also sent as JSON)           |
+| 401      | No credentials, or a bad / revoked / expired token (`WWW-Authenticate: Bearer`)             |
+| 403      | A missing ability or permission                                                             |
+| 404, 405 | Unknown path, wrong verb (`Allow` header)                                                   |
+| 419      | A cookie-authenticated write without the CSRF token (see below)                             |
+| 422      | Validation: `{status: 'error', msg, data: {errors: {field: 'message'}}}`                    |
+| 429      | Rate limit (`Retry-After`, `X-RateLimit-*`)                                                 |
+| 500      | `{status: 'error', msg}`; the real message only when `APP_DEBUG=true` (it is always logged) |
 
 ### Tokens
 
@@ -689,7 +714,16 @@ curl -s -X POST http://localhost:8000/api/items -H "Authorization: Bearer $TOKEN
 
 ```js
 // a front end (Next.js, Vue, ...) : no cookies, no CSRF token, the token in a header
-const api = (path, init = {}) => fetch(`${API}/api${path}`, { ...init, headers: { Accept: "application/json", "Content-Type": "application/json", Authorization: `Bearer ${token}`, ...init.headers } }).then((r) => r.json());
+const api = (path, init = {}) =>
+  fetch(`${API}/api${path}`, {
+    ...init,
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      ...init.headers,
+    },
+  }).then((r) => r.json());
 const { data } = await api("/items?page=1&per_page=20");
 ```
 
@@ -729,23 +763,23 @@ A Marketplace extension (with prop completion, diagnostics and rename) will foll
 
 Write a docblock in a component file (`@var string|null $label The text to show`) and the extension shows it on hover, completes props and values, and warns about unknown or missing props. `php cast components --json` gives the same information to AI tools, and `php cast make:component` starts new components documented. See [docs/COMPONENTS.md](docs/COMPONENTS.md).
 
-The extension also colours the engine's `@` syntax (`@{ $x }`, `@foreach`, `@if`, `@switch` ...) and **indents** a view as a whole: *Format Document*, *Format Selection* and the command *Cast: Fix indentation* understand HTML tags, component tags, PHP's `<?php if (...): ?> ... <?php endif ?>`, multi-line `<?php ?>` blocks and the `@` directives together (leading whitespace only; `<script>`, `<style>`, `<pre>`, comments and heredocs are left alone). With `cast.autoIndent` (on by default) the indent also stays right while you type. Run `php cast editor:install` again after updating the framework to get it.
+The extension also colours the engine's `@` syntax (`@{ $x }`, `@foreach`, `@if`, `@switch` ...) and **indents** a view as a whole: _Format Document_, _Format Selection_ and the command _Cast: Fix indentation_ understand HTML tags, component tags, PHP's `<?php if (...): ?> ... <?php endif ?>`, multi-line `<?php ?>` blocks and the `@` directives together (leading whitespace only; `<script>`, `<style>`, `<pre>`, comments and heredocs are left alone). With `cast.autoIndent` (on by default) the indent also stays right while you type. Run `php cast editor:install` again after updating the framework to get it.
 
 ## Helpers
 
 Installing the package loads these global functions (each wrapped in `function_exists`, so you can define your own first). Names are unchanged from the apps they came from.
 
-| File | Contents |
-| --- | --- |
-| `core.php` | `app`, `env`, `config`, `base_path`, `storage_path`, `resource_path`, `public_path`, `useConfig`, `__getConfig`, `views`, `Component`, `__includes`, `__modules`, `__cast`, `render404`, `route`, `route_to`, `abort`, `_access`, `file_control`, `app_version`, `sendAlert`, `__getAlerts`, `__busyLoader`, `clearState`, `__getSess`, `dd`, `dump`, `vd`, `__prev` |
-| `request.php` | `request`, `response`, `getPost` |
-| `security.php` | `__csrf`, `__verifyCsrf`, `hashPassword`, `verifyPassword`, `__randStr`, `tokenGen`, `__getUser`, `_checkAccess` |
-| `strings.php` | `__ucwords`, `__ucfirst`, `str_capitalize`, `snakeCase`, `htchars`, `str_escape`, `htmlNewLine`, `strReplace`, `str_addHyphen`, `__getSplitStr` |
-| `arrays.php` | `arrayToList`, `__implode`, `arraySearch`, `searchMultiArray`, `arrayUnique`, `arrayRand`, `arrayMultiToSingle`, `arrayReducer`, `add2dArray`, `sortArray`, `sortMultiArray`, `paginateArray`, `parseArray`, `decodeJsonInArray` |
-| `dates.php` | `getDateTime`, `__fixDate`, `dateDiff`, `modifyDate`, `getMonthLastDay`, `getFirstLast_monthDate`, `getMonthsInRange`, `getYearMonths`, `__useMonth`, `__dueIn` |
-| `math.php` | `__round`, `__floats`, `__compare`, `isMultiple`, `getFloat`, `__money`, `__symbolsCurr` (formats via `config('money.formats')`) |
-| `html.php` | `jsonQuotes`, `jsonValidate`, `__attr`, `__requiredAttr`, `__selectedValue`, `__getImg`, `__invalidFeedback`, `__textAlign` |
-| `validation.php` | `validate`, `formValidation`, `validateParam`, `checkRouteParams`, `checkPostParams`, `checkValidity` |
+| File             | Contents                                                                                                                                                                                                                                                                                                                                                             |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `core.php`       | `app`, `env`, `config`, `base_path`, `storage_path`, `resource_path`, `public_path`, `useConfig`, `__getConfig`, `views`, `Component`, `__includes`, `__modules`, `__cast`, `render404`, `route`, `route_to`, `abort`, `_access`, `file_control`, `app_version`, `sendAlert`, `__getAlerts`, `__busyLoader`, `clearState`, `__getSess`, `dd`, `dump`, `vd`, `__prev` |
+| `request.php`    | `request`, `response`, `getPost`                                                                                                                                                                                                                                                                                                                                     |
+| `security.php`   | `__csrf`, `__verifyCsrf`, `hashPassword`, `verifyPassword`, `__randStr`, `tokenGen`, `__getUser`, `_checkAccess`                                                                                                                                                                                                                                                     |
+| `strings.php`    | `__ucwords`, `__ucfirst`, `str_capitalize`, `snakeCase`, `htchars`, `str_escape`, `htmlNewLine`, `strReplace`, `str_addHyphen`, `__getSplitStr`                                                                                                                                                                                                                      |
+| `arrays.php`     | `arrayToList`, `__implode`, `arraySearch`, `searchMultiArray`, `arrayUnique`, `arrayRand`, `arrayMultiToSingle`, `arrayReducer`, `add2dArray`, `sortArray`, `sortMultiArray`, `paginateArray`, `parseArray`, `decodeJsonInArray`                                                                                                                                     |
+| `dates.php`      | `getDateTime`, `__fixDate`, `dateDiff`, `modifyDate`, `getMonthLastDay`, `getFirstLast_monthDate`, `getMonthsInRange`, `getYearMonths`, `__useMonth`, `__dueIn`                                                                                                                                                                                                      |
+| `math.php`       | `__round`, `__floats`, `__compare`, `isMultiple`, `getFloat`, `__money`, `__symbolsCurr` (formats via `config('money.formats')`)                                                                                                                                                                                                                                     |
+| `html.php`       | `jsonQuotes`, `jsonValidate`, `__attr`, `__requiredAttr`, `__selectedValue`, `__getImg`, `__invalidFeedback`, `__textAlign`                                                                                                                                                                                                                                          |
+| `validation.php` | `validate`, `formValidation`, `validateParam`, `checkRouteParams`, `checkPostParams`, `checkValidity`                                                                                                                                                                                                                                                                |
 
 **Your own helpers (business logic):** put `*.php` files in a folder and point `config/helpers.php` at it: `return ['custom' => 'app/helpers'];`.
 They load at boot, after the framework's.
@@ -770,7 +804,7 @@ CORS headers are sent only for exact origins in `CORS_ALLOWED_ORIGINS`, never `*
 
 ## Errors, maintenance and updates
 
-In development a server error is also shown to **SPA and API clients**: the JSON gets `data.debug` (where it happened, the code with the failing part marked, the stack, an *Open in editor* link and a link to the full error page), the Cast client shows it as an overlay, and a front end of your own can load `/cast/error-overlay.js` or use `data.debug` itself. After you close the overlay (Esc) the dock's red count (or a small "N errors" button) keeps the error one click away. Never in production. Details: [docs/ERROR-HANDLER.md](docs/ERROR-HANDLER.md).
+In development a server error is also shown to **SPA and API clients**: the JSON gets `data.debug` (where it happened, the code with the failing part marked, the stack, an _Open in editor_ link and a link to the full error page), the Cast client shows it as an overlay, and a front end of your own can load `/cast/error-overlay.js` or use `data.debug` itself. After you close the overlay (Esc) the dock's red count (or a small "N errors" button) keeps the error one click away. Never in production. Details: [docs/ERROR-HANDLER.md](docs/ERROR-HANDLER.md).
 
 The error handler is **Anode Error Handler**, installed with the framework: options, logs and your own pages are in [docs/ERROR-HANDLER.md](docs/ERROR-HANDLER.md). Views are compiled by **CastTemplateEngine**, also installed with it: [docs/TEMPLATE-ENGINE.md](docs/TEMPLATE-ENGINE.md).
 
@@ -811,31 +845,31 @@ php cast help --markdown --write=docs/commands.md    # the whole reference as a 
 
 Output is coloured on a terminal (green commands, blue arguments, orange headings; `NO_COLOR=1` turns it off, `FORCE_COLOR=1` forces it on, pipes and files are plain). The full reference for every command and flag is in [docs/COMMANDS.md](docs/COMMANDS.md) (generated by the last line above).
 
-| Command | Purpose |
-| --- | --- |
-| `serve [--host=127.0.0.1] [--port=8000] [--dry]` | PHP's built-in server for `public/` |
-| `route:list` | Every route, handler and middleware |
-| `views:clear` | Delete compiled views |
-| `down [--message=] [--secret=] [--retry=] [--in=]` / `up` | Maintenance mode |
-| `env:check` | Checks PHP, extensions, `.env`, debug in production, writable `storage/`, folders |
-| `make:config <name>`, `key:generate` | A documented config file for a section; the app key |
-| `make:service <Name> [--example=printer\|barcode\|qrcode]` | A service class, blank or a working printer / barcode / QR example |
-| `static:check [--url=URL]` | Why is CSS, JS or the documentation not showing? Checks the static folders in-process and, with `--url`, every file the page links to on your real web server (Apache/XAMPP, nginx, `cast serve`) |
-| `requirements [--production] [--json]` | Does this PHP have the extensions, limits and settings the framework needs |
-| `make:module <Name> [--core] [--model]`, `modules:list`, `modules:check`, `modules:table --migration`, `modules:enable <name>`, `modules:disable <name>` | [Modules](#modules-optional-gating) |
-| `deploy:init`, `deploy:check`, `deploy:scan`, `deploy:optimize` | [Deploying to production](#deploying-to-production) |
-| `demo:strip [--pack=clean\|shell\|crud\|auth\|auth-crud]` | Remove the demo and keep a starter pack |
-| `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]` | Class from a stub in `app/` (`Admin/User` makes a sub-folder) |
-| `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--migration\|--run]` | API tokens |
-| `init [--demo] [--no-migrate] [--force]` | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded) |
-| `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:baseline`, `migrate:sync`, `db:sequence`, `components`, `make:component`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations) |
-| `make:seeder`, `db:seed [--class=]` | Seeders |
-| `editor:install [--editor=] [--dir=] [--uninstall]` | Install the VS Code extension for `.cast.php` views |
-| `ide:helpers [--path=]` | Write `_ide_helpers.php` so the editor knows the global helpers (fixes "Undefined function 'htchars'") |
-| `views:check [--fix]` | Find views that start with `declare(strict_types=1);` (PHP refuses it inside a template) |
-| `docs:build [--source --readme --out --check]` | Build the documentation site (`data.js` + viewer) from markdown ([Writing the docs](docs/WRITING-DOCS.md)) |
-| `help [command]`, `<command> --help` | Usage, arguments, options and examples ([docs/COMMANDS.md](docs/COMMANDS.md)) |
-| `version` | Framework and PHP versions |
+| Command                                                                                                                                                                                                                                                | Purpose                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `serve [--host=127.0.0.1] [--port=8000] [--dry]`                                                                                                                                                                                                       | PHP's built-in server for `public/`                                                                                                                                                               |
+| `route:list`                                                                                                                                                                                                                                           | Every route, handler and middleware                                                                                                                                                               |
+| `views:clear`                                                                                                                                                                                                                                          | Delete compiled views                                                                                                                                                                             |
+| `down [--message=] [--secret=] [--retry=] [--in=]` / `up`                                                                                                                                                                                              | Maintenance mode                                                                                                                                                                                  |
+| `env:check`                                                                                                                                                                                                                                            | Checks PHP, extensions, `.env`, debug in production, writable `storage/`, folders                                                                                                                 |
+| `make:config <name>`, `key:generate`                                                                                                                                                                                                                   | A documented config file for a section; the app key                                                                                                                                               |
+| `make:service <Name> [--example=printer\|barcode\|qrcode]`                                                                                                                                                                                             | A service class, blank or a working printer / barcode / QR example                                                                                                                                |
+| `static:check [--url=URL]`                                                                                                                                                                                                                             | Why is CSS, JS or the documentation not showing? Checks the static folders in-process and, with `--url`, every file the page links to on your real web server (Apache/XAMPP, nginx, `cast serve`) |
+| `requirements [--production] [--json]`                                                                                                                                                                                                                 | Does this PHP have the extensions, limits and settings the framework needs                                                                                                                        |
+| `make:module <Name> [--core] [--model]`, `modules:list`, `modules:check`, `modules:table --migration`, `modules:enable <name>`, `modules:disable <name>`                                                                                               | [Modules](#modules-optional-gating)                                                                                                                                                               |
+| `deploy:init`, `deploy:check`, `deploy:scan`, `deploy:optimize`                                                                                                                                                                                        | [Deploying to production](#deploying-to-production)                                                                                                                                               |
+| `demo:strip [--pack=clean\|shell\|crud\|auth\|auth-crud]`                                                                                                                                                                                              | Remove the demo and keep a starter pack                                                                                                                                                           |
+| `make:controller`, `make:model`, `make:middleware`, `make:command`, `make:rule` `<Name>` `[--force]`                                                                                                                                                   | Class from a stub in `app/` (`Admin/User` makes a sub-folder)                                                                                                                                     |
+| `token:create <login> [--name=] [--abilities=] [--days=]`, `token:revoke <id>`, `token:schema [--migration\|--run]`                                                                                                                                    | API tokens                                                                                                                                                                                        |
+| `init [--demo] [--no-migrate] [--force]`                                                                                                                                                                                                               | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded)                                                                                                       |
+| `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:baseline`, `migrate:sync`, `db:sequence`, `components`, `make:component`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations)                                                                                                                                                                         |
+| `make:seeder`, `db:seed [--class=]`                                                                                                                                                                                                                    | Seeders                                                                                                                                                                                           |
+| `editor:install [--editor=] [--dir=] [--uninstall]`                                                                                                                                                                                                    | Install the VS Code extension for `.cast.php` views                                                                                                                                               |
+| `ide:helpers [--path=]`                                                                                                                                                                                                                                | Write `_ide_helpers.php` so the editor knows the global helpers (fixes "Undefined function 'htchars'")                                                                                            |
+| `views:check [--fix]`                                                                                                                                                                                                                                  | Find views that start with `declare(strict_types=1);` (PHP refuses it inside a template)                                                                                                          |
+| `docs:build [--source --readme --out --check]`                                                                                                                                                                                                         | Build the documentation site (`data.js` + viewer) from markdown ([Writing the docs](docs/WRITING-DOCS.md))                                                                                        |
+| `help [command]`, `<command> --help`                                                                                                                                                                                                                   | Usage, arguments, options and examples ([docs/COMMANDS.md](docs/COMMANDS.md))                                                                                                                     |
+| `version`                                                                                                                                                                                                                                              | Framework and PHP versions                                                                                                                                                                        |
 
 Your own commands extend `Cast\Console\Command` and are listed in `config/console.php`: `return ['commands' => [App\Console\Commands\SyncStockCommand::class]];`.
 Give them help by setting `protected array $arguments = ['id' => 'The order id', 'note?' => 'Optional note'];` (a trailing `?` is optional), `$options = ['--dry' => 'Show what would happen']` and `$examples = ['php cast stock:sync --dry' => 'preview']`.
@@ -845,20 +879,20 @@ Give them help by setting `protected array $arguments = ['id' => 'The order id',
 
 Interfaces in `Cast\Contracts` where an app plugs in its own behaviour:
 
-| Contract | Implemented by | Used for |
-| --- | --- | --- |
-| `ModelContract` | `Core\Model` | The CRUD surface services rely on |
-| `Savable`, `Patchable`, `HasLineItems` | your models | `ModelPersister` |
-| `Middleware` | your middleware, `Csrf`, `Authenticate`, `Maintenance` | Route middleware |
-| `Guard` | `SessionGuard` (default) or your own | Who is logged in and what they may do |
-| `UserProvider` | your user store | `Auth` |
-| `FindsUsersById` | your user store (next to `UserProvider`) | Turning an API token back into a user |
-| `TokenStore` | `DatabaseTokenStore` (default) or your own | Where API tokens are kept |
-| `Rule` | your validation rules | `Validator` |
-| `ViewRenderer` | `Core\View` | The template layer |
-| `MaintenanceStore` | `FileMaintenanceStore` (default) | Where maintenance state lives |
-| `Updater` | `CallbackUpdater` or your own | Pending updates |
-| `Command` | `Console\Command` | Console commands |
+| Contract                               | Implemented by                                         | Used for                              |
+| -------------------------------------- | ------------------------------------------------------ | ------------------------------------- |
+| `ModelContract`                        | `Core\Model`                                           | The CRUD surface services rely on     |
+| `Savable`, `Patchable`, `HasLineItems` | your models                                            | `ModelPersister`                      |
+| `Middleware`                           | your middleware, `Csrf`, `Authenticate`, `Maintenance` | Route middleware                      |
+| `Guard`                                | `SessionGuard` (default) or your own                   | Who is logged in and what they may do |
+| `UserProvider`                         | your user store                                        | `Auth`                                |
+| `FindsUsersById`                       | your user store (next to `UserProvider`)               | Turning an API token back into a user |
+| `TokenStore`                           | `DatabaseTokenStore` (default) or your own             | Where API tokens are kept             |
+| `Rule`                                 | your validation rules                                  | `Validator`                           |
+| `ViewRenderer`                         | `Core\View`                                            | The template layer                    |
+| `MaintenanceStore`                     | `FileMaintenanceStore` (default)                       | Where maintenance state lives         |
+| `Updater`                              | `CallbackUpdater` or your own                          | Pending updates                       |
+| `Command`                              | `Console\Command`                                      | Console commands                      |
 
 ## Modules (optional gating)
 
@@ -966,11 +1000,11 @@ BASE=http://127.0.0.1:8099 node tests/e2e/spa.e2e.js
 
 ## Upgrading
 
-[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^1.1` for the stable line, or `composer require anode/cast-framework:2.0.6-alpha` to try the alpha (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
+[docs/UPGRADING.md](docs/UPGRADING.md): `composer require anode/cast-framework:^1.1` for the stable line, or `composer require anode/cast-framework:2.0.7` to try the alpha (on 0.x, `^0.2` stays on 0.2.x), `php cast init --demo --force --no-migrate` to refresh the demo files, `php cast migrate:baseline` to adopt migrations on an existing database.
 
 ## Versioning
 
-**2.0.0 is in alpha** (`v2.0.6-alpha`): more changes are coming, so until the stable 2.0.0 the API can change between alpha versions. Apps that need a stable base stay on `^1.1`. To try the alpha: `composer require anode/cast-framework:2.0.6-alpha` (Composer asks for `"minimum-stability": "alpha"` or the exact `2.0.6-alpha` constraint).
+**2.0.0 is in alpha** (`v2.0.7`): more changes are coming, so until the stable 2.0.0 the API can change between alpha versions. Apps that need a stable base stay on `^1.1`. To try the alpha: `composer require anode/cast-framework:2.0.7` (Composer asks for `"minimum-stability": "alpha"` or the exact `2.0.7` constraint).
 
 [Semantic Versioning](https://semver.org). The public API is what this README documents: the helper names, the config keys, the contracts, the route/middleware spec,
 the response shapes and the console commands. See [CHANGELOG.md](CHANGELOG.md). Migrating an existing app: [docs/ERP-PORTING.md](docs/ERP-PORTING.md).

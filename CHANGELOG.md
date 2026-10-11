@@ -2,7 +2,7 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
-## 2.0.6-alpha
+## 2.0.7
 
 The next alpha after `2.0.0-alpha`: everything below, plus `static:check`, the dev-server warning bar, the shell-free `cast serve`, and `cast serve` noticing a busy port (it offers the next free one) and stopping the server together with the command (on Windows, Ctrl+C in Git Bash could leave it running; an old one an old server kept answering while the new one got no requests).
 
@@ -13,21 +13,24 @@ The next alpha after `2.0.0-alpha`: everything below, plus `static:check`, the d
 
 - **A page with no styles, no dock and an empty `/cdocs` now explains itself.** When PHP's built-in server is started without the router script (`php -S 127.0.0.1:8000 -t public`), every `.css`, `.js` and `.svg` URL gets PHP's own 404 while pages still work. In development an inline check on each page asks for one of the framework's files and, if it does not come back, shows a red bar with the fix (`php cast serve`, or `php -S ... public/index.php`; on Apache/nginx the rewrite rules). `static:check` recognises PHP's own 404 and a `--url` that is a file instead of the app's address.
 - **`php cast static:check [--url=URL]`**: finds why CSS, JS or the documentation do not show on a real install. In-process it checks the static folders and whether each file would be served; with `--url` it loads your page and requests every linked stylesheet and script, `/cdocs/` and its data on the real web server, and explains a wrong `APP_BASE_PATH`, a rewrite that returns the home page for a file, a 404, or a cut answer.
-The next major version, in alpha while more changes land. It carries everything below that was written after 1.1.0 (error handler 1.3 support, errors for SPA and API clients, the dock's error count):
+  The next major version, in alpha while more changes land. It carries everything below that was written after 1.1.0 (error handler 1.3 support, errors for SPA and API clients, the dock's error count):
 
 ### The dock counts development errors
+
 - **Errors stay one click away after the overlay is closed.** The development error overlay remembers the errors of the tab (last 25, one entry per error with a count). The floating dock shows a red count on its button, lists them in its menu (click to reopen) and can clear them; without a dock (a front end of your own) a small "N errors - open" button appears in the corner. `CastErrorOverlay.errors()` / `.clear()` and the `cast:dev-errors` event for code.
 
 ### Development errors for SPA pages and front-end frameworks
-- **Development errors reach SPA pages and front-end frameworks.** A server error (an exception, a PHP warning, a fatal error, an error in a view) used to give a Cast or API client only a message. In development (`APP_DEBUG=true`, not production) the JSON now has `data.debug`: the file and line, the code around it, which part failed, the stack, an *Open in editor* link and `url`, the full error page (`GET /cast/error/<id>`, the last 25 are kept in `storage/framework/errors/`). The Cast client shows it as an **overlay** (`/cast/error-overlay.js`, loaded only when needed; a shadow root; Esc closes); a React / Vue / Next.js front end can load the same script or read `data.debug`. In production nothing of this is sent. Full page and editor links need `anode/error-handler` 1.3.
-- The demo has a `/_crash` route to see it. Docs: the *Error handler* page has screenshots of the error page and the overlay. `docs:build` copies `docs/images/` and the viewer shows `![alt](images/x.png)` images.
+
+- **Development errors reach SPA pages and front-end frameworks.** A server error (an exception, a PHP warning, a fatal error, an error in a view) used to give a Cast or API client only a message. In development (`APP_DEBUG=true`, not production) the JSON now has `data.debug`: the file and line, the code around it, which part failed, the stack, an _Open in editor_ link and `url`, the full error page (`GET /cast/error/<id>`, the last 25 are kept in `storage/framework/errors/`). The Cast client shows it as an **overlay** (`/cast/error-overlay.js`, loaded only when needed; a shadow root; Esc closes); a React / Vue / Next.js front end can load the same script or read `data.debug`. In production nothing of this is sent. Full page and editor links need `anode/error-handler` 1.3.
+- The demo has a `/_crash` route to see it. Docs: the _Error handler_ page has screenshots of the error page and the overlay. `docs:build` copies `docs/images/` and the viewer shows `![alt](images/x.png)` images.
 
 ### Error handler 1.3 support
-- **Error handler 1.3.0 support**: the development error page shows the failing code underlined in red with an *Open in editor* link and the code of every stack step, and logs are one readable file per day with request, code and stack. The framework passes `root_path` and `editor` (`CAST_EDITOR`), `config/error-handler.php` (`make:config error-handler`) lists the new options (`editor`, `editor_path_map`, `snippet_lines`, `log_style`, `log_format`, `log_code_lines`), and `env:check` advises error-handler 1.3.0. Update with `composer update anode/error-handler`. Docs: the *Error handler* page.
+
+- **Error handler 1.3.0 support**: the development error page shows the failing code underlined in red with an _Open in editor_ link and the code of every stack step, and logs are one readable file per day with request, code and stack. The framework passes `root_path` and `editor` (`CAST_EDITOR`), `config/error-handler.php` (`make:config error-handler`) lists the new options (`editor`, `editor_path_map`, `snippet_lines`, `log_style`, `log_format`, `log_code_lines`), and `env:check` advises error-handler 1.3.0. Update with `composer update anode/error-handler`. Docs: the _Error handler_ page.
 
 ## 1.1.0
 
-- **VS Code extension 0.3.0** (`php cast editor:install`): colours the template engine's `@` syntax (`@{ $x }`, `@foreach`, `@forelse`, `@if`, `@switch`, `@php` ...), and indents a whole view: Format Document, Format Selection and *Cast: Fix indentation* understand HTML tags, component tags, PHP's `if (...): ... endif` syntax, multi-line `<?php ?>` blocks and the `@` directives together, and the indent stays right while you type (`cast.autoIndent`). Snippets for the `@` directives.
+- **VS Code extension 0.3.0** (`php cast editor:install`): colours the template engine's `@` syntax (`@{ $x }`, `@foreach`, `@forelse`, `@if`, `@switch`, `@php` ...), and indents a whole view: Format Document, Format Selection and _Cast: Fix indentation_ understand HTML tags, component tags, PHP's `if (...): ... endif` syntax, multi-line `<?php ?>` blocks and the `@` directives together, and the indent stays right while you type (`cast.autoIndent`). Snippets for the `@` directives.
 - Test fix: `init` test no longer shares a fixed folder in `/tmp`.
 
 ## 1.0.1
@@ -64,14 +67,14 @@ The first stable release: everything in 0.1 to 0.12 (below), with the public API
 ## 0.8.0
 
 - **The framework's docs are at `/cdocs`** (was `/docs`), so `/docs` stays free for your own app. Config: `config/cdocs.php` (`make:config cdocs`), `cdocs.enabled` for production. If you copied the old `docs` entry into `config/static.php`, rename it to `cdocs`.
-- **What's new**: the documentation has a *What's new* page built from this changelog (`_meta.json` can add any file as a page with `"files"`), linked in the top bar.
+- **What's new**: the documentation has a _What's new_ page built from this changelog (`_meta.json` can add any file as a page with `"files"`), linked in the top bar.
 - **`php cast demo:strip`** removes the demo from an app made with `init --demo` and leaves a starter pack: `shell`, `crud`, `auth` or `auth-crud` (asked, or `--pack=`; `--dry-run`, `--yes`). It rewrites the routes, provider, seeder and config, and writes an Account page for the `auth` pack.
-- **The dock**: a floating button (bottom right) with links to the demo and the docs, added by the framework to HTML pages in development, so it is there even if you delete your layout and views. `CAST_DOCK=false` or `config/dock.php` turns it off; the menu has *Hide*. Never in production, Cast or JSON answers.
-- **Demo menu**: the demo's pages sit in a group on the right: a grayed *Demo App* label, Items, Stats and a *Logout* button (the email is its tooltip). New settings in `config/app.php`: `auth`, `showcase` and `menu` (`[label, path, signed-in only]`), which `demo:strip` writes.
+- **The dock**: a floating button (bottom right) with links to the demo and the docs, added by the framework to HTML pages in development, so it is there even if you delete your layout and views. `CAST_DOCK=false` or `config/dock.php` turns it off; the menu has _Hide_. Never in production, Cast or JSON answers.
+- **Demo menu**: the demo's pages sit in a group on the right: a grayed _Demo App_ label, Items, Stats and a _Logout_ button (the email is its tooltip). New settings in `config/app.php`: `auth`, `showcase` and `menu` (`[label, path, signed-in only]`), which `demo:strip` writes.
 
 ## 0.7.0
 
-- **A welcome UI**: `php cast init` now starts on a designed welcome page ("Let's build something amazing"): the framework logo, a menu with *Docs* and *Demo the Cast Framework*, a quick-start terminal, what you get, and your first five minutes. Dark and light themes (CSS variables in `app.css`), the fixed footer and a `100dvh` body.
+- **A welcome UI**: `php cast init` now starts on a designed welcome page ("Let's build something amazing"): the framework logo, a menu with _Docs_ and _Demo the Cast Framework_, a quick-start terminal, what you get, and your first five minutes. Dark and light themes (CSS variables in `app.css`), the fixed footer and a `100dvh` body.
 - **`php cast init --demo` keeps that page** and adds Log in / Register at the top right. New: a **register** page (validates, creates the user, logs in), and a banner above login and register ("Use the framework for CRUD operations") with links to the docs (a `<CrudBanner />` component). `/demo` in the minimal app explains how to install the demo; in the demo it goes to the login.
 - **The documentation at `/docs`** (moved to `/cdocs` in 0.8.0): a static viewer (`Resources/docs/index.html`: sidebar, search, on-this-page, copy buttons, dark/light) fed by `data.js`, made from the markdown by **`php cast docs:build`** (front matter: title, section, order, description; `docs/_meta.json`; a README is split into pages; links are rewritten; `--check` for CI). `composer docs` rebuilds the framework's own. Served in development. Guide: [docs/WRITING-DOCS.md](docs/WRITING-DOCS.md).
 - **Colourful console**: `php cast list` is grouped (General, Db, Make, Migrate, ...), help has coloured headings, flags and examples, tables have coloured headers, `init` colours what it created. `NO_COLOR` and `FORCE_COLOR` are honoured; pipes stay plain.

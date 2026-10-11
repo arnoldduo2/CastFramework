@@ -22,7 +22,7 @@
       "App\\": "app/"
     }
   },
-  "minimum-stability": "dev",
+  2"minimum-stability": "stable",
   "prefer-stable": true,
   "config": {
     "allow-plugins": {
