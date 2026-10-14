@@ -95,6 +95,30 @@ final class View implements ViewRenderer
      * The data keys it reads: `parentName`, `pageName`, `tabName`, `authguard`, `spa`, `title`, `partial`, `fragment`,
      * `type`, `target`, `modalClass`, `form`.
      */
+    /** Render a view, wrapping it in its layout (default 'app') if available. */
+    public function renderWithLayout(string $view, array $data = []): string
+    {
+        $content = $this->render($view, $data);
+
+        $layout = $data['layout'] ?? Config::get('view.layout', 'app');
+        if ($layout === false || empty($layout) || !$this->exists((string) $layout)) {
+            return $content;
+        }
+
+        // Avoid double-wrapping if the view already generated a complete document (e.g. has <html> or <!DOCTYPE)
+        if (preg_match('/<(!DOCTYPE|html)[^>]*>/i', $content)) {
+            return $content;
+        }
+
+        // Avoid self-wrapping if the view being rendered is the layout itself
+        if ($view === (string) $layout) {
+            return $content;
+        }
+
+        $layoutData = [...$data, 'slot' => $content, 'content' => $content, 'pageView' => $view];
+        return $this->render((string) $layout, $layoutData);
+    }
+
     public function respond(string $view, array $data = [], int $status = 200): Response
     {
         $request = Request::current();
@@ -104,7 +128,7 @@ final class View implements ViewRenderer
             if ($request->isCast()) return $this->castResponse($view, $data, $status, $request);
 
             $this->page['mode'] = $this->page['spa'] ? (Config::get('spa.initial', 'lazy') === 'inline' ? 'inline' : 'lazy') : 'plain';
-            return Response::html($this->render($view, $data), $status);
+            return Response::html($this->renderWithLayout($view, $data), $status);
         } finally {
             $this->page = null;
         }
@@ -173,7 +197,7 @@ final class View implements ViewRenderer
         // the whole body (login to private area, a different layout, or no partial to swap): the content
         // container is part of it, filled in, so later navigation can swap just the content
         $this->page['mode'] = 'inline';
-        $document = self::extractDocument($this->render($view, $data));
+        $document = self::extractDocument($this->renderWithLayout($view, $data));
         $payload['type'] = 'page';
         $payload['target'] = (string) Config::get('spa.root', 'body');
         $payload['html'] = $document['body'];

@@ -1,6 +1,6 @@
 {
     "name": "anode/cast-framework",
-    "version": "2.2.0",
+    "version": "2.2.1",
     "description": "CastFramework: a small PHP MVC framework with an SPA-ready view layer, built on CastTemplateEngine.",
     "type": "composer-plugin",
     "license": "MIT",

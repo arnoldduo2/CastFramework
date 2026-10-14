@@ -10,81 +10,68 @@ use Cast\Http\Request;
 use Cast\Http\Response;
 
 /**
- * Native Node-free SSE Live-Reload / HMR controller for CastFramework.
- * Monitors view templates and assets for modifications and streams events
- * to connected browsers for instant CSS injection and in-place SPA view swaps.
+ * Native Node-free Live-Reload controller for CastFramework.
+ * Non-blocking, instant response (<1ms) tracking modification timestamps.
+ * Releases session locks immediately so normal page loads and SPA navigations
+ * never experience lag or worker starvation.
  */
 final class LiveReload
 {
     public static function enabled(): bool
     {
-        return DevError::enabled() && Config::get('app.hmr', 'sse') !== 'disabled';
+        return DevError::enabled() && Config::get('app.hmr', 'poll') !== 'disabled';
     }
 
     public static function handle(Application $app, Request $request): Response
     {
-        if (!self::enabled() || Config::get('app.hmr', 'sse') === 'vite') {
+        // Immediately release any PHP session lock so other browser requests are never blocked
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            @session_write_close();
+        }
+
+        if (!self::enabled() || Config::get('app.hmr', 'poll') === 'vite') {
             return new Response('', 204);
         }
-
-        // Send SSE streaming headers
-        header('Content-Type: text/event-stream; charset=utf-8');
-        header('Cache-Control: no-cache, no-transform');
-        header('Connection: keep-alive');
-        header('X-Accel-Buffering: no');
-
-        if (function_exists('apache_setenv')) {
-            @apache_setenv('no-gzip', '1');
-        }
-        @ini_set('zlib.output_compression', '0');
-        @ini_set('implicit_flush', '1');
-        while (ob_get_level() > 0) {
-            @ob_end_flush();
-        }
-
-        // Send initial connection event
-        echo "event: ping\ndata: {\"status\":\"connected\"}\n\n";
-        @flush();
 
         $watchDirs = [
             $app->basePath('resources/views'),
             $app->basePath('resources/css'),
             $app->basePath('resources/js'),
+            $app->basePath('routes'),
         ];
 
-        $lastState = self::snapshot($watchDirs);
+        clearstatcache();
+        $latest = self::scanLatest($watchDirs);
 
-        // Keep connection open up to 25 seconds (browser EventSource auto-reconnects seamlessly)
-        $start = time();
-        while (time() - $start < 25) {
-            if (connection_aborted()) {
-                break;
-            }
+        $since = (int) ($request->query('since') ?? 0);
 
-            usleep(350000); // 350ms check
-            clearstatcache();
-            $currentState = self::snapshot($watchDirs);
-
-            if ($currentState !== $lastState) {
-                $change = self::detectChange($lastState, $currentState);
-                $event = $change['type']; // 'css', 'view', or 'reload'
-                $data = json_encode($change['data'] ?? []);
-                echo "event: {$event}\ndata: {$data}\n\n";
-                @flush();
-                $lastState = $currentState;
-            }
+        if ($since > 0 && $latest['time'] > $since) {
+            return Response::json([
+                'status'  => 'ok',
+                'changed' => true,
+                'type'    => $latest['type'],
+                'file'    => $latest['file'],
+                'time'    => $latest['time'],
+            ]);
         }
 
-        exit(0);
+        return Response::json([
+            'status'  => 'ok',
+            'changed' => false,
+            'time'    => $latest['time'],
+        ]);
     }
 
     /**
      * @param list<string> $dirs
-     * @return array<string, int>
+     * @return array{time: int, file: string, type: string}
      */
-    private static function snapshot(array $dirs): array
+    private static function scanLatest(array $dirs): array
     {
-        $files = [];
+        $maxTime = 0;
+        $latestFile = '';
+        $type = 'reload';
+
         foreach ($dirs as $dir) {
             if (!is_dir($dir)) continue;
             try {
@@ -94,46 +81,24 @@ final class LiveReload
                 foreach ($iterator as $file) {
                     /** @var \SplFileInfo $file */
                     if ($file->isFile()) {
-                        $files[$file->getPathname()] = $file->getMTime();
+                        $mtime = $file->getMTime();
+                        if ($mtime > $maxTime) {
+                            $maxTime = $mtime;
+                            $latestFile = $file->getFilename();
+                            $ext = strtolower($file->getExtension());
+                            if ($ext === 'css') {
+                                $type = 'css';
+                            } elseif (str_ends_with($file->getPathname(), '.cast.php')) {
+                                $type = 'view';
+                            } else {
+                                $type = 'reload';
+                            }
+                        }
                     }
                 }
             } catch (\Throwable) {}
         }
-        return $files;
-    }
 
-    /**
-     * @param array<string, int> $old
-     * @param array<string, int> $new
-     * @return array{type: string, data: array<string, mixed>}
-     */
-    private static function detectChange(array $old, array $new): array
-    {
-        foreach ($new as $path => $mtime) {
-            if (!isset($old[$path]) || $old[$path] !== $mtime) {
-                return self::classifyChange($path);
-            }
-        }
-        foreach ($old as $path => $mtime) {
-            if (!isset($new[$path])) {
-                return self::classifyChange($path);
-            }
-        }
-        return ['type' => 'reload', 'data' => []];
-    }
-
-    /**
-     * @return array{type: string, data: array<string, mixed>}
-     */
-    private static function classifyChange(string $path): array
-    {
-        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-        if ($ext === 'css') {
-            return ['type' => 'css', 'data' => ['file' => basename($path)]];
-        }
-        if (str_ends_with($path, '.cast.php')) {
-            return ['type' => 'view', 'data' => ['file' => basename($path)]];
-        }
-        return ['type' => 'reload', 'data' => ['file' => basename($path)]];
+        return ['time' => $maxTime, 'file' => $latestFile, 'type' => $type];
     }
 }

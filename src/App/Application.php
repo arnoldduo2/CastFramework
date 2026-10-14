@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '2.2.0';
+    public const VERSION = '2.2.1';
 
     private static ?self $instance = null;
 
@@ -315,6 +315,7 @@ final class Application
             'view' => [
                 'ext' => Env::get('APP_VIEWS_EXT', '.cast.php'),
                 'components' => 'components',
+                'layout' => 'app',
             ],
             'static' => [
                 'css' => ['dir' => $paths['resources'], 'keep_prefix' => true],

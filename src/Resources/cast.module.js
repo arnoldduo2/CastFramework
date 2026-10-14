@@ -770,42 +770,87 @@
       mount(key, view, "partial");
     }
 
-    // Native Node-free SSE HMR / live reload in development
+    // Native Node-free live reload in development mode (non-blocking, 0ms lag)
     if (
       settings.castDev === "1" &&
       settings.castHmr !== "vite" &&
       settings.castHmr !== "off" &&
-      window.EventSource
+      !window.__castLiveReloadActive
     ) {
-      try {
-        const sse = new EventSource(url("/_cast/live-reload"));
-        sse.addEventListener("css", () => {
-          document.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
-            const href = link.getAttribute("href");
-            if (!href || href.startsWith("data:") || href.startsWith("blob:")) return;
-            const u = new URL(link.href, location.href);
-            u.searchParams.set("_hmr", Date.now());
-            link.href = u.href;
-          });
-        });
-        sse.addEventListener("view", () => {
-          if (typeof load === "function") {
-            load(location.pathname + location.search, { replace: true, push: false });
-          } else {
-            location.reload();
+      window.__castLiveReloadActive = true;
+      let lastCheck = 0;
+      let pollingTimer = null;
+      let inFlight = false;
+
+      async function poll() {
+        if (inFlight || document.hidden) return;
+        inFlight = true;
+        try {
+          const res = await fetch(
+            url("/_cast/live-reload?since=" + lastCheck),
+            { cache: "no-store", headers: { Accept: "application/json" } }
+          );
+          if (res.status === 200) {
+            const data = await res.json();
+            if (data && data.status === "ok") {
+              if (lastCheck > 0 && data.changed) {
+                lastCheck = data.time;
+                if (data.type === "css") {
+                  document
+                    .querySelectorAll('link[rel="stylesheet"]')
+                    .forEach((link) => {
+                      const href = link.getAttribute("href");
+                      if (
+                        !href ||
+                        href.startsWith("data:") ||
+                        href.startsWith("blob:")
+                      )
+                        return;
+                      const u = new URL(link.href, location.href);
+                      u.searchParams.set("_hmr", Date.now());
+                      link.href = u.href;
+                    });
+                } else if (data.type === "view") {
+                  if (typeof load === "function") {
+                    load(location.pathname + location.search, {
+                      replace: true,
+                      push: false,
+                    });
+                  } else {
+                    location.reload();
+                  }
+                } else {
+                  location.reload();
+                }
+              } else {
+                lastCheck = data.time || lastCheck;
+              }
+            }
           }
-        });
-        sse.addEventListener("reload", () => {
-          location.reload();
-        });
-      } catch (e) {
-        /* SSE connection error or disabled */
+        } catch (e) {
+          /* connection error or server restarting */
+        } finally {
+          inFlight = false;
+          if (!document.hidden) {
+            pollingTimer = setTimeout(poll, 800);
+          }
+        }
       }
+
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) {
+          clearTimeout(pollingTimer);
+          inFlight = false;
+          poll();
+        }
+      });
+
+      poll();
     }
   }
 
   window.Cast = {
-    version: "2.2.0",
+    version: "2.2.1",
     load,
     http: (options) => http(options),
     page,
