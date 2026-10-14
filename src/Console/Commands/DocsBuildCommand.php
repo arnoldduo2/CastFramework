@@ -41,7 +41,7 @@ final class DocsBuildCommand extends Command
         }
 
         $builder = new DocsBuilder();
-        $data = $builder->build($source, $readme, null, Application::VERSION);
+        $data = $builder->build($source, $readme, null, Application::VERSION, $this->engineReadme());
         $js = $builder->render($data);
         $count = count($data['pages']);
 
@@ -73,5 +73,19 @@ final class DocsBuildCommand extends Command
             if ($n) $output->line('  ' . $output->color(str_pad($section, 24), 'blue') . $n . ' page' . ($n === 1 ? '' : 's'));
         }
         return 0;
+    }
+
+    /**
+     * The installed `anode/cast-template-engine`'s own README.md, if found — so `docs:build` can pull specific sections
+     * of it in automatically (see `docs/_meta.json`'s "engineReadme") instead of CastFramework hand-copying them.
+     * Same two candidates `EngineCommand::ensureEngineAutoloaded()` probes: a real composer install, or the dev
+     * path-repo sibling checkout. Missing is not an error — the rest of the site still builds without it.
+     */
+    private function engineReadme(): ?string
+    {
+        foreach ([$this->app->basePath('vendor/anode/cast-template-engine/README.md'), dirname($this->app->basePath()) . '/CastTemplateEngine/README.md'] as $candidate) {
+            if (is_file($candidate)) return $candidate;
+        }
+        return null;
     }
 }

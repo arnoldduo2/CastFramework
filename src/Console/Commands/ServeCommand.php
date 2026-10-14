@@ -63,9 +63,17 @@ final class ServeCommand extends Command
         $output->line("Router script: $router");
 
         // An argument array is started without a shell, so Windows (cmd.exe, Git Bash) cannot mangle the quotes and drop the router.
-        $env = array_merge($_SERVER, [
-            'PHP_CLI_SERVER_WORKERS' => '8',
-        ]);
+        // Worker concurrency (PHP_CLI_SERVER_WORKERS) uses pcntl_fork, which is not supported on Windows.
+        $env = null;
+        if (PHP_OS_FAMILY !== 'Windows' && extension_loaded('pcntl')) {
+            $env = [];
+            foreach ($_SERVER as $k => $v) {
+                if (is_scalar($v) && !is_bool($v)) {
+                    $env[(string) $k] = (string) $v;
+                }
+            }
+            $env['PHP_CLI_SERVER_WORKERS'] = '8';
+        }
         $process = proc_open($argv, [0 => STDIN, 1 => STDOUT, 2 => STDERR], $pipes, null, $env);
         if (!is_resource($process)) {
             $output->error('Could not start the PHP server.');

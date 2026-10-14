@@ -32,9 +32,12 @@ final class DocsBuilder
      * @param string $source   folder with the `.md` pages
      * @param string|null $readme  a README to split into pages (or null)
      * @param string|null $meta    `_meta.json` (title, section order, how to place README headings); default `<source>/_meta.json`
+     * @param string|null $engineReadme  a second README (CastTemplateEngine's own) to split into pages, placed by `_meta.json`'s
+     *        `"engineReadme"` map (same shape as `"readme"`); unlike the primary README, a heading not listed there is skipped,
+     *        not defaulted to "Reference" — this list is opt-in, so an engine update never silently adds an unreviewed page
      * @return array{title: string, version: string, sections: list<string>, pages: list<array<string, mixed>>}
      */
-    public function build(string $source, ?string $readme = null, ?string $meta = null, string $version = ''): array
+    public function build(string $source, ?string $readme = null, ?string $meta = null, string $version = '', ?string $engineReadme = null): array
     {
         $meta = $this->meta($meta ?? rtrim($source, '/\\') . '/_meta.json');
         $this->pages = [];
@@ -57,6 +60,9 @@ final class DocsBuilder
         }
         if ($readme !== null && is_file($readme)) {
             foreach ($this->splitReadme((string) file_get_contents($readme), $meta, basename($readme)) as $page) $this->pages[] = $page;
+        }
+        if ($engineReadme !== null && is_file($engineReadme)) {
+            foreach ($this->splitReadme((string) file_get_contents($engineReadme), $meta, 'CastTemplateEngine/README.md', 'engineReadme', false, true) as $page) $this->pages[] = $page;
         }
 
         $order = array_flip($meta['sections'] ?? []);
@@ -127,22 +133,30 @@ final class DocsBuilder
         ];
     }
 
-    /** @return list<array<string, mixed>> */
-    private function splitReadme(string $text, array $meta, string $name): array
+    /**
+     * @param string $placingKey  which `_meta.json` map says where each `## heading` goes (`"readme"` or `"engineReadme"`)
+     * @param bool $includeOverview  whether the text before the first `## heading` becomes its own "Overview" page
+     * @param bool $skipUnlisted  when true, a heading not in `$placingKey`'s map is skipped rather than defaulted to "Reference"
+     *        (opt-in placement, so a future heading added upstream never silently appears unreviewed)
+     * @return list<array<string, mixed>>
+     */
+    private function splitReadme(string $text, array $meta, string $name, string $placingKey = 'readme', bool $includeOverview = true, bool $skipUnlisted = false): array
     {
         $text = str_replace("\r\n", "\n", $text);
         $chunks = preg_split('/^(?=## )/m', $text) ?: [];
         $pages = [];
-        $placing = $meta['readme'] ?? [];
+        $placing = $meta[$placingKey] ?? [];
         foreach ($chunks as $i => $chunk) {
             if (trim($chunk) === '') continue;
             if ($i === 0) {
+                if (!$includeOverview) continue;
                 $pages[] = ['slug' => 'overview', 'title' => 'Overview', 'section' => 'Start', 'order' => 0, 'description' => 'What CastFramework is and what it gives you.',
                     'source' => $name, 'md' => (string) preg_replace('/\A# .+\n+/', '', $chunk, 1)];
                 continue;
             }
             preg_match('/^## (.+)$/m', $chunk, $m);
             $heading = trim($m[1]);
+            if ($skipUnlisted && !isset($placing[$heading])) continue;
             [$section, $order] = ($placing[$heading] ?? ['Reference']) + [1 => 50];
             if ($section === '_skip') continue;
             $pages[] = ['slug' => self::slug($heading), 'title' => trim((string) preg_replace('/[`]/', '', $heading)), 'section' => $section, 'order' => (int) $order,

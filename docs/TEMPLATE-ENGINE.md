@@ -46,8 +46,20 @@ be written in four styles (`<Btns.AddNew>` finds `btns/add-new.cast.php`, `add_n
 
 Inside the component file, props are accessible as variables (`$title`, `$hasLabel`: `has_label`, `has-label` and `hasLabel` all arrive as `$hasLabel`).
 The HTML between the tags is `$children`, and each `<Slot name="footer">` arrives as `$footer`. Defaults are plain PHP (`$title ??= 'KPI';`).
-Run `php cast make:component Btns.AddNew --props=label:string` to write a documented component, and `php cast components` to list all components
-([Components](COMPONENTS.md)).
+Create a documented component with docblock and defaults:
+
+```bash
+php cast make:component Btns.AddNew --props=label:string=Add,href:?string
+```
+
+List all components or check docblocks:
+
+```bash
+php cast components
+php cast components --check
+```
+
+See [Components](COMPONENTS.md) for full component reference.
 
 ---
 
@@ -208,16 +220,10 @@ The bundler:
 
 ## Console commands
 
-CastFramework includes engine CLI tooling:
-
-```bash
-php cast engine:check              # Lint all .cast.php files for syntax errors & missing keys
-php cast engine:compile            # Precompile all templates into the cache folder
-php cast engine:build              # Minify & bundle component assets into app.css and app.js
-php cast engine:clear              # Clear compiled template cache
-php cast engine:snippets           # Display full code snippets cheat sheet
-php cast engine:editor install     # Install or update VS Code extension
-```
+The full, current command list and flags live on [Terminal Commands & CLI](#terminal-commands--cli) — pulled automatically
+from CastTemplateEngine's own README each time `php cast docs:build` runs, so it can't drift from what the installed engine
+actually supports the way a second, hand-kept copy here would. See also [Documentation Snippets List](#documentation-snippets-list)
+for every editor snippet trigger.
 
 ---
 
@@ -232,13 +238,24 @@ php cast engine:editor install     # Install or update VS Code extension
 - **Cache:** compiled views are written to `storage/framework/views`. In development a changed view is recompiled; in production set
   `view.check_modified` false for a little more speed and run `php cast views:clear` (or `deploy:optimize`) when you deploy.
 - **Deploy:** `php cast deploy:optimize` clears compiled views and prepares production assets.
-- **Editor:** `php cast editor:install` adds highlighting, Ctrl+click to a component's file, diagnostics, and prop completion.
+- **Editor:** `php cast editor:install` (alias for `php cast engine:editor install`) adds highlighting, Ctrl+click to a component's file, diagnostics, and prop completion. The extension itself is built and maintained by CastTemplateEngine, not CastFramework.
 
 ---
 
+## More from the engine
+
+This page is the framework-specific overview; the engine's own README supplies the reference material below as-is
+(pulled in automatically by `docs:build`, not copied by hand — `php cast docs:check` fails if they ever drift):
+
+- [Syntax rules](#syntax-rules) — the full tag/prop/slot/attribute rules, and exactly what the compiler never touches.
+- [Escaping](#escaping) — `e()`, and what is and isn't escaped automatically.
+- [Caching and errors](#caching-and-errors) — compiled-template caching and how compile/runtime errors are reported.
+- [Limitations](#limitations) — the sharp edges worth knowing up front.
+- [Coming from useComponent()](#coming-from-usecomponent) — migrating an older app's `useComponent()` calls.
+
 ## Versions
 
-The framework requires `anode/cast-template-engine` `^1.5.0`. Keep it current with:
+The framework requires `anode/cast-template-engine` `^1.6.0`. Keep it current with:
 
 ```bash
 composer update anode/cast-template-engine

@@ -50,6 +50,12 @@ final class Input
         return $this->options[$name] ?? $default;
     }
 
+    /** @return array<string, string|bool> */
+    public function options(): array
+    {
+        return $this->options;
+    }
+
     public function hasOption(string $name): bool
     {
         return isset($this->options[$name]);

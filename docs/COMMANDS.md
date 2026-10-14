@@ -219,7 +219,7 @@ php cast down --in=60   # down in a minute
 
 ## `editor:install`
 
-Install the VS Code extension for .cast.php views (highlighting, Ctrl+click, props).
+Alias for `engine:editor install` — installs the editor extension for .cast.php views (highlighting, Ctrl+click, props), maintained by CastTemplateEngine.
 
 ```
 php cast editor:install [options]
@@ -228,13 +228,100 @@ php cast editor:install [options]
 | Option | |
 | --- | --- |
 | `--editor=NAME` | Only this editor: code, insiders, vscodium, cursor, antigravity or windsurf (default: every editor found) |
-| `--dir=PATH` | Install into this extensions folder instead |
 | `--uninstall` | Remove the extension |
 
 ```bash
-php cast editor:install   # every editor found
+php cast editor:install   # same as `php cast engine:editor install`
 php cast editor:install --editor=code   # VS Code only
-php cast editor:install --uninstall   # remove it
+php cast editor:install --uninstall   # same as `php cast engine:editor uninstall`
+```
+
+## `engine:build`
+
+Minify and bundle component CSS and JS into resources/css/app.css and resources/js/app.js.
+
+```
+php cast engine:build <path>
+```
+
+| Argument | |
+| --- | --- |
+| `path` | Project root path (defaults to app root) |
+
+```bash
+php cast engine:build   # bundle all component assets for production
+```
+
+## `engine:check`
+
+Lint all .cast.php files for syntax errors and missing keys.
+
+```
+php cast engine:check <path>
+```
+
+| Argument | |
+| --- | --- |
+| `path` | Directory to scan (defaults to views folder) |
+
+```bash
+php cast engine:check   # scan views and components
+```
+
+## `engine:clear`
+
+Clear the compiled template cache.
+
+```
+php cast engine:clear
+```
+
+```bash
+php cast engine:clear   # wipe compiled template files
+```
+
+## `engine:compile`
+
+Precompile all .cast.php templates into the cache folder.
+
+```
+php cast engine:compile <path>
+```
+
+| Argument | |
+| --- | --- |
+| `path` | Views directory to compile |
+
+```bash
+php cast engine:compile   # warm up the compiled views cache
+```
+
+## `engine:editor`
+
+Install or update the Cast VS Code extension.
+
+```
+php cast engine:editor <subcommand>
+```
+
+| Argument | |
+| --- | --- |
+| `subcommand` | install or update |
+
+```bash
+php cast engine:editor install   # install editor support
+```
+
+## `engine:snippets`
+
+List all available template code snippets and shorthand triggers.
+
+```
+php cast engine:snippets
+```
+
+```bash
+php cast engine:snippets   # display snippets reference table
 ```
 
 ## `env:check`
@@ -953,52 +1040,4 @@ php cast views:clear
 
 ```bash
 php cast views:clear
-```
-
-## `engine:build`
-
-Minify and bundle component CSS and JS files into `resources/css/app.css` and `resources/js/app.js`.
-
-```
-php cast engine:build [project-root]
-```
-
-```bash
-php cast engine:build   # bundle component assets for production
-```
-
-## `engine:check`
-
-Lint and validate all `.cast.php` template files in the project for errors and missing keys.
-
-```
-php cast engine:check [directory]
-```
-
-```bash
-php cast engine:check   # scan views and components for syntax issues
-```
-
-## `engine:compile`
-
-Precompile all `.cast.php` views and components into the cache folder.
-
-```
-php cast engine:compile [views-dir]
-```
-
-```bash
-php cast engine:compile   # pre-warm the compiled view cache
-```
-
-## `engine:snippets`
-
-List all available Cast template code snippets and shorthand triggers.
-
-```
-php cast engine:snippets
-```
-
-```bash
-php cast engine:snippets   # display code snippets reference table
 ```

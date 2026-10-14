@@ -86,6 +86,11 @@ final class EngineCommand extends Command
                         $args = [$this->app->viewsPath()];
                     }
                 }
+                // Input splits "--flag"/"--flag=value" into options, but the engine's own CommandInterface::execute()
+                // expects them inline in the flat $args array (see EngineEditorCommand::execute()'s own "--editor=" scan).
+                foreach ($input->options() as $key => $value) {
+                    $args[] = $value === true ? "--$key" : "--$key=$value";
+                }
                 return $cmd instanceof \CastTemplateEngine\Console\CommandInterface
                     ? $cmd->execute($args)
                     : $cmd($args);

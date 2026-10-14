@@ -276,6 +276,12 @@ One token per session (`Session::csrfToken()`), renewed on login/logout (`Sessio
 
 ## Controllers
 
+Create a new controller:
+
+```bash
+php cast make:controller Orders
+```
+
 Extend `Cast\Http\Controller`. It holds only what every controller needs:
 
 ```php
@@ -336,7 +342,10 @@ Fields that are empty and not `required` skip their other rules. `sometimes` ski
 Override per rule (`['required' => '...']`), per field and rule (`['email.required' => '...']`), and set labels with the fourth argument.
 
 **Custom rules:** a class implementing `Cast\Contracts\Rule` (`passes()`, `message()`), a closure, or `Validator::extend('even', fn($value, $params, $data, $field) => ..., ':field must be even.')`.
-`php cast make:rule Uppercase` creates one.
+
+```bash
+php cast make:rule Uppercase
+```
 
 **What happens on failure:** `validate()` throws `ValidationException`. The Kernel answers **422 JSON** `{status:'error', msg, data:{errors:{field:'message'}}}` for ajax/JSON
 requests, and for browser forms it flashes `input_errors` and `old` (without passwords or the token) and redirects back to the referrer.
@@ -359,7 +368,14 @@ Auth::hash($password);                                         // Hash::make(): 
 
 **Passwords and secrets.** Passwords are _hashed_ (one way): `Cast\Support\Hash::make()` / `check()` / `needsRehash()` (and the helpers `hashPassword()` / `verifyPassword()`) use **Argon2id** when your PHP has it and **bcrypt** otherwise; the algorithm is read from the stored hash, so old bcrypt hashes keep working. When a user logs in with a weaker hash than `config/hashing.php` asks for (`HASH_DRIVER`, bcrypt `cost`, Argon2 `memory`/`time`), `Auth` stores a new one if your user provider has a `rehash(array $user, string $newHash)` method. Values you must read back (a token, a card number) are _encrypted_ with the **app key** instead: `encrypt()` / `decrypt()` (AES-256-GCM) and `sign()` / `unsign()` (HMAC-SHA256) from `Cast\Support\Crypt`, keyed by `APP_KEY` (`php cast key:generate`). Never encrypt a password; never hash something you need back.
 
-**Your own services.** `php cast make:service Mailer` writes `<source>/Services/MailerService.php` with a how-to in its comment. For things older apps need there are working examples: `--example=printer` (ESC/POS receipt printing over the network or USB), `--example=barcode` (Code 128 as SVG, no library), `--example=qrcode` (QR codes through `chillerlan/php-qrcode`). Bind one in your provider (`$this->app->singleton('printer', fn() => new ReceiptService('192.168.1.50:9100'))`) and call `app('printer')` anywhere.
+**Your own services.** Create a new service class:
+
+```bash
+php cast make:service Mailer
+php cast make:service Receipt --example=printer
+```
+
+Writes `<source>/Services/MailerService.php` with a how-to in its comment. For things older apps need there are working examples: `--example=printer` (ESC/POS receipt printing over the network or USB), `--example=barcode` (Code 128 as SVG, no library), `--example=qrcode` (QR codes through `chillerlan/php-qrcode`). Bind one in your provider (`$this->app->singleton('printer', fn() => new ReceiptService('192.168.1.50:9100'))`) and call `app('printer')` anywhere.
 
 `UserProvider` has three methods: `findByCredentials($identifier): ?array`, `onLogin(array $user)`, `passwordKey(): string`.
 
@@ -382,6 +398,12 @@ $id = (new ModelPersister())->save(Invoices::class, $data, fn($data, $id) => aud
 ```
 
 ## Models and the query builder
+
+Create a new model:
+
+```bash
+php cast make:model JournalEntries
+```
 
 ```php
 class JournalEntries extends Cast\Core\Model {}          // table: journal_entries (override: protected static ?string $table = 'x';)
@@ -521,6 +543,19 @@ app('view')->share('appName', 'My App');             // data every view receives
 
 Inside a view the data is available as variables and as `$data`. Components: a `.cast.php` component receives camelCased props and `$children`;
 a legacy `.php` component receives `$data`. A view that is not found in your folder falls back to the framework's own (error pages).
+
+Create a new documented component:
+
+```bash
+php cast make:component Btns.Button --props=label:string=Button,href:?string
+```
+
+List all components or check docblocks:
+
+```bash
+php cast components
+php cast components --check
+```
 
 **Directives, reactivity & styles (CastTemplateEngine 1.5.0; see [Template engine](docs/TEMPLATE-ENGINE.md)).**
 - **Control flow:** `@foreach`, `@forelse` / `@empty`, `@for`, `@while`, `@if` / `@elseif` / `@else`, `@unless`, `@isset`, `@switch`, `@break`, `@continue`, `@php`, and `@{ $x }` (prints like `<?= $x ?>`).
@@ -748,7 +783,7 @@ CORS: only exact origins in `CORS_ALLOWED_ORIGINS` get headers (`Authorization`,
 
 ## Editor support
 
-The package ships a VS Code extension (`editor/vscode`) for `.cast.php` views. Install it from your project:
+The VS Code extension for `.cast.php` views is built, tested and shipped by **CastTemplateEngine** (`anode/cast-template-engine`) — the package that owns the `.cast.php` syntax also owns the editor support that teaches editors to understand it. `php cast editor:install` is a thin alias for the engine's own `php cast engine:editor install`; install it from your project:
 
 ```bash
 php cast editor:install        # VS Code, Insiders, VSCodium, Cursor, Antigravity, Windsurf: every one it finds
@@ -762,15 +797,15 @@ Then reload the editor window. It gives you:
   (`__modules('app.app', 'js')`): the file opens, using the same rules as the engine (`<Form.TextInput>` is `form/text-input`, `form/text_input`, `form/TextInput` or `form/textInput`).
 - **Snippets**: `ccomp`, `cslot`, `cprop`, `cfor`, `cif`, `cpage`, `cinc`, `cmod`, and `cpagejs` in JavaScript.
 
-`--editor=code|insiders|vscodium|cursor|antigravity|windsurf` picks one editor, `--dir=PATH` installs into any extensions folder, `--uninstall` removes it. The folders it searches for components
-come from the `cast.componentsPath`, `cast.viewsPath` and `cast.resourcesPath` settings (and `config/view.php`). Details: [editor/vscode/README.md](editor/vscode/README.md).
+`--editor=code|insiders|vscodium|cursor|antigravity|windsurf` picks one editor, `--uninstall` removes it (there is no `--dir=PATH` any more — install to a named or auto-detected editor). The folders it searches for components
+come from the `cast.componentsPath`, `cast.viewsPath` and `cast.resourcesPath` settings (and `config/view.php`). Details and source: [CastTemplateEngine on GitHub](https://github.com/arnoldduo2/CastTemplateEngine).
 A Marketplace extension (with prop completion, diagnostics and rename) will follow as the framework grows.
 
 ### Component docs: props, types, agents
 
 Write a docblock in a component file (`@var string|null $label The text to show`) and the extension shows it on hover, completes props and values, and warns about unknown or missing props. `php cast components --json` gives the same information to AI tools, and `php cast make:component` starts new components documented. See [docs/COMPONENTS.md](docs/COMPONENTS.md).
 
-The extension also colours the engine's `@` syntax (`@{ $x }`, `@foreach`, `@if`, `@switch` ...) and **indents** a view as a whole: _Format Document_, _Format Selection_ and the command _Cast: Fix indentation_ understand HTML tags, component tags, PHP's `<?php if (...): ?> ... <?php endif ?>`, multi-line `<?php ?>` blocks and the `@` directives together (leading whitespace only; `<script>`, `<style>`, `<pre>`, comments and heredocs are left alone). With `cast.autoIndent` (on by default) the indent also stays right while you type. Run `php cast editor:install` again after updating the framework to get it.
+The extension also colours the engine's `@` syntax (`@{ $x }`, `@foreach`, `@if`, `@switch` ...) and **indents** a view as a whole: _Format Document_, _Format Selection_ and the command _Cast: Fix indentation_ understand HTML tags, component tags, PHP's `<?php if (...): ?> ... <?php endif ?>`, multi-line `<?php ?>` blocks and the `@` directives together (leading whitespace only; `<script>`, `<style>`, `<pre>`, comments and heredocs are left alone). With `cast.autoIndent` (on by default) the indent also stays right while you type. Run `php cast editor:install` again after updating `anode/cast-template-engine` to get it.
 
 ## Helpers
 
@@ -871,7 +906,7 @@ Output is coloured on a terminal (green commands, blue arguments, orange heading
 | `init [--demo] [--no-migrate] [--force]`                                                                                                                                                                                                               | Create a new app's files in the current folder (`--demo`: the starter, migrated and seeded)                                                                                                       |
 | `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:baseline`, `migrate:sync`, `db:sequence`, `components`, `make:component`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations)                                                                                                                                                                         |
 | `make:seeder`, `db:seed [--class=]`                                                                                                                                                                                                                    | Seeders                                                                                                                                                                                           |
-| `editor:install [--editor=] [--dir=] [--uninstall]`                                                                                                                                                                                                    | Install the VS Code extension for `.cast.php` views                                                                                                                                               |
+| `editor:install [--editor=] [--uninstall]`                                                                                                                                                                                                             | Alias for `engine:editor install` — the editor extension for `.cast.php` views, maintained by CastTemplateEngine                                                                                 |
 | `ide:helpers [--path=]`                                                                                                                                                                                                                                | Write `_ide_helpers.php` so the editor knows the global helpers (fixes "Undefined function 'htchars'")                                                                                            |
 | `views:check [--fix]`                                                                                                                                                                                                                                  | Find views that start with `declare(strict_types=1);` (PHP refuses it inside a template)                                                                                                          |
 | `docs:build [--source --readme --out --check]`                                                                                                                                                                                                         | Build the documentation site (`data.js` + viewer) from markdown ([Writing the docs](docs/WRITING-DOCS.md))                                                                                        |

@@ -33,12 +33,12 @@ final class LiveReload
             return new Response('', 204);
         }
 
-        $watchDirs = [
-            $app->basePath('resources/views'),
-            $app->basePath('resources/css'),
-            $app->basePath('resources/js'),
-            $app->basePath('routes'),
-        ];
+        $watchDirs = array_values(array_filter([
+            $app->viewsPath(),
+            $app->resourcesPath('css'),
+            $app->resourcesPath('js'),
+            $app->routesPath(),
+        ], 'is_dir'));
 
         clearstatcache();
         $latest = self::scanLatest($watchDirs);

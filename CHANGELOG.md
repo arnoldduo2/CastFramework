@@ -2,6 +2,17 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
+## 3.0.0
+
+Major release: the `.cast.php` editor extension and its reference docs now live solely in `anode/cast-template-engine`, which this
+release requires `^1.6.0` of. **Breaking:** `editor:install --dir=PATH` is removed.
+
+- **`editor:install` is now an alias for `engine:editor install`**: the `.cast.php` editor extension (VS Code, Antigravity IDE, Cursor, Windsurf, etc.) is built and shipped entirely by `anode/cast-template-engine`; CastFramework no longer carries its own copy of `editor/vscode` or a second install implementation. **`--dir=PATH` is removed** (the engine has no equivalent — use `--editor=NAME` or let it auto-detect). `engine:editor`'s own flags (e.g. `--editor=`) now actually reach the engine command (`EngineCommand` previously dropped them).
+- **Requires `anode/cast-template-engine` `^1.6.0`** (up from `^1.5.0`).
+- **Documentation pulled from the engine, not hand-copied**: `php cast docs:build` now also reads the installed `anode/cast-template-engine`'s own `README.md` and pulls its "Syntax rules", "Escaping", "Caching and errors", "Limitations", "Terminal Commands & CLI", "Documentation Snippets List" and "Coming from `useComponent()`" sections straight into this site (see `docs/_meta.json`'s `"engineReadme"`), so `php cast docs:check` now also catches drift between the two packages' docs.
+- **Windows fix for `php cast serve`'s multi-worker support** (`PHP_CLI_SERVER_WORKERS`, added in 2.2.1): only enabled when the `pcntl` extension is actually available and the OS isn't Windows, instead of crashing the dev server on start.
+- **Live-Reload path fix**: watched folders are resolved via `viewsPath()`/`resourcesPath()`/`routesPath()` and filtered to existing directories, instead of a hardcoded `basePath()` concatenation that could watch folders that don't exist.
+
 ## 2.2.1
 
 Patch release adding automatic root layout wrapping via `app.cast.php`, per-view layout overrides, and fixing dev-server session concurrency.

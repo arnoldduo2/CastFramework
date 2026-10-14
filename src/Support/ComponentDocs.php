@@ -6,8 +6,8 @@ namespace Cast\Support;
 
 /**
  * Reads what a component file says about itself: its docblocks and its `$prop ??= default` lines.
- * The VS Code extension has the same reader in JavaScript (editor/vscode/lib/docblock.js); both must produce exactly the JSON
- * in tests/fixtures/components/*.expected.json.
+ * CastTemplateEngine's editor extension has the same reader in JavaScript (editor/vscode/lib/docblock.js, in that package); both
+ * must produce exactly the JSON in tests/fixtures/components/*.expected.json.
  *
  *   /**
  *    * Button component

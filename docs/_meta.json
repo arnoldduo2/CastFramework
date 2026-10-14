@@ -137,5 +137,25 @@
       "Reference",
       99
     ]
+  },
+  "engineReadme": {
+    "Syntax rules": ["Build", 10],
+    "Escaping": ["Build", 11],
+    "Caching and errors": ["Build", 12],
+    "Limitations": ["Build", 13],
+    "Terminal Commands & CLI": ["Build", 14],
+    "Documentation Snippets List": ["Build", 15],
+    "Coming from `useComponent()`": ["Build", 16],
+    "Contents": ["_skip", 0],
+    "Install": ["_skip", 0],
+    "Setup": ["_skip", 0],
+    "Writing components": ["_skip", 0],
+    "Wiring it into an app": ["_skip", 0],
+    "The @ shorthand for PHP": ["_skip", 0],
+    "Reactive Scripts & Event Handling": ["_skip", 0],
+    "Scoped CSS & Dynamic Variables": ["_skip", 0],
+    "Component Assets & Bundler": ["_skip", 0],
+    "Tests and versioning": ["_skip", 0],
+    "License": ["_skip", 0]
   }
 }
