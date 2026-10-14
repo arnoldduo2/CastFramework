@@ -265,7 +265,7 @@
       ]
     },
     "directive": {
-      "begin": "(?<![\\w.@])(@)(for|foreach|forelse|while|if|elseif|unless|isset|switch|case|php|break|continue|else|empty|endforelse|endforeach|endswitch|endunless|endisset|endwhile|endphp|endfor|endif|default)\\b",
+      "begin": "(?<![\\w.@])(@)(for|foreach|forelse|while|if|elseif|unless|isset|switch|case|php|break|continue|else|empty|endforelse|endforeach|endswitch|endunless|endisset|endwhile|endphp|endfor|endif|default|map|filter|script|js|css|scripts|styles)\\b",
       "end": "(?<=\\))(?:[ \\t]*(:))?|(?![ \\t(])",
       "name": "meta.directive.cast",
       "beginCaptures": {

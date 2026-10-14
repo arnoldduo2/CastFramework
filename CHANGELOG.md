@@ -2,6 +2,27 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
+## 2.2.0
+
+Minor release adding native Node-free SSE Live-Reload / HMR, multi-app session isolation on localhost, browser error auto-clearing, and modern thin scrollbars for the framework demo.
+
+- **Native Node-Free SSE Live-Reload / HMR**: Added zero-dependency Server-Sent Events controller (`Cast\Support\LiveReload` and framework-level route `GET /_cast/live-reload`). Features instant CSS stylesheet hot-swapping (0ms reload) and in-place SPA view swaps (`Cast.load()`) when `.cast.php` templates change without requiring Node.js, npm, or external watchers. Supports Vite via `'hmr' => 'vite'` in `config/app.php` (`'sse'` is default). In production, the internal route silently returns `204 No Content` with zero CSRF requirements.
+- **Multi-App Session Isolation**: Dynamic session naming `<app_name>_session_<hash>` prevents cross-app session contamination when running multiple Cast apps on localhost/XAMPP. Automatically scopes cookie paths to `Config::get('app.base_path')` (e.g. `/app1/` vs `/app2/`).
+- **Browser Error Auto-Clearing & Fallbacks**: Development error overlays and red badge pills now automatically purge resolved errors upon successful page navigation / HTTP 200. Added keyboard shortcuts (`Escape` to close overlay, `Ctrl + Shift + X` to clear all remembered errors), a visible `×` dismiss button directly on the floating error pill, and programmatic `Cast.clearErrors()` / `CastErrorOverlay.clear()`.
+- **Modern Thin Scrollbars**: Implemented cross-browser 6px pill scrollbars (`scrollbar-width: thin` with WebKit fallbacks) matching theme tokens across demo views, `.page`, `<pre>` code terminals, tables, and dialogs. Added `scrollbar-gutter: stable` to eliminate layout shift.
+
+## 2.1.0
+
+Minor release integrating **CastTemplateEngine 1.5.0**, bringing native reactive client scripts, component-scoped CSS with dynamic variables, component asset bundling, and engine CLI tooling.
+
+- **Reactive Client Scripts**: Component views can declare client interactivity using `@script(...)` and `@js(...)`. Scripts are captured and emitted once per request before `</body>` with `@scripts`. Includes zero-dependency client runtime with delegated event listener `handleEvent(event, selector, handler)` and `Cast.on(...)`, in-place DOM updates (`Cast.update`), and fragment swapping (`Cast.refresh`).
+- **Scoped CSS & Dynamic CSS Variables**: Components can isolate styles with `@css(...)`. Selectors are automatically scoped under deterministic component classes (`.cast-<id>`), while dynamic PHP expressions (`@{ ... }`) are converted to CSS custom properties (`var(--cast-<id>-<n>)`) passed as inline styles. Styles are rendered in `<head>` via `@styles`.
+- **Component Asset Auto-discovery & Bundler**: Dedicated component assets in `resources/css/components/` and `resources/js/components/` are automatically discovered when components render. The zero-dependency minifier and bundler (`php cast engine:build`) bundles them between marker comments in `resources/css/app.css` and `resources/js/app.js`.
+- **CLI Engine Commands**: Direct integration of `php cast engine:*` commands into the framework CLI: `engine:build`, `engine:check`, `engine:compile`, `engine:clear`, `engine:snippets`, and `engine:editor`.
+- **Deploy Optimization**: `php cast deploy:optimize` now automatically invokes component asset bundling.
+- **Collection Shorthands**: Declarative JSX-style collection mapping (`@map`), collection filtering (`@filter`), chained operations (`@$items.filter(...).map(...)`), and automatic `data-el-key` attributes with diagnostic warnings.
+- **VS Code Extension & Snippets**: Updated editor extension to v1.5.0 with hover docs for client runtime methods (`handleEvent`, `Cast.on`, `Cast.update`, `Cast.refresh`), directives syntax highlighting, and updated snippet triggers.
+
 ## 2.0.7
 
 The next alpha after `2.0.0-alpha`: everything below, plus `static:check`, the dev-server warning bar, the shell-free `cast serve`, and `cast serve` noticing a busy port (it offers the next free one) and stopping the server together with the command (on Windows, Ctrl+C in Git Bash could leave it running; an old one an old server kept answering while the new one got no requests).

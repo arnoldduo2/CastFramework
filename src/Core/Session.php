@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Cast\Core;
 
+use Cast\App\Application;
+
 /**
  * Session access plus flash data and the global CSRF token.
  * In the CLI (tests, console) no PHP session is started; `$_SESSION` is used as a plain array.
@@ -22,10 +24,28 @@ final class Session
         }
 
         $config = (array) Config::get('session', []);
-        session_name((string) ($config['name'] ?? 'cast_session'));
+        if (!empty($config['name']) && $config['name'] !== 'cast_session') {
+            $sessionName = (string) $config['name'];
+        } else {
+            $appName = strtolower((string) preg_replace('/[^a-zA-Z0-9]+/', '_', (string) Config::get('app.name', 'cast')));
+            $appName = trim($appName, '_') ?: 'cast';
+            $basePath = class_exists(Application::class) && Application::instance() ? Application::instance()->basePath() : '';
+            $hash = substr(hash('sha256', (string) Config::get('app.key') . $basePath), 0, 8);
+            $sessionName = "{$appName}_session_{$hash}";
+        }
+        session_name($sessionName);
+
+        $cookiePath = (string) ($config['path'] ?? (Config::get('app.base_path') ?: '/'));
+        if ($cookiePath === '') {
+            $cookiePath = '/';
+        }
+        if ($cookiePath !== '/' && !str_ends_with($cookiePath, '/')) {
+            $cookiePath .= '/';
+        }
+
         session_set_cookie_params([
             'lifetime' => (int) ($config['lifetime'] ?? 0),
-            'path' => (string) ($config['path'] ?? '/'),
+            'path' => $cookiePath,
             'domain' => (string) ($config['domain'] ?? ''),
             'secure' => (bool) ($config['secure'] ?? false),
             'httponly' => (bool) ($config['httponly'] ?? true),

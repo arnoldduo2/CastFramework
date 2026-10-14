@@ -9,3 +9,7 @@ starter/storage/*
 .env
 node_modules/
 .phpunit.cache/
+/vendor/
+/storage/*
+!/storage/.gitkeep
+/_ide_helpers.php

@@ -2,7 +2,7 @@
   "name": "cast-framework",
   "displayName": "CastFramework",
   "description": "Highlighting, navigation and prop-aware completion for CastFramework views (.cast.php): component tags, docblock props and types, Ctrl+click to open a component's file.",
-  "version": "0.3.0",
+  "version": "1.5.0",
   "publisher": "anode",
   "license": "MIT",
   "repository": {
@@ -30,8 +30,7 @@
   "main": "./extension.js",
   "activationEvents": [
     "onLanguage:php",
-    "workspaceContains:**/*.cast.php",
-    "onCommand:cast.fixIndentation"
+    "workspaceContains:**/*.cast.php"
   ],
   "contributes": {
     "grammars": [

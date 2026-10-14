@@ -146,11 +146,14 @@ if (!function_exists('__cast')) {
     {
         $base = Config::get('app.base_path', '') . '/cast';
         $v = app_version();
+        $dev = \Cast\Support\DevError::enabled() ? " data-cast-dev='1'" : '';
+        $hmr = htmlspecialchars((string) Config::get('app.hmr', 'sse'), ENT_QUOTES);
         return "<link rel='stylesheet' href='$base/cast.css$v'/>"
             . "<script src='$base/cast.module.js$v' data-cast-root='" . htmlspecialchars((string) Config::get('spa.root', 'body'), ENT_QUOTES)
             . "' data-cast-view='" . htmlspecialchars((string) Config::get('spa.view', '#cast-view'), ENT_QUOTES)
             . "' data-cast-guard='" . htmlspecialchars($guard, ENT_QUOTES)
-            . "' data-cast-base='" . htmlspecialchars((string) Config::get('app.base_path', ''), ENT_QUOTES) . "'></script>";
+            . "' data-cast-base='" . htmlspecialchars((string) Config::get('app.base_path', ''), ENT_QUOTES)
+            . "' data-cast-hmr='$hmr'$dev></script>";
     }
 }
 

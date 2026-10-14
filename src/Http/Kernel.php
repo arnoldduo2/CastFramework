@@ -99,6 +99,14 @@ final class Kernel
     {
         Request::setCurrent($request);
 
+        // framework level route: live reload SSE in development (silently returns 204 in production with no csrf)
+        if ($request->method() === 'GET' && $request->path() === '/_cast/live-reload') {
+            if (!DevError::enabled() || Config::get('app.env') === 'production') {
+                return new Response('', 204);
+            }
+            return \Cast\Support\LiveReload::handle($this->app, $request);
+        }
+
         // development only: the full page of an error a Cast or API client got as JSON (not a route: it must not show in route:list)
         if ($request->method() === 'GET' && DevError::enabled() && preg_match('#^/cast/error/([0-9a-f]{8})$#', $request->path(), $m)) {
             return DevError::page($m[1], $this->app) ?? Response::html('<h1>404</h1><p>That error is no longer stored (the last 25 are kept), or the error handler is older than 1.3.</p>', 404);

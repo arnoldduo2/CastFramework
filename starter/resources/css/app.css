@@ -36,6 +36,29 @@
   --accent-color: #007a00; --link-color: #007a00; --secondary-color: #3f4bd0; --warm-color: #b34700;
 }
 
+/* ---- modern thin scrollbar ---- */
+html, body, * {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--border-color) 70%, var(--text-off-light) 30%) transparent;
+}
+*::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--border-color) 70%, var(--text-off-light) 30%);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--text-off-light);
+}
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 * { box-sizing: border-box; }
 /* The page is as tall as the window (100dvh); the area between the menu and the fixed footer scrolls. */
 body { margin: 0; height: 100dvh; display: flex; flex-direction: column; background: var(--main-bg); color: var(--text-color); font: 15px/1.6 var(--font-body); -webkit-font-smoothing: antialiased; }
@@ -63,7 +86,7 @@ code { font: 13px var(--font-mono); background: var(--hover-bg); border-radius: 
 .chip.dot::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--accent-color); }
 
 /* ---- scrolling area, footer ---- */
-.page { flex: 1 1 auto; min-height: 0; overflow-y: auto; width: 100%; padding: 28px max(16px, calc((100% - 1040px) / 2)) 56px; display: grid; gap: 22px; align-content: start; grid-auto-rows: max-content; }
+.page { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; width: 100%; padding: 28px max(16px, calc((100% - 1040px) / 2)) 56px; display: grid; gap: 22px; align-content: start; grid-auto-rows: max-content; }
 .foot { position: fixed; bottom: 0; left: 0; width: 100%; border-top: 1px solid var(--border-color); background: var(--card-bg); text-align: center; color: var(--text-off-light); font-size: 12px; padding: 5px; }
 .foot a { color: var(--text-off-light); }
 

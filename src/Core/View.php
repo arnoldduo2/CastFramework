@@ -29,6 +29,27 @@ final class View implements ViewRenderer
 
     public function __construct(private Application $app)
     {
+        if (!class_exists(\CastTemplateEngine\CastTemplate::class)) {
+            foreach ([
+                $app->basePath('vendor/anode/cast-template-engine/src'),
+                dirname($app->basePath()) . '/CastTemplateEngine/src',
+                dirname(__DIR__, 3) . '/CastTemplateEngine/src',
+            ] as $dir) {
+                if (is_dir($dir)) {
+                    spl_autoload_register(function (string $class) use ($dir) {
+                        $prefix = 'CastTemplateEngine\\';
+                        if (str_starts_with($class, $prefix)) {
+                            $file = $dir . '/' . str_replace('\\', '/', substr($class, strlen($prefix))) . '.php';
+                            if (is_file($file)) require_once $file;
+                        }
+                    });
+                    if (is_file(dirname($dir) . '/src/helpers.php')) {
+                        require_once dirname($dir) . '/src/helpers.php';
+                    }
+                    break;
+                }
+            }
+        }
         $this->ext = (string) Config::get('view.ext', '.cast.php');
         $this->viewsDir = $app->viewsPath();
         $this->frameworkViews = $app->frameworkPath('Views');

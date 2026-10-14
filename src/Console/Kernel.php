@@ -73,6 +73,9 @@ final class Kernel
         foreach (Commands\MakeCommand::kinds() as $kind) {
             $this->add(new Commands\MakeCommand($app, $kind));
         }
+        foreach (Commands\EngineCommand::actions() as $action) {
+            $this->add(new Commands\EngineCommand($app, $action));
+        }
     }
 
     public function add(CommandContract $command): void

@@ -145,3 +145,14 @@ Upgrading an app made on an older version: [UPGRADING.md](UPGRADING.md).
 | old compiled views | `php cast views:clear` |
 | the environment looks off | `php cast env:check` |
 | nothing happens after `composer update` | on 0.x, `^0.3` does not reach 0.4: `composer require anode/cast-framework:^0.4` |
+
+
+## Live Reload & Hot Module Replacement (HMR)
+
+CastFramework includes a **zero-dependency, native SSE Live-Reload controller** that requires **no Node.js, no npm, and no external bundlers**:
+
+- **Instant CSS Hot-Swap:** When editing any stylesheet in `resources/css/`, styles are injected into the page immediately with zero browser refresh.
+- **In-Place SPA View Swaps:** When editing `.cast.php` templates, `Cast.load()` refreshes the current active view fragment in-place.
+- **Controller / Config Reload:** Modifying PHP logic triggers an automatic page refresh.
+- **Production Safe:** The framework-level route `GET /_cast/live-reload` runs only when `APP_DEBUG=true` in non-production environments. In production or upon `php cast deploy`, it silently returns `204 No Content` with zero CSRF requirements and zero overhead.
+- **Vite Compatibility:** If you prefer using Vite, set `'hmr' => 'vite'` in `config/app.php` (default is `'sse'`).

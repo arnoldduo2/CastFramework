@@ -18,6 +18,10 @@ final class DeployOptimizeCommand extends Command
     public function handle(Input $input, Output $output): int
     {
         (new ViewsClearCommand($this->app))->handle($input, $output);
+        if (class_exists(\CastTemplateEngine\Build\Bundler::class)) {
+            $res = \CastTemplateEngine\Build\Bundler::build($this->app->basePath());
+            $output->info("Bundled {$res['css_count']} component CSS and {$res['js_count']} component JS file(s).");
+        }
         $output->line();
         $output->line($output->color('Also, on the server:', 'orange'));
         foreach ([

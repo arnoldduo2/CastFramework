@@ -90,6 +90,26 @@ class Definitions {
 
 class Hovers {
   provideHover(document, position) {
+    const wordRange = document.getWordRangeAtPosition(position, /[@A-Za-z0-9_.]+/);
+    if (wordRange) {
+      const word = document.getText(wordRange);
+      const builtins = {
+        handleEvent: "**handleEvent(event, selector, handler)**\n\nRegisters a delegated event listener on `document`.\n\n- `event`: `'click'`, `'change'`, `'input'`, etc.\n- `selector`: CSS selector (e.g. `'.product_item'`)\n- `handler`: `(e, el) => void` where `el` is the matched element\n\n```js\nhandleEvent('click', '.btn', (e, el) => {\n  console.log('Clicked', el.dataset.id);\n});\n```",
+        "Cast.on": "**Cast.on(event, selector, handler)**\n\nDelegated event listener on `document`.\n\n- `handler`: `(e, el) => void` where `el` is the matched element",
+        "Cast.update": "**Cast.update(selector, data)**\n\nIn-place reactive update for elements or `<select>` options.\n\n```js\nCast.update('#ship_address', optionsList);\n```",
+        "Cast.refresh": "**Cast.refresh(selector, endpoint, options)**\n\nFetches updated component HTML fragment and swaps target in DOM.\n\n```js\nCast.refresh('#card', '/_cast/component/card?id=' + id);\n```",
+        "Cast.onLoad": "**Cast.onLoad(callback)**\n\nLifecycle hook triggered on DOMContentLoaded and after DOM fragment refreshes.",
+        "@script": "**@script( ... )**\n\nComponent script block. Wrapped in an IIFE and registered once per component. Printed by `@scripts`.",
+        "@js": "**@js( ... )**\n\nAlias for `@script(...)`. Component script block wrapped in an IIFE.",
+        "@css": "**@css( ... )**\n\nComponent stylesheet block. Scoped to the component and supports dynamic `@{ expr }` CSS variables.\n\n```css\n@css(\n  li.active { border-color: @{ props['role'] === 'admin' ? '#fff' : '#666' }; }\n)\n```",
+        "@scripts": "**@scripts**\n\nOutputs all collected component scripts and the `cast.js` runtime before `</body>`.",
+        "@styles": "**@styles**\n\nOutputs all collected component stylesheets."
+      };
+      if (builtins[word]) {
+        return new vscode.Hover(new vscode.MarkdownString(builtins[word]), wordRange);
+      }
+    }
+
     const hit = references(document).find((r) => r.range.contains(position));
     if (!hit) return undefined;
 
@@ -305,7 +325,9 @@ function publishDiagnostics(document, collection) {
   const where = locations(document);
   const problems = diagnose(document.getText(), (tag) => lookup(tag, where));
   collection.set(document.uri, problems.map((p) => {
-    const d = new vscode.Diagnostic(new vscode.Range(document.positionAt(p.start), document.positionAt(p.end)), p.message, SEVERITY[level]);
+    const sev = p.severity === "error" ? vscode.DiagnosticSeverity.Error
+      : (p.severity === "warning" ? vscode.DiagnosticSeverity.Warning : SEVERITY[level]);
+    const d = new vscode.Diagnostic(new vscode.Range(document.positionAt(p.start), document.positionAt(p.end)), p.message, sev);
     d.source = "cast";
     d.code = p.kind;
     d.cast = p;

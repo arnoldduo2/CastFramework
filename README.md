@@ -522,7 +522,14 @@ app('view')->share('appName', 'My App');             // data every view receives
 Inside a view the data is available as variables and as `$data`. Components: a `.cast.php` component receives camelCased props and `$children`;
 a legacy `.php` component receives `$data`. A view that is not found in your folder falls back to the framework's own (error pages).
 
-**The `@` shorthand (template engine 1.1.0 and newer; see [Template engine](docs/TEMPLATE-ENGINE.md)).** Instead of `<?php foreach (...): ?>` and `<?= $x ?>` you can write `@foreach ($users as $user):` ... `@endforeach`, `@{ $user->name }`, `@forelse` / `@empty` / `@endforelse`, `@for`, `@while`, `@if` / `@elseif` / `@else` / `@endif`, `@unless`, `@isset`, `@switch`, `@break`, `@continue` and `@php` ... `@endphp`. `@{ }` prints as it is, like `<?= ?>` (use `htchars()` for user text). Plain PHP keeps working in the same file. Full table: the [template engine README](https://github.com/arnoldduo2/CastTemplateEngine#the--shorthand-for-php). Update with `composer update anode/cast-template-engine`.
+**Directives, reactivity & styles (CastTemplateEngine 1.5.0; see [Template engine](docs/TEMPLATE-ENGINE.md)).**
+- **Control flow:** `@foreach`, `@forelse` / `@empty`, `@for`, `@while`, `@if` / `@elseif` / `@else`, `@unless`, `@isset`, `@switch`, `@break`, `@continue`, `@php`, and `@{ $x }` (prints like `<?= $x ?>`).
+- **Collections:** `@map($items, ($item, $i) => return(<Card key={$i}>...</Card>))`, `@filter(...)`, and `@$items.filter(...).map(...)`.
+- **Client reactivity:** `@script(...)` or `@js(...)` with delegated event listener `handleEvent(event, selector, handler)` and `Cast.on(...)` (emitted before `</body>` via `@scripts`).
+- **Scoped styling:** `@css(...)` with automatic selector scoping and dynamic CSS variables (`var(--cast-...)` emitted in `<head>` via `@styles`).
+- **Component asset bundling:** Component files in `resources/css/components/` and `resources/js/components/` are minified and bundled into `app.css` and `app.js` using `php cast engine:build`.
+
+Full guide: [docs/TEMPLATE-ENGINE.md](docs/TEMPLATE-ENGINE.md) and [CastTemplateEngine repository](https://github.com/arnoldduo2/CastTemplateEngine#readme).
 
 ## Running on Windows / XAMPP, or in a sub-folder
 

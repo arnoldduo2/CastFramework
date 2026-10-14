@@ -954,3 +954,51 @@ php cast views:clear
 ```bash
 php cast views:clear
 ```
+
+## `engine:build`
+
+Minify and bundle component CSS and JS files into `resources/css/app.css` and `resources/js/app.js`.
+
+```
+php cast engine:build [project-root]
+```
+
+```bash
+php cast engine:build   # bundle component assets for production
+```
+
+## `engine:check`
+
+Lint and validate all `.cast.php` template files in the project for errors and missing keys.
+
+```
+php cast engine:check [directory]
+```
+
+```bash
+php cast engine:check   # scan views and components for syntax issues
+```
+
+## `engine:compile`
+
+Precompile all `.cast.php` views and components into the cache folder.
+
+```
+php cast engine:compile [views-dir]
+```
+
+```bash
+php cast engine:compile   # pre-warm the compiled view cache
+```
+
+## `engine:snippets`
+
+List all available Cast template code snippets and shorthand triggers.
+
+```
+php cast engine:snippets
+```
+
+```bash
+php cast engine:snippets   # display code snippets reference table
+```

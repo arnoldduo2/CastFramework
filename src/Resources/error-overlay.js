@@ -54,7 +54,8 @@
     var id = String(debug.id || debug.message || "");
     var found = -1;
     for (var i = 0; i < list.length; i++) if (list[i].id === id) found = i;
-    var entry = { id: id, kind: debug.kind || "", message: debug.message || "", file: debug.file || "", line: debug.line || 0, time: Date.now(), count: 1, debug: debug };
+    var reqUrl = debug.url || (window.location.pathname + window.location.search);
+    var entry = { id: id, kind: debug.kind || "", message: debug.message || "", file: debug.file || "", line: debug.line || 0, time: Date.now(), count: 1, url: reqUrl, debug: debug };
     if (found >= 0) {
       entry.count = (list[found].count || 1) + 1;
       list.splice(found, 1);
@@ -64,6 +65,20 @@
   }
   function clear() {
     write([]);
+  }
+  function clearResolved(url) {
+    var list = read();
+    if (!list.length) return;
+    var current = url || (window.location.pathname + window.location.search);
+    var currentPath = current.split("?")[0];
+    var remaining = list.filter(function (entry) {
+      if (!entry.url) return true;
+      var errPath = entry.url.split("?")[0];
+      return errPath !== currentPath;
+    });
+    if (remaining.length !== list.length) {
+      write(remaining);
+    }
   }
   // links: only addresses that open an editor or a page; never javascript:
   function safe(url) {
@@ -146,7 +161,8 @@
     });
     var x = el("button", "x", "×");
     x.type = "button";
-    x.setAttribute("aria-label", "Forget these errors");
+    x.setAttribute("aria-label", "Clear errors");
+    x.setAttribute("title", "Clear errors (Ctrl+Shift+X)");
     x.addEventListener("click", clear);
     wrap.append(open, x);
     root.append(style, wrap);
@@ -155,6 +171,14 @@
   function onKey(e) {
     if (e.key === "Escape") close();
   }
+  window.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") {
+      if (HOST) close();
+    } else if (e.ctrlKey && e.shiftKey && (e.key === "X" || e.key === "x")) {
+      clear();
+      if (HOST) close();
+    }
+  }, true);
 
   function show(debug, options) {
     if (!debug || typeof debug !== "object") return;
@@ -241,6 +265,13 @@
     closeBtn.focus();
   }
 
-  window.CastErrorOverlay = { show: show, close: close, errors: read, clear: clear };
+  window.CastErrorOverlay = { show: show, close: close, errors: read, clear: clear, clearResolved: clearResolved };
+  window.Cast = window.Cast || {};
+  window.Cast.clearErrors = clear;
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", function () { clearResolved(); });
+  } else {
+    clearResolved();
+  }
   renderPill(); // errors remembered from before a page reload
 })();

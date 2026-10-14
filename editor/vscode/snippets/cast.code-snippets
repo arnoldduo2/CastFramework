@@ -151,5 +151,124 @@
       "@{ $0 }"
     ],
     "description": "print a PHP expression (same as <?= ?>)"
+  },
+  "Cast @map": {
+    "prefix": "amap",
+    "body": [
+      "@map($${1:items}, ($${2:item}, $${3:i}) => return (",
+      "\t<${4:Card} key={$${3:i}}>",
+      "\t\t$0",
+      "\t</${4:Card}>",
+      "))"
+    ],
+    "description": "@map collection rendering with key"
+  },
+  "Cast @$items.map": {
+    "prefix": "amapobj",
+    "body": [
+      "@$${1:items}.map(($${2:item}, $${3:i}) => return (",
+      "\t<${4:Card} key={$${3:i}}>",
+      "\t\t$0",
+      "\t</${4:Card}>",
+      "))"
+    ],
+    "description": "@$items.map(...) collection rendering with key"
+  },
+  "Cast @filter": {
+    "prefix": "afilter",
+    "body": [
+      "@filter($${1:items}, ($${2:item}) => $${2:item}->${3:quantity} > 0)"
+    ],
+    "description": "@filter standalone in-place collection filter"
+  },
+  "Cast @filter with map": {
+    "prefix": "afiltermap",
+    "body": [
+      "@filter($${1:items}, ($${2:item}) => $${2:item}->${3:quantity} > 0, ($${2:item}, $${4:i}) => return (",
+      "\t<${5:Card} key={$${4:i}}>",
+      "\t\t$0",
+      "\t</${5:Card}>",
+      "))"
+    ],
+    "description": "@filter collection with render callback"
+  },
+  "Cast chained filter and map": {
+    "prefix": "achain",
+    "body": [
+      "@$${1:items}.filter(($${2:item}) => $${2:item}->${3:quantity} > 0).map(($${2:item}, $${4:i}) => return (",
+      "\t<${5:Card} key={$${4:i}}>",
+      "\t\t$0",
+      "\t</${5:Card}>",
+      "))"
+    ],
+    "description": "@$items.filter(...).map(...) fluent method chaining"
+  },
+  "Cast @cast": {
+    "prefix": "acast",
+    "body": [
+      "@cast(<${1:p}>$0</${1:p}>)"
+    ],
+    "description": "Render compiled Cast markup inside expressions"
+  },
+  "Cast array_map": {
+    "prefix": "aarraymap",
+    "body": [
+      "@{array_map(function($${1:key}, $${2:value}) {",
+      "\treturn \"<p>@{ $${1:key} }: @{ $${2:value} }</p>\";",
+      "}, array_keys($${3:items}), $${3:items})}"
+    ],
+    "description": "Native PHP array_map expression"
+  },
+  "Cast @script": {
+    "prefix": "ascript",
+    "body": [
+      "@script(",
+      "\thandleEvent('${1:click}', '${2:.item}', (e, el) => {",
+      "\t\t$0",
+      "\t});",
+      ")"
+    ],
+    "description": "@script(...) component client-side logic"
+  },
+  "Cast @js": {
+    "prefix": "ajs",
+    "body": [
+      "@js(",
+      "\thandleEvent('${1:click}', '${2:.item}', (e, el) => {",
+      "\t\t$0",
+      "\t});",
+      ")"
+    ],
+    "description": "@js(...) alias for component script"
+  },
+  "Cast @css": {
+    "prefix": "acss",
+    "body": [
+      "@css(",
+      "\t${1:li.active} {",
+      "\t\t${2:border-color}: @{ ${3:props['role'] === 'admin' ? '#fff' : '#666'} };",
+      "\t}",
+      ")"
+    ],
+    "description": "@css(...) scoped component styles with dynamic CSS variables"
+  },
+  "Cast @scripts": {
+    "prefix": "ascripts",
+    "body": "@scripts",
+    "description": "@scripts output tag before </body>"
+  },
+  "Cast @styles": {
+    "prefix": "astyles",
+    "body": "@styles",
+    "description": "@styles output tag for collected component styles"
+  },
+  "Cast handleEvent": {
+    "prefix": "aevent",
+    "body": [
+      "handleEvent('${1:click}', '${2:.item}', (e, el) => {",
+      "\t$0",
+      "});"
+    ],
+    "description": "handleEvent delegated event listener"
   }
 }

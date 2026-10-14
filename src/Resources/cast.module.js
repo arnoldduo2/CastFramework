@@ -16,7 +16,7 @@
 
   const script = document.currentScript;
   const settings = Object.assign(
-    { castRoot: "body", castView: "#cast-view", castGuard: "", castBase: "" },
+    { castRoot: "body", castView: "#cast-view", castGuard: "", castBase: "", castDev: "", castHmr: "sse" },
     script ? script.dataset : {},
   );
   const base = String(settings.castBase || "").replace(/\/+$/, ""); // the folder the app lives in (APP_BASE_PATH), "" at the web root
@@ -220,8 +220,13 @@
     }
 
     if (res.data && res.data.csrf) setToken(res.data.csrf);
-    if (res.status === "error" && res.data && res.data.debug)
+    if (res.status === "error" && res.data && res.data.debug) {
       showDebug(res.data.debug);
+    } else if (res.status === "success" || (res.http >= 200 && res.http < 400)) {
+      if (window.CastErrorOverlay && typeof window.CastErrorOverlay.clearResolved === "function") {
+        window.CastErrorOverlay.clearResolved(target);
+      }
+    }
     if (options.follow !== false) await follow(res);
     return res;
   }
@@ -396,6 +401,9 @@
     state.ctx = el ? makeContext(key, el) : null;
     if (state.ctx) mountContext(state.ctx);
     if (el) emit(el, "cast:mounted", { page: key, type: type || "partial" });
+    if (window.CastErrorOverlay && typeof window.CastErrorOverlay.clearResolved === "function") {
+      window.CastErrorOverlay.clearResolved(location.pathname + location.search);
+    }
   }
 
   // --------------------------------------------------------------------- swap
@@ -761,15 +769,53 @@
     } else {
       mount(key, view, "partial");
     }
+
+    // Native Node-free SSE HMR / live reload in development
+    if (
+      settings.castDev === "1" &&
+      settings.castHmr !== "vite" &&
+      settings.castHmr !== "off" &&
+      window.EventSource
+    ) {
+      try {
+        const sse = new EventSource(url("/_cast/live-reload"));
+        sse.addEventListener("css", () => {
+          document.querySelectorAll('link[rel="stylesheet"]').forEach((link) => {
+            const href = link.getAttribute("href");
+            if (!href || href.startsWith("data:") || href.startsWith("blob:")) return;
+            const u = new URL(link.href, location.href);
+            u.searchParams.set("_hmr", Date.now());
+            link.href = u.href;
+          });
+        });
+        sse.addEventListener("view", () => {
+          if (typeof load === "function") {
+            load(location.pathname + location.search, { replace: true, push: false });
+          } else {
+            location.reload();
+          }
+        });
+        sse.addEventListener("reload", () => {
+          location.reload();
+        });
+      } catch (e) {
+        /* SSE connection error or disabled */
+      }
+    }
   }
 
   window.Cast = {
-    version: "2.0.7",
+    version: "2.2.0",
     load,
     http: (options) => http(options),
     page,
     token,
     url,
+    clearErrors: () => {
+      if (window.CastErrorOverlay && typeof window.CastErrorOverlay.clear === "function") {
+        window.CastErrorOverlay.clear();
+      }
+    },
     configure(options) {
       Object.assign(config, options || {});
       return window.Cast;
