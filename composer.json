@@ -1,6 +1,5 @@
 {
     "name": "anode/cast-framework",
-    "version": "3.0.0",
     "description": "CastFramework: a small PHP MVC framework with an SPA-ready view layer, built on CastTemplateEngine.",
     "type": "composer-plugin",
     "license": "MIT",
@@ -56,22 +55,5 @@
     },
     "require-dev": {
         "phpunit/phpunit": "^10.5"
-    },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../CastTemplateEngine",
-            "options": {
-                "symlink": true
-            }
-        }
-    ],
-    "autoload-dev": {
-        "psr-4": {
-            "CastTemplateEngine\\": "../CastTemplateEngine/src/"
-        },
-        "files": [
-            "../CastTemplateEngine/src/helpers.php"
-        ]
     }
 }
