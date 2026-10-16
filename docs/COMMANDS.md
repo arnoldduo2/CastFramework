@@ -219,7 +219,7 @@ php cast down --in=60   # down in a minute
 
 ## `editor:install`
 
-Alias for `engine:editor install` — installs the editor extension for .cast.php views (highlighting, Ctrl+click, props), maintained by CastTemplateEngine.
+Alias for `engine:editor install` — installs the editor extension for .cast.php views (LSP, Tree-sitter, syntax highlighting, Ctrl+click, props), maintained by CastTemplateEngine.
 
 ```
 php cast editor:install [options]
@@ -350,7 +350,7 @@ php cast engine:lint <path> [options]
 | `--json` | Output machine-readable JSON diagnostics for IDEs and AI tools |
 
 ```bash
-php cast engine:lint          # lint all views
+php cast engine:lint   # lint all views
 php cast engine:lint --json   # machine-readable diagnostics
 ```
 

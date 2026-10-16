@@ -2,9 +2,11 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
-## 3.1.0
+## 4.0.0
 
-Minor release integrating **CastTemplateEngine 2.0.0**, strictly-typed `@props` directive, component inheritance, CLI AST tooling, and standalone Language Server / Tree-sitter intelligence.
+Major release integrating **CastTemplateEngine `^2.0.0`** (itself a major version, bringing the strictly-typed `@props`
+directive, component inheritance, CLI AST tooling, and a standalone Language Server / Tree-sitter), plus real-world
+SPA navigation fixes and a packaging fix that broke `composer install` outside this machine's own setup.
 
 - **Upgraded to `anode/cast-template-engine` `^2.0.0`**: bumped minimum requirement in `composer.json`.
 - **Strictly-Typed `@props` Directive & Inheritance**:
@@ -23,6 +25,10 @@ Minor release integrating **CastTemplateEngine 2.0.0**, strictly-typed `@props` 
   - Partial SPA transitions preserve component scoped styles and scripts buffered during render.
 - **Documentation**:
   - Rebuilt `/cdocs` site with new engine v2.0 guides, `@props` reference, and CLI tooling.
+- **Packaging fix**: `composer.json`'s committed local path-repo (for symlinked engine development) made `composer install`
+  fatally error in any environment without that exact sibling folder — every CI run, and any real `composer require
+  anode/cast-framework`. Moved to local machine config instead; dropped the redundant `version` field that was failing
+  `composer validate --strict` on its own warning.
 
 ## 3.0.0
 
