@@ -139,6 +139,8 @@
     ]
   },
   "engineReadme": {
+    "Declaring props with @props": ["Build", 7],
+    "Component Inheritance": ["Build", 8],
     "Syntax rules": ["Build", 10],
     "Escaping": ["Build", 11],
     "Caching and errors": ["Build", 12],
@@ -146,6 +148,7 @@
     "Terminal Commands & CLI": ["Build", 14],
     "Documentation Snippets List": ["Build", 15],
     "Coming from `useComponent()`": ["Build", 16],
+    "Language Server & Tree-Sitter": ["Tooling", 5],
     "Contents": ["_skip", 0],
     "Install": ["_skip", 0],
     "Setup": ["_skip", 0],

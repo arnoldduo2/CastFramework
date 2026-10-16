@@ -66,10 +66,33 @@ final class ComponentDocs
             if ($props[$name]['inferred']) $props[$name]['kind'] = self::kindOf(null, $expression);
         }
 
-        $list = [];
-        foreach ($props as $prop) $list[] = self::finish($prop);
+        foreach ($props as &$prop) {
+            $prop = self::finish($prop);
+        }
+        unset($prop);
 
-        return ['description' => $description, 'props' => $list, 'slots' => $slots, 'examples' => $examples, 'deprecated' => $deprecated];
+        // @props{}: its type/required/default/kind win over a docblock's for the same name, but the docblock's own
+        // description text is kept if @props{} didn't produce one - same precedence as the JS twin (docblock.js's
+        // parseComponent()), so a description can stay hand-written prose even once @props{} is the enforced
+        // source of type/required/default for that prop.
+        if (class_exists(\CastTemplateEngine\Props::class)) {
+            foreach (\CastTemplateEngine\Props::scan($source)['props'] as $p) {
+                $type = implode('|', $p['types']) . ($p['nullable'] ? '|null' : '');
+                $prop = $props[$p['name']] ?? self::newProp($p['name']);
+                $oldDescription = $prop['description'];
+                $prop['type'] = $type;
+                $prop['default'] = $p['default'];
+                $prop['required'] = $p['required'];
+                $prop['documented'] = true;
+                $prop['inferred'] = false;
+                $prop = self::finish($prop);
+                $prop['required'] = $p['required']; // @props{}'s own rule (no default = required) is explicit, not inferred
+                if ($oldDescription !== '' && $prop['description'] === '') $prop['description'] = $oldDescription;
+                $props[$p['name']] = $prop;
+            }
+        }
+
+        return ['description' => $description, 'props' => array_values($props), 'slots' => $slots, 'examples' => $examples, 'deprecated' => $deprecated];
     }
 
     /** The spec of a component file, or null when it cannot be read. @return Spec|null */

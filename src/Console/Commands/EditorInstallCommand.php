@@ -15,7 +15,7 @@ use Cast\Console\{Command, Input, Output};
 final class EditorInstallCommand extends Command
 {
     protected string $name = 'editor:install';
-    protected string $description = 'Alias for `engine:editor install` — installs the editor extension for .cast.php views (highlighting, Ctrl+click, props), maintained by CastTemplateEngine';
+    protected string $description = 'Alias for `engine:editor install` — installs the editor extension for .cast.php views (LSP, Tree-sitter, syntax highlighting, Ctrl+click, props), maintained by CastTemplateEngine';
     protected array $options = [
         '--editor=NAME' => 'Only this editor: code, insiders, vscodium, cursor, antigravity or windsurf (default: every editor found)',
         '--uninstall' => 'Remove the extension',

@@ -6,14 +6,16 @@
  * @var string|null $href The URL to link to (if provided, renders an <a> tag instead of a <button>)
  * @var string|null $variant The button variant (e.g., "primary", "secondary", "ghost")
  */
-$label ??= 'Button';
-$type ??= 'button';
-$href ??= null;
-$variant ??= 'primary';
-$class = 'btn btn-' . $variant;
 ?>
-<?php if ($href) : ?>
-    <a class="<?= htchars($class) ?>" href="<?= htchars($href) ?>"><?= htchars($label) ?></a>
-<?php else : ?>
-    <button type="<?= htchars($type) ?>" class="<?= htchars($class) ?>"><?= htchars($label) ?></button>
-<?php endif ?>
+@props {
+    ?string $label = 'Button';
+    ?string $type = 'button';
+    ?string $href = null;
+    ?string $variant = 'primary';
+}
+@php($class = 'btn btn-' . $variant)
+@if ($href)
+    <a class=@htchars($class) href=@htchars($href)>@{ htchars($label) }</a>
+@else
+    <button type=@htchars($type) class=@htchars($class)>@{ htchars($label) }</button>
+@endif

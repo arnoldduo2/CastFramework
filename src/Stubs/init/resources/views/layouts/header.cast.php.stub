@@ -33,6 +33,7 @@ $docs = config('app.env') !== 'production' || config('cdocs.enabled');   // the 
     <?= __cast($data['authguard'] ?? '') ?>
     <?= __modules('app', 'css') ?>
     <?= __modules("$parentName.$pageName", 'css') ?>
+    @styles
 </head>
 
 <body>

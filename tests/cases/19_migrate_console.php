@@ -35,11 +35,13 @@ final class FakeOrmProvider extends ServiceProvider
     }
 }
 
-function console_app(array $files = [], string $env = 'development'): Application
-{
-    $app = boot_app($files + ['.env' => "APP_ENV=$env\nAPP_DEBUG=false\n"]);
-    sqlite();
-    return $app;
+if (!function_exists('console_app')) {
+    function console_app(array $files = [], string $env = 'development'): Application
+    {
+        $app = boot_app($files + ['.env' => "APP_ENV=$env\nAPP_DEBUG=false\n"]);
+        sqlite();
+        return $app;
+    }
 }
 
 test('migrate commands: make:migration, migrate, migrate:status, rollback, reset, refresh, fresh', function () {

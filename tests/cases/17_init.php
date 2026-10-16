@@ -7,22 +7,26 @@ declare(strict_types=1);
  * that would clash with the starter app's classes loaded by other test files.
  */
 
-function init_dir(bool $composerJson = true): string
-{
-    $dir = app_dir($composerJson ? ['composer.json' => json_encode(['name' => 'me/my-shop', 'require' => new stdClass()])] : []);
-    $framework = dirname(__DIR__, 2);
-    // the app's autoloader is Composer's with NO `App\` entry (a fresh app before `composer dump-autoload`): the framework maps it itself
-    mkdir("$dir/vendor", 0777, true);
-    file_put_contents("$dir/vendor/autoload.php", "<?php\nrequire " . var_export($framework . '/vendor/autoload.php', true) . ";\n");
-    return $dir;
+if (!function_exists('init_dir')) {
+    function init_dir(bool $composerJson = true): string
+    {
+        $dir = app_dir($composerJson ? ['composer.json' => json_encode(['name' => 'me/my-shop', 'require' => new stdClass()])] : []);
+        $framework = dirname(__DIR__, 2);
+        // the app's autoloader is Composer's with NO `App\` entry (a fresh app before `composer dump-autoload`): the framework maps it itself
+        mkdir("$dir/vendor", 0777, true);
+        file_put_contents("$dir/vendor/autoload.php", "<?php\nrequire " . var_export($framework . '/vendor/autoload.php', true) . ";\n");
+        return $dir;
+    }
 }
 
-/** @return array{int, string} */
-function cast_in(string $dir, string $args): array
-{
-    $cmd = sprintf('cd %s && php %s %s 2>&1', escapeshellarg($dir), escapeshellarg(dirname(__DIR__, 2) . '/bin/cast'), $args);
-    exec($cmd, $lines, $code);
-    return [$code, implode("\n", array_filter($lines, fn($l) => !str_starts_with($l, 'fatal:')))];
+if (!function_exists('cast_in')) {
+    function cast_in(string $dir, string $args): array
+    {
+        $cd = DIRECTORY_SEPARATOR === '\\' ? 'cd /d' : 'cd';
+        $cmd = sprintf('%s %s && php %s %s 2>&1', $cd, escapeshellarg($dir), escapeshellarg(dirname(__DIR__, 2) . '/bin/cast'), $args);
+        exec($cmd, $lines, $code);
+        return [$code, implode("\n", array_filter($lines, fn($l) => !str_starts_with($l, 'fatal:')))];
+    }
 }
 
 /** Run a request against the app in $dir; returns [status, body]. */
@@ -32,7 +36,7 @@ function app_get(string $dir, string $uri, array $headers = []): array
 require $argv[1] . '/vendor/autoload.php';
 $app = require $argv[1] . '/bootstrap/app.php';
 $app->boot();
-$server = json_decode($argv[3], true);
+$server = json_decode(base64_decode($argv[3] ?? ''), true) ?: [];
 $r = (new Cast\Http\Kernel($app))->handle(new Cast\Http\Request('GET', $argv[2], [], '', $server));
 echo $r->statusCode(), "\n", $r->body();
 PHP;
@@ -40,11 +44,16 @@ PHP;
     foreach ($headers as $name => $value) $server['HTTP_' . strtoupper(str_replace('-', '_', $name))] = $value;
     $file = $dir . '/_run.php';
     file_put_contents($file, "<?php\n" . $script);
-    exec(sprintf('php %s %s %s %s 2>&1', escapeshellarg($file), escapeshellarg($dir), escapeshellarg($uri), escapeshellarg(json_encode($server))), $lines);
+    $lines = [];
+    exec(sprintf('php %s %s %s %s 2>&1', escapeshellarg($file), escapeshellarg($dir), escapeshellarg($uri), escapeshellarg(base64_encode(json_encode($server)))), $lines, $code);
     unlink($file);
     $out = implode("\n", array_filter($lines, fn($l) => !str_starts_with($l, 'fatal:')));
     $status = (int) strtok($out, "\n");
-    return [$status, (string) substr($out, strlen((string) $status) + 1)];
+    $body = (string) substr($out, strlen((string) $status) + 1);
+    if ($status === 0 && $out !== '') {
+        $body = $out;
+    }
+    return [$status, $body];
 }
 
 test('init: creates a working minimal app, adds the App\\ autoload and names it after the folder', function () {
@@ -57,7 +66,7 @@ test('init: creates a working minimal app, adds the App\\ autoload and names it 
         has($file, $out);
     }
     ok(!str_contains(file_get_contents("$dir/public/index.php"), '.stub'));
-    ok(is_file("$dir/cast") && is_executable("$dir/cast"), 'the cast launcher exists and is executable');
+    ok(is_file("$dir/cast") && (DIRECTORY_SEPARATOR === '\\' || is_executable("$dir/cast")), 'the cast launcher exists and is executable');
     has('cast', $out);
     has('APP_NAME="', file_get_contents("$dir/.env"));
     has('composer.json', $out);
@@ -196,8 +205,9 @@ test('init: an app made before the launcher existed gets `cast` on the next init
 test('init --demo: the starter has the cast launcher too', function () {
     $dir = init_dir();
     cast_in($dir, 'init --demo');
-    ok(is_executable("$dir/cast"));
-    exec(sprintf('cd %s && php cast route:list 2>&1', escapeshellarg($dir)), $lines);
+    ok(is_file("$dir/cast") && (DIRECTORY_SEPARATOR === '\\' || is_executable("$dir/cast")));
+    $cd = DIRECTORY_SEPARATOR === '\\' ? 'cd /d' : 'cd';
+    exec(sprintf('%s %s && php cast route:list 2>&1', $cd, escapeshellarg($dir)), $lines);
     has('/api/items', implode("\n", $lines));
 });
 

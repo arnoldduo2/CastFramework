@@ -14,10 +14,13 @@ you need inside a CastFramework app.
 
 Your templates stay plain PHP: `<?php foreach ?>`, `<?php if ?>` and `<?= ?>` work as they always did. The engine adds:
 - **Component tags, children and named slots**
+- **Strictly-typed `@props` directive and component inheritance (`extends::...`)**
 - **Dynamic expressions as props** (`title={$x}`, `active`)
 - **Reactive client scripts** (`@script(...)`, `@js(...)`, `@scripts`) with delegated event handling
 - **Scoped component styles** (`@css(...)`, `@styles`) with dynamic CSS custom properties
 - **Collection mapping & filtering shorthands** (`@map`, `@filter`, `@$items.filter(...).map(...)`)
+- **Inline markup render helpers** (`@render(...)`, `return(...)`)
+- **Language Server Protocol (LSP) and Tree-sitter grammar support**
 - **A zero-dependency production asset bundler** (`php cast engine:build`)
 - **A concise `@` shorthand for native PHP controls**
 
@@ -247,15 +250,18 @@ for every editor snippet trigger.
 This page is the framework-specific overview; the engine's own README supplies the reference material below as-is
 (pulled in automatically by `docs:build`, not copied by hand — `php cast docs:check` fails if they ever drift):
 
+- [Declaring props with @props](#declaring-props-with-props) — strictly-typed props and compile-time validation.
+- [Component Inheritance](#component-inheritance) — extending components and inheriting props via `extends::...`.
 - [Syntax rules](#syntax-rules) — the full tag/prop/slot/attribute rules, and exactly what the compiler never touches.
 - [Escaping](#escaping) — `e()`, and what is and isn't escaped automatically.
 - [Caching and errors](#caching-and-errors) — compiled-template caching and how compile/runtime errors are reported.
+- [Language Server & Tree-Sitter](#language-server--tree-sitter) — LSP intelligence, diagnostics, and Tree-sitter grammar.
 - [Limitations](#limitations) — the sharp edges worth knowing up front.
 - [Coming from useComponent()](#coming-from-usecomponent) — migrating an older app's `useComponent()` calls.
 
 ## Versions
 
-The framework requires `anode/cast-template-engine` `^1.6.0`. Keep it current with:
+The framework requires `anode/cast-template-engine` `^2.0.0`. Keep it current with:
 
 ```bash
 composer update anode/cast-template-engine

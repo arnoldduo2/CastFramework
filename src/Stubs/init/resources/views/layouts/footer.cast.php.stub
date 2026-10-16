@@ -12,6 +12,7 @@ $docs = config('app.env') !== 'production' || config('cdocs.enabled');
     </footer>
     <?= __modules('app.app', 'js') ?>
     <?= __modules("$parentName.$pageName", 'js') ?>
+    @scripts
 </body>
 
 </html>

@@ -20,19 +20,35 @@ final class MakeComponentCommand extends Command
     ];
     protected array $options = [
         '--props=LIST' => 'Comma separated name:type[=default], e.g. label:string=Add,variant:\'primary\'|\'ghost\'=\'primary\',href:?string,block:bool',
+        '--extends=TAG' => 'The base component this component extends, e.g. Btns.Button -> @props extends::Btns.Button { ... }',
         '--force' => 'Overwrite an existing file',
     ];
     protected array $examples = [
         'php cast make:component Card' => 'an empty documented component',
         'php cast make:component Btns.AddNew --props=label:string=Add,href:?string,block:bool' => 'with props',
+        'php cast make:component Btns.IconButton --extends=Btns.Button --props=icon:string' => 'extend another component',
     ];
 
     public function handle(Input $input, Output $output): int
     {
         $tag = (string) $input->argument(0, '');
         if (!preg_match('/^[A-Z][A-Za-z0-9_]*(\.[A-Z][A-Za-z0-9_]*)*$/', $tag)) {
-            $output->error('Usage: php cast make:component <Name> [--props=label:string,...]   e.g. Btns.Button (capitalised, dots are folders)');
+            $output->error('Usage: php cast make:component <Name> [--props=label:string,...] [--extends=Base]   e.g. Btns.Button (capitalised, dots are folders)');
             return 1;
+        }
+
+        $extends = $input->option('extends');
+        if (is_string($extends) && $extends !== '') {
+            if (!preg_match('/^[A-Z][A-Za-z0-9_]*(\.[A-Z][A-Za-z0-9_]*)*$/', $extends)) {
+                $output->error("The extended component \"$extends\" must be a valid component tag name (e.g. Btns.Button).");
+                return 1;
+            }
+            if ($extends === $tag) {
+                $output->error("A component cannot extend itself (\"$tag\").");
+                return 1;
+            }
+        } else {
+            $extends = null;
         }
 
         $props = [];
@@ -53,12 +69,20 @@ final class MakeComponentCommand extends Command
         $segments = array_map(fn($s) => strtolower((string) preg_replace('/(?<=[a-z0-9])(?=[A-Z])/', '-', $s)), explode('.', $tag));
         $file = $dir . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $segments) . $ext;
 
+        if ($extends !== null) {
+            $baseSegments = array_map(fn($s) => strtolower((string) preg_replace('/(?<=[a-z0-9])(?=[A-Z])/', '-', $s)), explode('.', $extends));
+            $baseFile = $dir . DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $baseSegments) . $ext;
+            if (!is_file($baseFile)) {
+                $output->warn("Base component <$extends> was not found in " . str_replace($this->app->basePath() . DIRECTORY_SEPARATOR, '', $dir) . '.');
+            }
+        }
+
         if (is_file($file) && !$input->hasOption('force')) {
             $output->error(str_replace($this->app->basePath() . DIRECTORY_SEPARATOR, '', $file) . ' already exists. Use --force to overwrite.');
             return 1;
         }
         if (!is_dir(dirname($file))) mkdir(dirname($file), 0775, true);
-        file_put_contents($file, $this->render($tag, $props));
+        file_put_contents($file, $this->render($tag, $props, $extends));
         $output->info('Created ' . str_replace($this->app->basePath() . DIRECTORY_SEPARATOR, '', $file));
         return 0;
     }
@@ -117,13 +141,33 @@ final class MakeComponentCommand extends Command
     }
 
     /** @param list<array{name: string, type: string, default: ?string, required: bool}> $props */
-    private function render(string $tag, array $props): string
+    private function render(string $tag, array $props, ?string $extends = null): string
     {
-        $doc = "/**\n * " . str_replace('.', ' ', preg_replace('/(?<=[a-z0-9])(?=[A-Z])/', ' ', $tag)) . " component. Describe what it is for.\n";
+        $label = str_replace('.', ' ', preg_replace('/(?<=[a-z0-9])(?=[A-Z])/', ' ', $tag));
+        $doc = "/**\n * " . $label . " component" . ($extends !== null ? " (extends $extends)" : '') . ". Describe what it is for.\n";
         foreach ($props as $p) {
             $doc .= ' * @var ' . $p['type'] . ' $' . $p['name'] . ' Describe ' . $p['name'] . "\n";
         }
         $doc .= " */\n";
+
+        if ($extends !== null) {
+            $propsBlock = "@props extends::$extends {\n";
+            foreach ($props as $p) {
+                $type = $this->propsType($p['type']);
+                $propsBlock .= '    ' . $type . ' $' . $p['name'];
+                if ($p['default'] !== null) {
+                    $propsBlock .= ' = ' . $p['default'];
+                }
+                $propsBlock .= ";\n";
+            }
+            $propsBlock .= "}\n\n";
+
+            $propNames = implode(', ', array_map(fn($p) => '$' . $p['name'], $props));
+            $propHint = $propNames !== '' ? "    <?php // Props: $propNames ?>\n" : '';
+
+            $markup = "<$extends {...\$props}>\n" . $propHint . "    @{ \$children }\n</$extends>\n";
+            return "<?php\n" . $doc . "?>\n" . $propsBlock . $markup;
+        }
 
         $code = '';
         foreach ($props as $p) {
@@ -131,5 +175,20 @@ final class MakeComponentCommand extends Command
         }
         $children = "<div class=\"" . strtolower((string) preg_replace('/(?<=[a-z0-9])(?=[A-Z])|\./', '-', $tag)) . "\">\n    <?= \$children ?>\n</div>\n";
         return "<?php\n" . $doc . $code . "?>\n" . $children;
+    }
+
+    /** Map a docblock or union type to a supported @props strict type. */
+    private function propsType(string $type): string
+    {
+        $nullable = str_starts_with($type, '?') || (bool) preg_match('/(^|\|)\s*(null)\s*($|\|)/i', $type);
+        $clean = trim($type, '?');
+        if (preg_match('/^\??(string|int|float|bool|boolean|array|object|iterable|callable|mixed)$/i', $clean, $m)) {
+            $t = strtolower($m[1]) === 'boolean' ? 'bool' : strtolower($m[1]);
+            return ($nullable && $t !== 'mixed' ? '?' : '') . $t;
+        }
+        if (str_contains($clean, "'") || str_contains($clean, '"')) {
+            return ($nullable ? '?' : '') . 'string';
+        }
+        return ($nullable ? '?' : '') . 'mixed';
     }
 }

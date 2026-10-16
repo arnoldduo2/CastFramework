@@ -236,6 +236,22 @@ php cast editor:install --editor=code   # VS Code only
 php cast editor:install --uninstall   # same as `php cast engine:editor uninstall`
 ```
 
+## `engine:ast`
+
+Inspect the AST and metadata (props, components, styles) of a .cast.php template.
+
+```
+php cast engine:ast <file>
+```
+
+| Argument | |
+| --- | --- |
+| `file` | Path to the .cast.php file to inspect |
+
+```bash
+php cast engine:ast resources/views/app.cast.php   # inspect template structure and AST
+```
+
 ## `engine:build`
 
 Minify and bundle component CSS and JS into resources/css/app.css and resources/js/app.js.
@@ -257,15 +273,20 @@ php cast engine:build   # bundle all component assets for production
 Lint all .cast.php files for syntax errors and missing keys.
 
 ```
-php cast engine:check <path>
+php cast engine:check <path> [options]
 ```
 
 | Argument | |
 | --- | --- |
 | `path` | Directory to scan (defaults to views folder) |
 
+| Option | |
+| --- | --- |
+| `--json` | Output structured JSON diagnostics for tools |
+
 ```bash
 php cast engine:check   # scan views and components
+php cast engine:check --json   # JSON diagnostics
 ```
 
 ## `engine:clear`
@@ -310,6 +331,27 @@ php cast engine:editor <subcommand>
 
 ```bash
 php cast engine:editor install   # install editor support
+```
+
+## `engine:lint`
+
+Authoritative compiler check and linting on view files.
+
+```
+php cast engine:lint <path> [options]
+```
+
+| Argument | |
+| --- | --- |
+| `path` | File or directory to scan (defaults to views folder) |
+
+| Option | |
+| --- | --- |
+| `--json` | Output machine-readable JSON diagnostics for IDEs and AI tools |
+
+```bash
+php cast engine:lint          # lint all views
+php cast engine:lint --json   # machine-readable diagnostics
 ```
 
 ## `engine:snippets`
@@ -433,11 +475,13 @@ php cast make:component <Name> [options]
 | Option | |
 | --- | --- |
 | `--props=LIST` | Comma separated name:type[=default], e.g. label:string=Add,variant:'primary'\|'ghost'='primary',href:?string,block:bool |
+| `--extends=TAG` | The base component this component extends, e.g. Btns.Button -> @props extends::Btns.Button { ... } |
 | `--force` | Overwrite an existing file |
 
 ```bash
 php cast make:component Card   # an empty documented component
 php cast make:component Btns.AddNew --props=label:string=Add,href:?string,block:bool   # with props
+php cast make:component Btns.IconButton --extends=Btns.Button --props=icon:string   # extend another component
 ```
 
 ## `make:config`

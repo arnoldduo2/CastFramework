@@ -1,0 +1,44 @@
+<?php
+/**
+ * The items page (route GET /items): a form to add one, and a table with edit and delete. $data holds what ItemsController::index passed
+ * (here `items`); extract() makes each key a variable. Tags such as <Card> and <Btns.Button> are components (resources/views/components).
+ * The form posts to /items; `data-cast-form` makes the SPA client submit it without a reload and show validation errors under the fields.
+ */
+extract($data);
+?>
+<Card title="Add an item">
+    <form method="post" action=@route('/items') class="row" data-cast-form>
+        @{ __csrf() }
+        <label>Name <input name="name" required><?php __invalidFeedback('name'); ?></label>
+        <label>Qty <input name="qty" type="number" min="0" value="0" required><?php __invalidFeedback('qty'); ?></label>
+        <label>Price <input name="price" type="number" step="0.01" min="0" value="0" required><?php __invalidFeedback('price'); ?></label>
+        <Btns.Button label="Add" type="submit" />
+    </form>
+</Card>
+
+<Card title="Items">
+    @if (empty($items))
+        <p class="muted">No items yet.</p>
+    @else
+        <table id="items-table">
+            <thead>
+                <tr><th>Name</th><th>Qty</th><th>Price</th><th></th></tr>
+            </thead>
+            <tbody>
+                @foreach ($items as $item)
+                    <tr data-item="@{ jsonQuotes($item) }">
+                        <td>@{ htchars($item['name']) }</td>
+                        <td>@{ (int) $item['qty'] }</td>
+                        <td>@{ htchars(price($item['price'])) }</td>
+                        <td>
+                            <a href=@route('/items/' . (int) $item['id'] . '/edit') data-cast="modal">Edit</a>
+                            <button type="button" class="link js-restock">+1 qty</button>
+                            <button type="button" class="link danger js-delete">Delete</button>
+                        </td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+    <p class="muted" id="items-message" role="status"></p>
+</Card>

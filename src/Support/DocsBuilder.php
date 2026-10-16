@@ -61,6 +61,15 @@ final class DocsBuilder
         if ($readme !== null && is_file($readme)) {
             foreach ($this->splitReadme((string) file_get_contents($readme), $meta, basename($readme)) as $page) $this->pages[] = $page;
         }
+        if ($engineReadme === null && !empty($meta['engineReadme'])) {
+            $root = $meta['root'] ?? dirname($source);
+            foreach (["$root/vendor/anode/cast-template-engine/README.md", dirname($root) . '/CastTemplateEngine/README.md'] as $candidate) {
+                if (is_file($candidate)) {
+                    $engineReadme = $candidate;
+                    break;
+                }
+            }
+        }
         if ($engineReadme !== null && is_file($engineReadme)) {
             foreach ($this->splitReadme((string) file_get_contents($engineReadme), $meta, 'CastTemplateEngine/README.md', 'engineReadme', false, true) as $page) $this->pages[] = $page;
         }

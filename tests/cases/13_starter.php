@@ -6,60 +6,69 @@ use Cast\App\Application;
 use Cast\Core\Session;
 use Cast\Http\Request;
 
-/** Boot a copy of the starter app against an in-memory SQLite database. */
-function starter(bool $lazy = false, ?string $pack = null): Application
-{
-    $source = dirname(__DIR__, 2) . '/starter';
-    $dir = app_dir();
-    exec(sprintf('cd %s && tar --exclude=./vendor --exclude=./storage --exclude=./.env -cf - . | tar -xf - -C %s', escapeshellarg($source), escapeshellarg($dir)));
-    file_put_contents("$dir/.env", "APP_NAME=\"Cast Starter\"\nAPP_ENV=development\nAPP_DEBUG=true\nDB_CONN=sqlite\nDB_NAME=:memory:\n");
-    mkdir("$dir/storage", 0777, true);
+if (!function_exists('starter')) {
+    /** Boot a copy of the starter app against an in-memory SQLite database. */
+    function starter(bool $lazy = false, ?string $pack = null): Application
+    {
+        $source = dirname(__DIR__, 2) . '/starter';
+        $dir = app_dir();
+        $cd = DIRECTORY_SEPARATOR === '\\' ? 'cd /d' : 'cd';
+        exec(sprintf('%s %s && tar --exclude=./vendor --exclude=./storage --exclude=./.env -cf - . | tar -xf - -C %s', $cd, escapeshellarg($source), escapeshellarg($dir)));
+        file_put_contents("$dir/.env", "APP_NAME=\"Cast Starter\"\nAPP_ENV=development\nAPP_DEBUG=true\nDB_CONN=sqlite\nDB_NAME=:memory:\n");
+        mkdir("$dir/storage", 0777, true);
 
-    static $registered = false;
-    if (!$registered) {
-        spl_autoload_register(function (string $class) use ($dir) {
-            if (str_starts_with($class, 'App\\')) {
-                $file = $GLOBALS['starter_dir'] . '/app/' . str_replace('\\', '/', substr($class, 4)) . '.php';
-                if (is_file($file)) require $file;
-            }
-        });
-        $registered = true;
+        static $registered = false;
+        if (!$registered) {
+            spl_autoload_register(function (string $class) {
+                if (str_starts_with($class, 'App\\')) {
+                    $file = ($GLOBALS['starter_dir'] ?? '') . '/app/' . str_replace('\\', '/', substr($class, 4)) . '.php';
+                    if (is_file($file)) require $file;
+                }
+            });
+            $registered = true;
+        }
+        $GLOBALS['starter_dir'] = $dir;
+
+        if ($pack !== null) {                                     // php cast demo:strip --pack=...  on a fresh demo (own process: the routes file is loaded once per process)
+            $script = "$dir/.strip.php";
+            file_put_contents($script, '<?php require ' . var_export(dirname(__DIR__, 2) . '/vendor/autoload.php', true) . ';'
+                . '$app = new Cast\\App\\Application(' . var_export($dir, true) . '); $app->boot();'
+                . 'exit((new Cast\\Console\\Commands\\DemoStripCommand($app))->handle(new Cast\\Console\\Input(["demo:strip", "--pack=' . $pack . '", "--yes"]), new Cast\\Console\\Output(fopen("php://memory", "w+"))));');
+            exec('php ' . escapeshellarg($script) . ' 2>&1', $out, $code);
+            eq(0, $code, implode("\n", $out));
+            unlink($script);
+        }
+        $app = require "$dir/bootstrap/app.php";
+        $app->boot();
+        $app->make('migrator')->migrate();       // the tables come from database/migrations
+        if ($pack === null || str_starts_with($pack, 'auth')) \Cast\Database\SeederRunner::run('UserSeeder');
+        if (!$lazy) \Cast\Core\Config::set('spa.initial', 'inline');   // most tests look at the page content itself
+        return $app;
     }
-    $GLOBALS['starter_dir'] = $dir;
+}
 
-    if ($pack !== null) {                                     // php cast demo:strip --pack=...  on a fresh demo (own process: the routes file is loaded once per process)
-        $script = "$dir/.strip.php";
-        file_put_contents($script, '<?php require ' . var_export(dirname(__DIR__, 2) . '/vendor/autoload.php', true) . ';'
-            . '$app = new Cast\\App\\Application(' . var_export($dir, true) . '); $app->boot();'
-            . 'exit((new Cast\\Console\\Commands\\DemoStripCommand($app))->handle(new Cast\\Console\\Input(["demo:strip", "--pack=' . $pack . '", "--yes"]), new Cast\\Console\\Output(fopen("php://memory", "w+"))));');
-        exec('php ' . escapeshellarg($script) . ' 2>&1', $out, $code);
-        eq(0, $code, implode("\n", $out));
-        unlink($script);
+if (!function_exists('form')) {
+    /** A form-style (browser) request. */
+    function form(string $method, string $uri, array $fields = []): Request
+    {
+        $fields += ['_token' => Session::csrfToken()];
+        return new Request($method, $uri, [], http_build_query($fields), ['CONTENT_TYPE' => 'application/x-www-form-urlencoded']);
     }
-    $app = require "$dir/bootstrap/app.php";
-    $app->boot();
-    $app->make('migrator')->migrate();       // the tables come from database/migrations
-    if ($pack === null || str_starts_with($pack, 'auth')) \Cast\Database\SeederRunner::run('UserSeeder');
-    if (!$lazy) \Cast\Core\Config::set('spa.initial', 'inline');   // most tests look at the page content itself
-    return $app;
 }
 
-/** A form-style (browser) request. */
-function form(string $method, string $uri, array $fields = []): Request
-{
-    $fields += ['_token' => Session::csrfToken()];
-    return new Request($method, $uri, [], http_build_query($fields), ['CONTENT_TYPE' => 'application/x-www-form-urlencoded']);
+if (!function_exists('api')) {
+    function api(string $method, string $uri, array $body = []): Request
+    {
+        return req($method, $uri, $body, ['HTTP_X_CSRF_TOKEN' => Session::csrfToken(), 'HTTP_ACCEPT' => 'application/json']);
+    }
 }
 
-function api(string $method, string $uri, array $body = []): Request
-{
-    return req($method, $uri, $body, ['HTTP_X_CSRF_TOKEN' => Session::csrfToken(), 'HTTP_ACCEPT' => 'application/json']);
-}
-
-function login_admin(): void
-{
-    $r = handle(form('POST', '/login', ['email' => 'admin@example.com', 'password' => 'password']));
-    eq(302, $r->statusCode());
+if (!function_exists('login_admin')) {
+    function login_admin(): void
+    {
+        $r = handle(form('POST', '/login', ['email' => 'admin@example.com', 'password' => 'password']));
+        eq(302, $r->statusCode());
+    }
 }
 
 test('Starter: the home page renders with the layout, components, and auto-loaded CSS', function () {

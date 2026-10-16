@@ -322,7 +322,7 @@ PHP);
         $file = $this->app->basePath((string) config('app.source_path', 'app')) . '/Controllers/HomeController.php';
         if (!is_file($file)) return;
         $text = (string) file_get_contents($file);
-        $new = preg_replace('~\n    /\*\* GET /demo[^\n]*\*/\n    public function demo\(\): Response\n    \{\n[^\n]*\n    \}\n~', "\n", $text, 1);
+        $new = preg_replace('~\r?\n    /\*\* GET /demo[^\r\n]*\*/\r?\n    public function demo\(\): Response\r?\n    \{\r?\n[^\r\n]*\r?\n    \}\r?\n~', "\n", $text, 1);
         if ($new !== null && $new !== $text) file_put_contents($file, $new);
     }
 }

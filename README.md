@@ -557,12 +557,14 @@ php cast components
 php cast components --check
 ```
 
-**Directives, reactivity & styles (CastTemplateEngine 1.5.0; see [Template engine](docs/TEMPLATE-ENGINE.md)).**
+**Directives, reactivity & styles (CastTemplateEngine 2.0; see [Template engine](docs/TEMPLATE-ENGINE.md)).**
+- **Strictly-typed props & inheritance:** `@props { string $title; ?int $count = 0; }` and `@props extends::Components.BaseCard { ... }`.
 - **Control flow:** `@foreach`, `@forelse` / `@empty`, `@for`, `@while`, `@if` / `@elseif` / `@else`, `@unless`, `@isset`, `@switch`, `@break`, `@continue`, `@php`, and `@{ $x }` (prints like `<?= $x ?>`).
-- **Collections:** `@map($items, ($item, $i) => return(<Card key={$i}>...</Card>))`, `@filter(...)`, and `@$items.filter(...).map(...)`.
+- **Collections & rendering:** `@map($items, ($item, $i) => return(<Card key={$i}>...</Card>))`, `@filter(...)`, `@$items.filter(...).map(...)`, and `@render(...)`.
 - **Client reactivity:** `@script(...)` or `@js(...)` with delegated event listener `handleEvent(event, selector, handler)` and `Cast.on(...)` (emitted before `</body>` via `@scripts`).
 - **Scoped styling:** `@css(...)` with automatic selector scoping and dynamic CSS variables (`var(--cast-...)` emitted in `<head>` via `@styles`).
 - **Component asset bundling:** Component files in `resources/css/components/` and `resources/js/components/` are minified and bundled into `app.css` and `app.js` using `php cast engine:build`.
+- **AST tooling & editor intelligence:** `php cast engine:ast <file>`, `php cast engine:lint --json`, dedicated Language Server (`cast-language-server`), and Tree-sitter grammar (`tree-sitter-cast`).
 
 Full guide: [docs/TEMPLATE-ENGINE.md](docs/TEMPLATE-ENGINE.md) and [CastTemplateEngine repository](https://github.com/arnoldduo2/CastTemplateEngine#readme).
 

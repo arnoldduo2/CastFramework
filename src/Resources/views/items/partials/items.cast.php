@@ -7,8 +7,8 @@
 extract($data);
 ?>
 <Card title="Add an item">
-    <form method="post" action="<?= route('/items') ?>" class="row" data-cast-form>
-        <?= __csrf() ?>
+    <form method="post" action=@route('/items') class="row" data-cast-form>
+        @{ __csrf() }
         <label>Name <input name="name" required><?php __invalidFeedback('name'); ?></label>
         <label>Qty <input name="qty" type="number" min="0" value="0" required><?php __invalidFeedback('qty'); ?></label>
         <label>Price <input name="price" type="number" step="0.01" min="0" value="0" required><?php __invalidFeedback('price'); ?></label>
@@ -17,28 +17,28 @@ extract($data);
 </Card>
 
 <Card title="Items">
-    <?php if (!$items) : ?>
+    @if (empty($items))
         <p class="muted">No items yet.</p>
-    <?php else : ?>
+    @else
         <table id="items-table">
             <thead>
                 <tr><th>Name</th><th>Qty</th><th>Price</th><th></th></tr>
             </thead>
             <tbody>
-                <?php foreach ($items as $item) : ?>
-                    <tr data-item="<?= jsonQuotes($item) ?>">
-                        <td><?= htchars($item['name']) ?></td>
-                        <td><?= (int) $item['qty'] ?></td>
-                        <td><?= htchars(price($item['price'])) ?></td>
+                @foreach ($items as $item)
+                    <tr data-item="@{ jsonQuotes($item) }">
+                        <td>@{ htchars($item['name']) }</td>
+                        <td>@{ (int) $item['qty'] }</td>
+                        <td>@{ htchars(price($item['price'])) }</td>
                         <td>
-                            <a href="<?= route('/items/' . (int) $item['id'] . '/edit') ?>" data-cast="modal">Edit</a>
+                            <a href=@route('/items/' . (int) $item['id'] . '/edit') data-cast="modal">Edit</a>
                             <button type="button" class="link js-restock">+1 qty</button>
                             <button type="button" class="link danger js-delete">Delete</button>
                         </td>
                     </tr>
-                <?php endforeach ?>
+                @endforeach
             </tbody>
         </table>
-    <?php endif ?>
+    @endif
     <p class="muted" id="items-message" role="status"></p>
 </Card>

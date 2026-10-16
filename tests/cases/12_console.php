@@ -9,14 +9,16 @@ use Cast\Console\Kernel;
 use Cast\Console\Output;
 use Cast\Core\Router;
 
-/** @return array{int, string} exit code and output */
-function cast(array $argv, ?Application $app = null): array
-{
-    $app ??= Application::instance() ?? boot_app(boot: false);
-    $stream = fopen('php://memory', 'w+');
-    $code = (new Kernel($app, new Output($stream)))->run($argv);
-    rewind($stream);
-    return [$code, stream_get_contents($stream)];
+if (!function_exists('cast')) {
+    /** @return array{int, string} exit code and output */
+    function cast(array $argv, ?Application $app = null): array
+    {
+        $app ??= Application::instance() ?? boot_app(boot: false);
+        $stream = fopen('php://memory', 'w+');
+        $code = (new Kernel($app, new Output($stream)))->run($argv);
+        rewind($stream);
+        return [$code, stream_get_contents($stream)];
+    }
 }
 
 class SayHelloCommand extends Command

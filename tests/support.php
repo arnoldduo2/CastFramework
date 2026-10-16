@@ -18,8 +18,120 @@ $GLOBALS['total'] = 0;
 $GLOBALS['tmp_dirs'] = [];
 
 register_shutdown_function(function () {
-    foreach ($GLOBALS['tmp_dirs'] as $dir) exec('rm -rf ' . escapeshellarg($dir));
+    foreach ($GLOBALS['tmp_dirs'] as $dir) {
+        if (!is_dir($dir)) continue;
+        if (DIRECTORY_SEPARATOR === '\\') {
+            exec('rmdir /s /q ' . escapeshellarg($dir));
+        } else {
+            exec('rm -rf ' . escapeshellarg($dir));
+        }
+    }
 });
+
+if (!function_exists('init_dir')) {
+    function init_dir(bool $composerJson = true): string
+    {
+        $dir = app_dir($composerJson ? ['composer.json' => json_encode(['name' => 'me/my-shop', 'require' => new stdClass()])] : []);
+        $framework = dirname(__DIR__);
+        mkdir("$dir/vendor", 0777, true);
+        file_put_contents("$dir/vendor/autoload.php", "<?php\nrequire " . var_export($framework . '/vendor/autoload.php', true) . ";\n");
+        return $dir;
+    }
+}
+
+if (!function_exists('cast_in')) {
+    function cast_in(string $dir, string $args): array
+    {
+        $framework = dirname(__DIR__);
+        $cd = DIRECTORY_SEPARATOR === '\\' ? 'cd /d' : 'cd';
+        $cmd = sprintf('%s %s && php %s %s 2>&1', $cd, escapeshellarg($dir), escapeshellarg($framework . '/bin/cast'), $args);
+        exec($cmd, $lines, $code);
+        return [$code, implode("\n", array_filter($lines, fn($l) => !str_starts_with($l, 'fatal:')))];
+    }
+}
+
+if (!function_exists('cast')) {
+    function cast(array $argv, ?Application $app = null): array
+    {
+        $app ??= Application::instance() ?? boot_app([], boot: false);
+        $stream = fopen('php://memory', 'w+');
+        $code = (new \Cast\Console\Kernel($app, new \Cast\Console\Output($stream)))->run($argv);
+        rewind($stream);
+        return [$code, stream_get_contents($stream)];
+    }
+}
+
+if (!function_exists('console_app')) {
+    function console_app(array $files = [], string $env = 'development'): Application
+    {
+        $app = boot_app($files + ['.env' => "APP_ENV=$env\nAPP_DEBUG=false\n"]);
+        sqlite();
+        return $app;
+    }
+}
+
+if (!function_exists('starter')) {
+    function starter(bool $lazy = false, ?string $pack = null): Application
+    {
+        $source = dirname(__DIR__) . '/starter';
+        $dir = app_dir();
+        $cd = DIRECTORY_SEPARATOR === '\\' ? 'cd /d' : 'cd';
+        exec(sprintf('%s %s && tar --exclude=./vendor --exclude=./storage --exclude=./.env -cf - . | tar -xf - -C %s', $cd, escapeshellarg($source), escapeshellarg($dir)));
+        file_put_contents("$dir/.env", "APP_NAME=\"Cast Starter\"\nAPP_ENV=development\nAPP_DEBUG=true\nDB_CONN=sqlite\nDB_NAME=:memory:\n");
+        mkdir("$dir/storage", 0777, true);
+
+        static $registered = false;
+        if (!$registered) {
+            spl_autoload_register(function (string $class) {
+                if (str_starts_with($class, 'App\\')) {
+                    $file = ($GLOBALS['starter_dir'] ?? '') . '/app/' . str_replace('\\', '/', substr($class, 4)) . '.php';
+                    if (is_file($file)) require $file;
+                }
+            });
+            $registered = true;
+        }
+        $GLOBALS['starter_dir'] = $dir;
+
+        if ($pack !== null) {
+            $script = "$dir/.strip.php";
+            file_put_contents($script, '<?php require ' . var_export(dirname(__DIR__) . '/vendor/autoload.php', true) . ';'
+                . '$app = new Cast\\App\\Application(' . var_export($dir, true) . '); $app->boot();'
+                . 'exit((new Cast\\Console\\Commands\\DemoStripCommand($app))->handle(new Cast\\Console\\Input(["demo:strip", "--pack=' . $pack . '", "--yes"]), new Cast\\Console\\Output(fopen("php://memory", "w+"))));');
+            exec('php ' . escapeshellarg($script) . ' 2>&1', $out, $code);
+            eq(0, $code, implode("\n", $out));
+            unlink($script);
+        }
+        $app = require "$dir/bootstrap/app.php";
+        $app->boot();
+        $app->make('migrator')->migrate();
+        if ($pack === null || str_starts_with($pack, 'auth')) \Cast\Database\SeederRunner::run('UserSeeder');
+        if (!$lazy) \Cast\Core\Config::set('spa.initial', 'inline');
+        return $app;
+    }
+}
+
+if (!function_exists('form')) {
+    function form(string $method, string $uri, array $fields = []): Request
+    {
+        $fields += ['_token' => \Cast\Core\Session::csrfToken()];
+        return new Request($method, $uri, [], http_build_query($fields), ['CONTENT_TYPE' => 'application/x-www-form-urlencoded']);
+    }
+}
+
+if (!function_exists('api')) {
+    function api(string $method, string $uri, array $body = []): Request
+    {
+        return req($method, $uri, $body, ['HTTP_X_CSRF_TOKEN' => \Cast\Core\Session::csrfToken(), 'HTTP_ACCEPT' => 'application/json']);
+    }
+}
+
+if (!function_exists('login_admin')) {
+    function login_admin(): void
+    {
+        $r = handle(form('POST', '/login', ['email' => 'admin@example.com', 'password' => 'password']));
+        eq(302, $r->statusCode());
+    }
+}
 
 /**
  * Register a test case. With `$GLOBALS['cast_collect']` set (the PHPUnit bridge) the case is collected and run later by

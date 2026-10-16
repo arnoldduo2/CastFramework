@@ -152,6 +152,35 @@ test('make:component: the generated file is documented and round-trips through t
     eq(0, $code, $out);
 });
 
+test('make:component --extends creates a component inheriting from a base component', function () {
+    $dir = init_dir();
+    cast_in($dir, 'init');
+    cast_in($dir, 'make:component Btns.Button --props="label:string=Button,variant:string=primary"');
+    [$code, $out] = cast_in($dir, 'make:component Btns.IconButton --extends=Btns.Button --props="icon:string,badge:?string"');
+    eq(0, $code, $out);
+    $file = "$dir/src/resources/views/components/btns/icon-button.cast.php";
+    ok(is_file($file), 'extending file created');
+    $content = (string) file_get_contents($file);
+    has('@props extends::Btns.Button', $content);
+    has('string $icon;', $content);
+    has('?string $badge = null;', $content);
+    has('<Btns.Button {...$props}>', $content);
+
+    // Self extension is rejected
+    [$codeSelf, $outSelf] = cast_in($dir, 'make:component Btns.Self --extends=Btns.Self');
+    eq(1, $codeSelf);
+    has('cannot extend itself', $outSelf);
+
+    // Invalid extends format is rejected
+    [$codeBad, $outBad] = cast_in($dir, 'make:component Btns.Bad --extends=invalid-tag');
+    eq(1, $codeBad);
+    has('must be a valid component tag name', $outBad);
+
+    // components --check passes
+    [$codeCheck, $outCheck] = cast_in($dir, 'components --check');
+    eq(0, $codeCheck, $outCheck);
+});
+
 test('init: writes AGENTS.md once and never overwrites it', function () {
     $dir = init_dir();
     cast_in($dir, 'init');

@@ -2,6 +2,28 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
+## 3.1.0
+
+Minor release integrating **CastTemplateEngine 2.0.0**, strictly-typed `@props` directive, component inheritance, CLI AST tooling, and standalone Language Server / Tree-sitter intelligence.
+
+- **Upgraded to `anode/cast-template-engine` `^2.0.0`**: bumped minimum requirement in `composer.json`.
+- **Strictly-Typed `@props` Directive & Inheritance**:
+  - Components declare typed props with `@props { type $name [ = default ]; }` and inherit props via `@props extends::Components.Base { ... }`.
+  - Updated starter, demo, and init components (`Btns.Button`, `Card`, `CrudBanner`, `Btns.AddNew`) to modern `@props` syntax and directives.
+- **Component Docs & Parity**:
+  - `Cast\Support\ComponentDocs` now scans both docblocks and `@props` blocks with precedence for `@props` types/defaults while preserving hand-written docblock descriptions.
+  - `php cast components --check` verifies declared `@props` are used in template markup.
+- **CLI Commands**:
+  - Added `php cast engine:ast <file>` for inspecting template syntax tree, declared `@props`, component invocations, and scoped CSS classes.
+  - Added `php cast engine:lint [--json]` (and `php cast engine:check --json`) for machine-readable JSON compiler diagnostics for IDEs and AI coding tools.
+- **Editor Support & Tooling**:
+  - `php cast editor:install` now supports the dedicated Language Server Protocol (`cast-language-server`) and Tree-sitter grammar (`tree-sitter-cast`) across multiple editors (VS Code, Antigravity IDE, Cursor, Windsurf).
+- **Layout & SPA Resilience**:
+  - Synced `@styles` in `<head>` and `@scripts` before `</body>` across starter layouts and stubs.
+  - Partial SPA transitions preserve component scoped styles and scripts buffered during render.
+- **Documentation**:
+  - Rebuilt `/cdocs` site with new engine v2.0 guides, `@props` reference, and CLI tooling.
+
 ## 3.0.0
 
 Major release: the `.cast.php` editor extension and its reference docs now live solely in `anode/cast-template-engine`, which this

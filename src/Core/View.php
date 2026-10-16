@@ -8,6 +8,7 @@ use Cast\App\Application;
 use Cast\Contracts\ViewRenderer;
 use Cast\Http\Request;
 use Cast\Http\Response;
+use CastTemplateEngine\Assets;
 use CastTemplateEngine\CastTemplate;
 use Throwable;
 
@@ -162,6 +163,8 @@ final class View implements ViewRenderer
             'css' => [],
             'js' => [],
             'own' => [],
+            'styles' => [],
+            'scripts' => [],
             'guard' => $guard,
             'url' => $request->uri(),
             'page' => $page['key'],
@@ -191,6 +194,15 @@ final class View implements ViewRenderer
             $payload['title'] ??= $this->defaultTitle($data);
             ['css' => $payload['css'], 'js' => $payload['js']] = $this->assets($data);
             $payload['own'] = [...$payload['css'], ...$payload['js']];
+            // a partial render never includes the layout (header.cast.php/footer.cast.php), so @styles/@scripts -
+            // which live there - never run for this response; without this, every @css()/@script() a component on
+            // this partial buffered via Assets::addStyle()/addScript() during the render just above would be
+            // silently discarded, and the client would have nothing to show for it (the symptom: a component's
+            // scoped CSS/JS works on the very first full page load, then disappears after navigating away and back
+            // via SPA nav). id => content, same ids CastTemplateEngine\Directives computes at compile time (stable,
+            // content-hashed - see cast.module.js's own injectComponentStyle()/Script(), which dedupe by this id).
+            $payload['styles'] = Assets::getStyles();
+            $payload['scripts'] = Assets::getScripts();
             return Response::success('', $payload, $status);
         }
 
@@ -206,6 +218,13 @@ final class View implements ViewRenderer
         $payload['js'] = $document['js'];
         $own = $this->assets($data);   // the page's own files: the client removes them when it leaves the page
         $payload['own'] = [...$own['css'], ...$own['js']];
+        // renderWithLayout() just ran @styles/@scripts, but their <style>/<script> output lives in <head> (and,
+        // for @scripts, a <script> near </body> that a client-side innerHTML assignment never executes anyway) -
+        // extractDocument() only keeps what was inside <body>, so neither survives into $document['body'] above.
+        // Assets::getStyles()/getScripts() still have the same buffers renderStyles()/renderScripts() just read
+        // from (they only read the buffers, never clear them), so this is the same fix as the partial branch above.
+        $payload['styles'] = Assets::getStyles();
+        $payload['scripts'] = Assets::getScripts();
         return Response::success('', $payload, $status);
     }
 

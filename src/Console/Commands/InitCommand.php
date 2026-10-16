@@ -249,6 +249,25 @@ final class InitCommand extends Command
     private function configureHandler(Prompt $ask): array
     {
         $o = [];
+        $editor = $ask->choice('Which editor should "Open in editor" links on the error page open?', [
+            'vscode' => 'VS Code',
+            'vscode-insiders' => 'VS Code Insiders',
+            'vscodium' => 'VSCodium',
+            'cursor' => 'Cursor',
+            'phpstorm' => 'PhpStorm',
+            'idea' => 'IntelliJ IDEA',
+            'sublime' => 'Sublime Text',
+            'atom' => 'Atom',
+            'custom' => 'Other (type a custom editor:// URL pattern)',
+            'none' => 'None (no links)',
+        ], 'vscode');
+        if ($editor === 'custom') {
+            // for an editor not listed (e.g. a VS Code fork with its own URL scheme, like Antigravity): any
+            // pattern containing {file} is accepted as-is - see Anode\ErrorHandler\Editor::url(). {line} and
+            // {column} are optional.
+            $editor = (string) $ask->ask('Editor URL pattern, with {file}, {line} and optionally {column}', 'myeditor://open?file={file}&line={line}');
+        }
+        if ($editor !== 'vscode') $o['editor'] = $editor;
         if (!$ask->confirm('Log errors to files?', true)) $o['log_errors'] = false;
         $dir = $ask->ask('Log folder', 'storage/logs');
         if (trim($dir, '/\\') !== 'storage/logs') $o['log_directory'] = trim($dir, '/\\') . '/';

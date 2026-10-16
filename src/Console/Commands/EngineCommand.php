@@ -27,8 +27,20 @@ final class EngineCommand extends Command
             'check' => [
                 'Lint all .cast.php files for syntax errors and missing keys',
                 ['path' => 'Directory to scan (defaults to views folder)'],
+                ['--json' => 'Output structured JSON diagnostics for tools'],
+                ['php cast engine:check' => 'scan views and components', 'php cast engine:check --json' => 'JSON diagnostics']
+            ],
+            'lint' => [
+                'Authoritative compiler check and linting on view files',
+                ['path' => 'File or directory to scan (defaults to views folder)'],
+                ['--json' => 'Output machine-readable JSON diagnostics for IDEs and AI tools'],
+                ['php cast engine:lint' => 'lint all views', 'php cast engine:lint --json' => 'machine-readable diagnostics']
+            ],
+            'ast' => [
+                'Inspect the AST and metadata (props, components, styles) of a .cast.php template',
+                ['file' => 'Path to the .cast.php file to inspect'],
                 [],
-                ['php cast engine:check' => 'scan views and components']
+                ['php cast engine:ast resources/views/app.cast.php' => 'inspect template structure and AST']
             ],
             'compile' => [
                 'Precompile all .cast.php templates into the cache folder',
@@ -66,7 +78,7 @@ final class EngineCommand extends Command
     /** @return list<string> */
     public static function actions(): array
     {
-        return ['build', 'check', 'compile', 'clear', 'snippets', 'editor'];
+        return ['build', 'check', 'compile', 'clear', 'snippets', 'editor', 'ast', 'lint'];
     }
 
     public function handle(Input $input, Output $output): int
@@ -78,11 +90,11 @@ final class EngineCommand extends Command
             $cmd = \CastTemplateEngine\Console\CommandRegistry::get("engine:{$this->action}");
             if ($cmd !== null) {
                 $args = $input->arguments();
-                // If path argument is not provided for build or check, default to framework base or views path
+                // If path argument is not provided for build or check/lint, default to framework base or views path
                 if (empty($args)) {
                     if ($this->action === 'build') {
                         $args = [$this->app->basePath()];
-                    } elseif ($this->action === 'check') {
+                    } elseif ($this->action === 'check' || $this->action === 'lint') {
                         $args = [$this->app->viewsPath()];
                     }
                 }

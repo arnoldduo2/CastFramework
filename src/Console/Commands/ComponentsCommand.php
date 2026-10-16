@@ -140,20 +140,21 @@ final class ComponentsCommand extends Command
             $spec = $c['spec'];
             $source = (string) file_get_contents($c['file']);
             $code = (string) preg_replace('/\/\*\*.*?\*\//s', '', $source);   // the file without its docblocks
+            $codeWithoutProps = (string) preg_replace('/@props\b(?:\s+extends::[A-Za-z_][\w.]*)?\s*\{.*?\}/s', '', $code);
             $documented = array_filter($spec['props'], fn($p) => !$p['inferred']);
 
             if ($spec['description'] === '') $problems[] = "<{$c['tag']}>: no description (add a docblock summary)";
             foreach ($documented as $p) {
-                if (!preg_match('/\$' . preg_quote($p['name'], '/') . '\b/', $code)) {
+                if (!preg_match('/\$' . preg_quote($p['name'], '/') . '\b/', $codeWithoutProps)) {
                     $problems[] = "<{$c['tag']}>: \"{$p['name']}\" is documented but the file never uses it";
                 }
             }
             if ($documented) {
                 foreach ($spec['props'] as $p) {
-                    if ($p['inferred']) $problems[] = "<{$c['tag']}>: \"{$p['name']}\" has a default (`??=`) but no @var line";
+                    if ($p['inferred']) $problems[] = "<{$c['tag']}>: \"{$p['name']}\" has a default (`??=`) but no @var or @props line";
                 }
             } elseif ($spec['props']) {
-                $problems[] = "<{$c['tag']}>: props are not documented (add @var lines)";
+                $problems[] = "<{$c['tag']}>: props are not documented (add @props block or @var lines)";
             }
         }
         if (!$problems) {

@@ -47,6 +47,7 @@
     nav: null, // AbortController of the navigation in flight
     pending: null, // the key of the page being swapped in (its script registers itself under this key)
     scripts: new Set(), // script URLs that have already run
+    componentAssets: new Set(), // "style:id"/"script:id" of @css()/@script() output already injected (see syncComponentAssets)
     started: false,
     depth: 0,
   };
@@ -320,6 +321,48 @@
     for (const url of js) await loadScript(url, pageLevel(url)); // in order: page modules may depend on each other
   }
 
+  /**
+   * A partial-navigation envelope's `styles`/`scripts` (id => content - see Cast\Core\View::castResponse(), the
+   * server side of this): a page's own @css()/@script() output, which never reaches the client any other way for
+   * an in-app navigation (@styles/@scripts, the directives that normally flush it, live in the layout, and neither
+   * a partial render nor a whole-page swap's own <head>/body-wrapped inline tags survive the trip - see View.php's
+   * own comments on each). Injected at most once per id, ever: ids are content hashes
+   * (CastTemplateEngine\Directives computes the same id server-side at compile time for the same component body),
+   * so navigating to a page whose component was already injected on an earlier visit is recognised and skipped.
+   * This is deliberate, not just an optimisation - a <style> tag would be harmless to re-add, but a <script>
+   * block almost always registers a delegated listener via handleEvent()/Cast.on(), which has no "off": re-running
+   * it on every navigation would silently stack up duplicate listeners (a click firing its handler twice, three
+   * times, and so on, the more a page is revisited). For the same reason, an id that stops appearing is never
+   * removed either - the delegated listener it registered survives its own elements leaving the DOM regardless,
+   * so there would be nothing left to actually clean up by removing the tag. Split into two functions (not one)
+   * so `swap()` can run styles *before* its own DOM swap (avoids a flash of unstyled content) and scripts *after*
+   * it (a whole-page swap's `target` is document.body itself - injecting a script into document.body before that
+   * same swap overwrites it immediately after, via target.innerHTML).
+   */
+  function syncComponentStyles(env) {
+    for (const [id, css] of Object.entries(env.styles || {})) {
+      const key = "style:" + id;
+      if (state.componentAssets.has(key)) continue;
+      state.componentAssets.add(key);
+      const el = document.createElement("style");
+      el.setAttribute("data-cast-component", id);
+      el.textContent = css;
+      document.head.appendChild(el);
+    }
+  }
+
+  function syncComponentScripts(env) {
+    for (const [id, js] of Object.entries(env.scripts || {})) {
+      const key = "script:" + id;
+      if (state.componentAssets.has(key)) continue;
+      state.componentAssets.add(key);
+      const el = document.createElement("script");
+      el.setAttribute("data-cast-component", id);
+      el.textContent = "(function () {\n" + js + "\n})();";
+      document.body.appendChild(el);
+    }
+  }
+
   // ------------------------------------------------------------ page lifecycle
 
   /**
@@ -468,6 +511,7 @@
     state.pending = data.page || null;
     try {
       await syncAssets(data);
+      syncComponentStyles(data); // before the swap: in <head>, never wiped by it either way, and avoids a flash of unstyled content
     } finally {
       state.pending = null;
     }
@@ -476,6 +520,9 @@
     target.innerHTML = data.html; // server-rendered markup (inline scripts are not run: page code belongs in the page module)
     target.removeAttribute("data-cast-lazy");
     target.removeAttribute("aria-busy");
+    // after the swap, not before: for a whole-page swap `target` is document.body itself, and a component script
+    // injected into document.body *before* this line would immediately be wiped by this same innerHTML assignment
+    syncComponentScripts(data);
     if (data.title != null) document.title = data.title;
     if (data.guard != null) state.guard = data.guard;
     if (data.csrf) setToken(data.csrf);
@@ -549,8 +596,8 @@
    *   push: false to skip the history entry; replace: true to replace the current one
    */
   async function load(path, opts = {}) {
-    const url = window.Cast.url(path);
-    if (!sameOrigin(url)) return void location.assign(url);
+    const href = url(path);
+    if (!sameOrigin(href)) return void location.assign(href);
 
     if (state.nav) state.nav.abort();
     const controller = (state.nav = new AbortController());
@@ -561,7 +608,7 @@
     busy(true);
     let res;
     try {
-      const response = await fetch(url, {
+      const response = await fetch(href, {
         method: "GET",
         credentials: "same-origin",
         signal: controller.signal,
@@ -596,14 +643,14 @@
       res.raw &&
       opts.type !== "modal" &&
       !(res.http >= 400) &&
-      !recentFallback(url)
+      !recentFallback(href)
     )
-      return void location.assign(url);
+      return void location.assign(href);
 
     const data = res.data || {};
     if (res.status === "error") {
-      if (data.type === "reload") return void location.assign(data.url || url);
-      return showError(type === "page" ? $(config.root) : $(target), res, url);
+      if (data.type === "reload") return void location.assign(data.url || href);
+      return showError(type === "page" ? $(config.root) : $(target), res, href);
     }
 
     switch (data.type) {
@@ -612,11 +659,11 @@
           ? load(data.url, { replace: opts.replace })
           : void location.assign(data.url);
       case "reload":
-        return void location.assign(data.url || url);
+        return void location.assign(data.url || href);
       case "modal":
         return openModal(res);
       default:
-        return swap(res, Object.assign({ url }, opts));
+        return swap(res, Object.assign({ url: href }, opts));
     }
   }
 
@@ -756,21 +803,11 @@
     }
 
     const view = $(config.view);
-    if (!view || !view.hasAttribute("data-cast-page")) return; // not a Cast page
 
-    const key = view.getAttribute("data-cast-page");
-    state.key = key;
-    if (view.hasAttribute("data-cast-lazy")) {
-      load(
-        view.getAttribute("data-cast-url") ||
-          location.pathname + location.search,
-        { replace: true, push: false, initial: true },
-      );
-    } else {
-      mount(key, view, "partial");
-    }
-
-    // Native Node-free live reload in development mode (non-blocking, 0ms lag)
+    // Native Node-free live reload in development mode (non-blocking, 0ms lag). Runs on every page, not only
+    // Cast SPA pages (data-cast-page, checked below) - a plain CastFramework page still wants its views/CSS/JS
+    // watched. Previously this block sat after the "not a Cast page" early return below, so it silently never
+    // ran at all on a page that isn't SPA-mounted.
     if (
       settings.castDev === "1" &&
       settings.castHmr !== "vite" &&
@@ -811,7 +848,11 @@
                       link.href = u.href;
                     });
                 } else if (data.type === "view") {
-                  if (typeof load === "function") {
+                  if (
+                    view &&
+                    view.hasAttribute("data-cast-page") &&
+                    typeof load === "function"
+                  ) {
                     load(location.pathname + location.search, {
                       replace: true,
                       push: false,
@@ -846,6 +887,20 @@
       });
 
       poll();
+    }
+
+    if (!view || !view.hasAttribute("data-cast-page")) return; // not a Cast page
+
+    const key = view.getAttribute("data-cast-page");
+    state.key = key;
+    if (view.hasAttribute("data-cast-lazy")) {
+      load(
+        view.getAttribute("data-cast-url") ||
+          location.pathname + location.search,
+        { replace: true, push: false, initial: true },
+      );
+    } else {
+      mount(key, view, "partial");
     }
   }
 
