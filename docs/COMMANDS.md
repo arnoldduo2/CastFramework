@@ -333,6 +333,74 @@ php cast engine:editor <subcommand>
 php cast engine:editor install   # install editor support
 ```
 
+## `engine:editor-install`
+
+Install the CastFramework extension and/or the global cast-language-server, with a requirements check.
+
+```
+php cast engine:editor-install [target] [options]
+```
+
+| Argument | |
+| --- | --- |
+| `target` (optional) | extension, lsp, or all (default: all) |
+
+| Option | |
+| --- | --- |
+| `--code, --cursor, --insiders, --vscodium, --antigravity, --windsurf` | only this editor, bare flag, repeatable (default: every editor found) |
+| `--yes` | assume yes for prompts (e.g. the Phpactor download) |
+| `--no-phpactor` | skip the Phpactor download prompt |
+| `--dry-run` | show what would happen without changing anything |
+
+```bash
+php cast engine:editor-install   # extension + LSP server, with a requirements check
+php cast engine:editor-install lsp --yes   # just the LSP server, auto-confirming Phpactor
+```
+
+## `engine:editor-uninstall`
+
+Uninstall the CastFramework extension and/or the global cast-language-server.
+
+```
+php cast engine:editor-uninstall [target] [options]
+```
+
+| Argument | |
+| --- | --- |
+| `target` (optional) | extension, lsp, or all (default: all) |
+
+| Option | |
+| --- | --- |
+| `--code, --cursor, --insiders, --vscodium, --antigravity, --windsurf` | only this editor, bare flag, repeatable (default: every editor found) |
+| `--dry-run` | show what would happen without changing anything |
+
+```bash
+php cast engine:editor-uninstall   # remove the extension and the global LSP server
+```
+
+## `engine:editor-update`
+
+Update the CastFramework extension and/or the global cast-language-server.
+
+```
+php cast engine:editor-update [target] [options]
+```
+
+| Argument | |
+| --- | --- |
+| `target` (optional) | extension, lsp, or all (default: all) |
+
+| Option | |
+| --- | --- |
+| `--code, --cursor, --insiders, --vscodium, --antigravity, --windsurf` | only this editor, bare flag, repeatable (default: every editor found) |
+| `--yes` | assume yes for prompts |
+| `--no-phpactor` | skip the Phpactor download prompt |
+| `--dry-run` | show what would happen without changing anything |
+
+```bash
+php cast engine:editor-update   # update the extension and the LSP server
+```
+
 ## `engine:lint`
 
 Authoritative compiler check and linting on view files.

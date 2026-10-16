@@ -8,8 +8,10 @@ use Cast\App\Application;
 use Cast\Console\{Command, Input, Output};
 
 /**
- * `engine:build`, `engine:check`, `engine:compile`, `engine:clear`, `engine:snippets`, `engine:editor`:
- * CastTemplateEngine integration commands for CastFramework.
+ * `engine:build`, `engine:check`, `engine:compile`, `engine:clear`, `engine:snippets`, `engine:editor`,
+ * `engine:ast`, `engine:lint`, `engine:editor-install`, `engine:editor-update`, `engine:editor-uninstall`:
+ * CastTemplateEngine integration commands for CastFramework. Every action is a pure pass-through to the
+ * matching `CastTemplateEngine\Console\CommandRegistry` entry (see handle()) - no logic is duplicated here.
  */
 final class EngineCommand extends Command
 {
@@ -66,6 +68,24 @@ final class EngineCommand extends Command
                 [],
                 ['php cast engine:editor install' => 'install editor support']
             ],
+            'editor-install' => [
+                'Install the CastFramework extension and/or the global cast-language-server, with a requirements check',
+                ['target?' => 'extension, lsp, or all (default: all)'],
+                ['--code, --cursor, --insiders, --vscodium, --antigravity, --windsurf' => 'only this editor, bare flag, repeatable (default: every editor found)', '--yes' => 'assume yes for prompts (e.g. the Phpactor download)', '--no-phpactor' => 'skip the Phpactor download prompt', '--dry-run' => 'show what would happen without changing anything'],
+                ['php cast engine:editor-install' => 'extension + LSP server, with a requirements check', 'php cast engine:editor-install lsp --yes' => 'just the LSP server, auto-confirming Phpactor']
+            ],
+            'editor-update' => [
+                'Update the CastFramework extension and/or the global cast-language-server',
+                ['target?' => 'extension, lsp, or all (default: all)'],
+                ['--code, --cursor, --insiders, --vscodium, --antigravity, --windsurf' => 'only this editor, bare flag, repeatable (default: every editor found)', '--yes' => 'assume yes for prompts', '--no-phpactor' => 'skip the Phpactor download prompt', '--dry-run' => 'show what would happen without changing anything'],
+                ['php cast engine:editor-update' => 'update the extension and the LSP server']
+            ],
+            'editor-uninstall' => [
+                'Uninstall the CastFramework extension and/or the global cast-language-server',
+                ['target?' => 'extension, lsp, or all (default: all)'],
+                ['--code, --cursor, --insiders, --vscodium, --antigravity, --windsurf' => 'only this editor, bare flag, repeatable (default: every editor found)', '--dry-run' => 'show what would happen without changing anything'],
+                ['php cast engine:editor-uninstall' => 'remove the extension and the global LSP server']
+            ],
             default => [
                 'CastTemplateEngine tool',
                 [],
@@ -78,7 +98,7 @@ final class EngineCommand extends Command
     /** @return list<string> */
     public static function actions(): array
     {
-        return ['build', 'check', 'compile', 'clear', 'snippets', 'editor', 'ast', 'lint'];
+        return ['build', 'check', 'compile', 'clear', 'snippets', 'editor', 'ast', 'lint', 'editor-install', 'editor-update', 'editor-uninstall'];
     }
 
     public function handle(Input $input, Output $output): int

@@ -801,7 +801,19 @@ Then reload the editor window. It gives you:
 
 `--editor=code|insiders|vscodium|cursor|antigravity|windsurf` picks one editor, `--uninstall` removes it (there is no `--dir=PATH` any more — install to a named or auto-detected editor). The folders it searches for components
 come from the `cast.componentsPath`, `cast.viewsPath` and `cast.resourcesPath` settings (and `config/view.php`). Details and source: [CastTemplateEngine on GitHub](https://github.com/arnoldduo2/CastTemplateEngine).
-A Marketplace extension (with prop completion, diagnostics and rename) will follow as the framework grows.
+
+For richer, PHP-aware intelligence (real diagnostics, go-to-definition, formatting, optional PHP bridging via Phpactor) use
+`php cast engine:editor-install` instead — a superset that runs a requirements check (PHP, Node.js, npm) and installs both
+the extension above and the global `cast-language-server`:
+
+```bash
+php cast engine:editor-install              # extension + language server, every editor found, with a requirements check
+php cast engine:editor-install lsp --yes    # just the language server, auto-confirming the optional Phpactor download
+php cast engine:editor-install extension --cursor   # just the extension, into Cursor only
+php cast engine:editor-update               # update both; php cast engine:editor-uninstall removes both
+```
+
+See [Language Server & Tree-Sitter](docs/TEMPLATE-ENGINE.md#language-server--tree-sitter) for what the language server adds on top of the extension alone.
 
 ### Component docs: props, types, agents
 
@@ -909,6 +921,7 @@ Output is coloured on a terminal (green commands, blue arguments, orange heading
 | `make:migration`, `migrate [--seed --pretend --step --force]`, `migrate:baseline`, `migrate:sync`, `db:sequence`, `components`, `make:component`, `migrate:rollback [--step=N]`, `migrate:reset`, `migrate:refresh`, `migrate:fresh`, `migrate:status` | [Migrations](#migrations)                                                                                                                                                                         |
 | `make:seeder`, `db:seed [--class=]`                                                                                                                                                                                                                    | Seeders                                                                                                                                                                                           |
 | `editor:install [--editor=] [--uninstall]`                                                                                                                                                                                                             | Alias for `engine:editor install` — the editor extension for `.cast.php` views, maintained by CastTemplateEngine                                                                                 |
+| `engine:editor-install [extension\|lsp\|all] [--yes] [--no-phpactor] [--dry-run]`, `engine:editor-update`, `engine:editor-uninstall`                                                                                                                  | Extension + global `cast-language-server`, with a requirements check (Node.js, npm, optional Phpactor) — see [Language Server & Tree-Sitter](docs/TEMPLATE-ENGINE.md#language-server--tree-sitter) |
 | `ide:helpers [--path=]`                                                                                                                                                                                                                                | Write `_ide_helpers.php` so the editor knows the global helpers (fixes "Undefined function 'htchars'")                                                                                            |
 | `views:check [--fix]`                                                                                                                                                                                                                                  | Find views that start with `declare(strict_types=1);` (PHP refuses it inside a template)                                                                                                          |
 | `docs:build [--source --readme --out --check]`                                                                                                                                                                                                         | Build the documentation site (`data.js` + viewer) from markdown ([Writing the docs](docs/WRITING-DOCS.md))                                                                                        |

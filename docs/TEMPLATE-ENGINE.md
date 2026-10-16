@@ -241,7 +241,7 @@ for every editor snippet trigger.
 - **Cache:** compiled views are written to `storage/framework/views`. In development a changed view is recompiled; in production set
   `view.check_modified` false for a little more speed and run `php cast views:clear` (or `deploy:optimize`) when you deploy.
 - **Deploy:** `php cast deploy:optimize` clears compiled views and prepares production assets.
-- **Editor:** `php cast editor:install` (alias for `php cast engine:editor install`) adds highlighting, Ctrl+click to a component's file, diagnostics, and prop completion. The extension itself is built and maintained by CastTemplateEngine, not CastFramework.
+- **Editor:** `php cast editor:install` (alias for `php cast engine:editor install`) adds highlighting, Ctrl+click to a component's file, diagnostics, and prop completion. For the full Language Server + Tree-sitter setup too (richer, PHP-aware intelligence — see [Language Server & Tree-Sitter](#language-server--tree-sitter)), use `php cast engine:editor-install` instead: it runs a requirements check (Node.js, npm, optional Phpactor for PHP-bridging) and installs both the extension and the global `cast-language-server`. `engine:editor-update`/`engine:editor-uninstall` mirror it. All of these are built and maintained by CastTemplateEngine, not CastFramework.
 
 ---
 

@@ -2,6 +2,20 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
+## 4.1.0
+
+Minor release: exposes CastTemplateEngine's full editor install family (extension + language server, with a
+requirements check) through CastFramework's own console, as pure aliases.
+
+- **`engine:editor-install`, `engine:editor-update`, `engine:editor-uninstall`**: new `EngineCommand` actions,
+  pass-through to the matching `CastTemplateEngine\Console\CommandRegistry` entries (no logic duplicated in
+  CastFramework, same pattern as every other `engine:*` alias). Installs/updates/removes both the VS Code-family
+  extension and the global `cast-language-server`, with a requirements check (PHP, Node.js, npm, optional
+  Phpactor for PHP-bridging) and `--yes`/`--no-phpactor`/`--dry-run`/per-editor flags. `editor:install` (the
+  simpler, extension-only alias from 3.0.0) is unchanged.
+- **Docs**: `docs/TEMPLATE-ENGINE.md`'s "Editor:" bullet and `README.md`'s "Editor support" section now cover
+  both the simple and full install paths; `docs/COMMANDS.md` regenerated for the three new commands.
+
 ## 4.0.0
 
 Major release integrating **CastTemplateEngine `^2.0.0`** (itself a major version, bringing the strictly-typed `@props`
