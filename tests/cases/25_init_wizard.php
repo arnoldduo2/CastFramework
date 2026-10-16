@@ -31,6 +31,7 @@ test('init asks about the source folder, the front end, the error handler and th
         '',               // views, css and js: the default (root, because the source folder is not src)
         'y',              // use the error handler
         'y',              // configure it
+        '',               // editor for "Open in editor" links: the default (vscode)
         'n',              // log errors? no
         'var/log',        // log folder
         'y',              // developer logs
