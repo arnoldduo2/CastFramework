@@ -268,7 +268,7 @@ AJAX endpoints always answer `{status, msg, data}`.
 
 One token per session (`Session::csrfToken()`), renewed on login/logout (`Session::regenerate()`).
 
-- **Forms:** `<?= __csrf() ?>` renders `<input type="hidden" name="_token" ...>`.
+- **Forms:** `@{ __csrf() }` renders `<input type="hidden" name="_token" ...>`.
 - **Ajax:** send the header `X-CSRF-TOKEN` (or `X-XSRF-TOKEN`), or `_token` in the JSON body. Put the token in a `<meta name="csrf-token">`.
 - **Checked centrally** for every **POST, PUT, PATCH and DELETE** route, with `hash_equals` (API requests with a bearer token, or without a session cookie, are the one exception: see [CSRF and cookies on the API](#csrf-and-cookies-on-the-api)). A missing or wrong token is a **419**
   (JSON `{status:'error'}` for ajax, a page otherwise). GET requests never need one.
@@ -349,7 +349,7 @@ php cast make:rule Uppercase
 
 **What happens on failure:** `validate()` throws `ValidationException`. The Kernel answers **422 JSON** `{status:'error', msg, data:{errors:{field:'message'}}}` for ajax/JSON
 requests, and for browser forms it flashes `input_errors` and `old` (without passwords or the token) and redirects back to the referrer.
-In views: `<?php __invalidFeedback('email'); ?>` prints the flashed message once; `Session::peekFlash('old')` has the previous input.
+In views: `@php(__invalidFeedback('email'))` prints the flashed message once; `Session::peekFlash('old')` has the previous input.
 
 **Legacy syntax:** `formValidation(['email' => $email . '|required|email', 'qty' => $qty . '|required|number|3'])` (value, then `required`, `email` or `number`, then a minimum length)
 keeps the old messages and the `input_errors` key.
@@ -528,9 +528,9 @@ resources/js/items/items.module.js
 The controller passes `parentName`, `pageName` and `authguard`; the layout asks for the files:
 
 ```php
-<?= __modules('app', 'css') ?>                       // resources/css/app.css
-<?= __modules("$parentName.$pageName", 'css') ?>     // resources/css/items/items.css  (only if the file exists)
-<?= __modules("$parentName.$pageName", 'js') ?>      // resources/js/items/items.module.js
+@{ __modules('app', 'css') }                         // resources/css/app.css
+@{ __modules("$parentName.$pageName", 'css') }       // resources/css/items/items.css  (only if the file exists)
+@{ __modules("$parentName.$pageName", 'js') }        // resources/js/items/items.module.js
 ```
 
 ```php
@@ -593,10 +593,10 @@ return $this->view('items.items', ['parentName' => 'items', 'pageName' => 'items
 Layout (`resources/views/layouts/header.cast.php`): add the client once in `<head>`, with the page's `authguard`:
 
 ```php
-<meta name="csrf-token" content="<?= htchars(\Cast\Core\Session::csrfToken()) ?>">
-<?= __cast($data['authguard'] ?? '') ?>          <!-- /cast/cast.css and /cast/cast.module.js, served by the framework -->
-<?= __modules('app', 'css') ?>
-<?= __modules("$parentName.$pageName", 'css') ?>
+<meta name="csrf-token" content=@htchars(\Cast\Core\Session::csrfToken())>
+@{ __cast($data['authguard'] ?? '') }            <!-- /cast/cast.css and /cast/cast.module.js, served by the framework -->
+@{ __modules('app', 'css') }
+@{ __modules("$parentName.$pageName", 'css') }
 ```
 
 The page file stays the shell (header, content partial, footer). The partial named `{parentName}.partials.{pageName}` is the _content area_:
@@ -662,7 +662,7 @@ Plain JavaScript, no dependencies. Links and forms are picked up automatically.
 <!-- fill another container -->
 <form method="post" action="/items" data-cast-form>
   <!-- submitted with fetch; 422 errors appear under the fields -->
-  <?= __csrf() ?>
+  @{ __csrf() }
   <input name="name" />
   <p data-cast-message role="alert"></p>
   <!-- other errors (e.g. a wrong password) go here -->
@@ -785,7 +785,11 @@ CORS: only exact origins in `CORS_ALLOWED_ORIGINS` get headers (`Authorization`,
 
 ## Editor support
 
-The VS Code extension for `.cast.php` views is built, tested and shipped by **CastTemplateEngine** (`anode/cast-template-engine`) — the package that owns the `.cast.php` syntax also owns the editor support that teaches editors to understand it. `php cast editor:install` is a thin alias for the engine's own `php cast engine:editor install`; install it from your project:
+The VS Code extension for `.cast.php` views is built, tested and shipped by **CastTemplateEngine** (`anode/cast-template-engine`) — the package that owns the `.cast.php` syntax also owns the editor support that teaches editors to understand it, and both `editor:install` and `engine:editor-install` below are thin aliases for the engine's own commands.
+
+### Installing the extension
+
+`php cast editor:install` is a thin alias for the engine's own `php cast engine:editor install`; install it from your project:
 
 ```bash
 php cast editor:install        # VS Code, Insiders, VSCodium, Cursor, Antigravity, Windsurf: every one it finds
@@ -793,7 +797,7 @@ php cast editor:install        # VS Code, Insiders, VSCodium, Cursor, Antigravit
 
 Then reload the editor window. It gives you:
 
-- **Colours** for component tags (`<Card>`, `<Btns.Button />`), `<Slot name="...">`, props (`title="Hi <?= $name ?>"`, `total={$qty + 1}`, `{...$data}`) and components inside `{ }` values. The file stays a normal PHP file,
+- **Colours** for component tags (`<Card>`, `<Btns.Button />`), `<Slot name="...">`, props (`title="Hi @{ $name }"`, `total={$qty + 1}`, `{...$data}`) and components inside `{ }` values. The file stays a normal PHP file,
   so PHP IntelliSense, Emmet and the HTML features keep working.
 - **Ctrl+click** (Cmd+click on macOS), **F12** and **hover** on a component tag, a view name (`__includes('layouts.header')`, `views('home.home')`), a legacy `Component('btns.add')` or a module
   (`__modules('app.app', 'js')`): the file opens, using the same rules as the engine (`<Form.TextInput>` is `form/text-input`, `form/text_input`, `form/TextInput` or `form/textInput`).
@@ -801,6 +805,8 @@ Then reload the editor window. It gives you:
 
 `--editor=code|insiders|vscodium|cursor|antigravity|windsurf` picks one editor, `--uninstall` removes it (there is no `--dir=PATH` any more — install to a named or auto-detected editor). The folders it searches for components
 come from the `cast.componentsPath`, `cast.viewsPath` and `cast.resourcesPath` settings (and `config/view.php`). Details and source: [CastTemplateEngine on GitHub](https://github.com/arnoldduo2/CastTemplateEngine).
+
+### Installing the extension + language server
 
 For richer, PHP-aware intelligence (real diagnostics, go-to-definition, formatting, optional PHP bridging via Phpactor) use
 `php cast engine:editor-install` instead — a superset that runs a requirements check (PHP, Node.js, npm) and installs both
@@ -1016,7 +1022,7 @@ php cast deploy:optimize      # clears compiled views and lists the OPcache / au
 ## Security notes
 
 - Every value in the query builder is bound; identifiers are validated. Raw SQL goes through `raw()` with bound parameters.
-- Escape output: `<?= htchars($value) ?>`. `<?= ?>` prints raw, and `Request` input is raw too.
+- Escape output: `@{ htchars($value) }`. `@{ }` (like `<?= ?>`) prints raw, and `Request` input is raw too.
 - Compiled views are PHP code: keep `storage/` outside the web root, or deny web access to it. Only render templates you trust.
 - Set `APP_DEBUG=false` in production (`php cast env:check` warns when it is not).
 - Passwords: `Auth::hash()` uses Argon2id (bcrypt as a fallback); the session never stores the hash; a new session id and CSRF token are issued at login.

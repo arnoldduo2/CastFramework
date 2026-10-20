@@ -1,4 +1,4 @@
-<?php
+@php
 /**
  * Generic error page. Variables: $code, $title, $message, $appName, $homeUrl.
  * Override it by creating `errors/error.cast.php` (or `errors/{code}.cast.php`) in your app's views folder.
@@ -12,25 +12,25 @@ $hints = [
     503 => 'The service is temporarily unavailable.',
 ];
 $hint = $hints[$code] ?? '';
-?>
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title><?= htchars($appName) ?> | <?= (int) $code ?> <?= htchars($title) ?></title>
-    <?php __includes('errors._style'); ?>
+    <title>@{ htchars($appName) } | @{ (int) $code } @{ htchars($title) }</title>
+    @php(__includes('errors._style'))
 </head>
 
 <body>
     <main class="card" role="main">
-        <div class="code"><?= (int) $code ?></div>
-        <h1><?= htchars($title) ?></h1>
-        <?php if ($message !== $title) : ?><p><?= htchars($message) ?></p><?php endif ?>
-        <?php if ($hint && $hint !== $message) : ?><p class="hint"><?= htchars($hint) ?></p><?php endif ?>
-        <?php if (!empty($notice)) : ?><p class="hint" role="note"><strong>Development note:</strong> <?= htchars($notice) ?></p><?php endif ?>
-        <a class="btn" href="<?= htchars($homeUrl) ?>">Back to <?= htchars($appName) ?></a>
+        <div class="code">@{ (int) $code }</div>
+        <h1>@{ htchars($title) }</h1>
+        @if ($message !== $title)<p>@{ htchars($message) }</p>@endif
+        @if ($hint && $hint !== $message)<p class="hint">@{ htchars($hint) }</p>@endif
+        @if (!empty($notice))<p class="hint" role="note"><strong>Development note:</strong> @{ htchars($notice) }</p>@endif
+        <a class="btn" href=@htchars($homeUrl)>Back to @{ htchars($appName) }</a>
     </main>
 </body>
 

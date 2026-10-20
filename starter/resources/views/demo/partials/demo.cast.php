@@ -1,7 +1,7 @@
-<?php
+@php
 /** "Demo the Cast Framework" (route /demo, HomeController::demo). In the demo app this route sends you to the demo instead (see routes/web.php). */
 $docs = config('app.env') !== 'production' || config('cdocs.enabled');
-?>
+@endphp
 <section class="hero">
     <span class="chip dot">Live demo</span>
     <h1>See a <em>real app</em> built on it.</h1>
@@ -16,6 +16,6 @@ $docs = config('app.env') !== 'production' || config('cdocs.enabled');
 <p class="muted">Demo login: <code>admin@example.com</code> / <code>password</code>, or register your own account. <code>--force</code> replaces the starter files (routes, config, layouts, this welcome page); your <code>.env</code> is never touched. Starting a new project instead? Run <code>php cast init</code> in an empty folder.</p>
 
 <div class="cta">
-    <a class="btn" href="<?= route('/') ?>">Back to the welcome page</a>
-    <?php if ($docs) : ?><a class="btn btn-ghost" href="<?= route('/cdocs/') ?>" data-cast="off">Read the docs</a><?php endif ?>
+    <a class="btn" href=@route('/')>Back to the welcome page</a>
+    @if ($docs)<a class="btn btn-ghost" href=@route('/cdocs/') data-cast="off">Read the docs</a>@endif
 </div>

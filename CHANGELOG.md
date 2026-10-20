@@ -2,6 +2,32 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
+## 5.0.0
+
+Major release: every view, component, layout and page the framework itself ships now uses CastTemplateEngine's `@`
+directive syntax instead of native `<?php ... ?>`/`<?= ... ?>` tags, and the minimum `anode/cast-template-engine`
+version moves to its `3.0.0` major.
+
+- **Upgraded to `anode/cast-template-engine` `^3.0.0`** (up from `^2.0.0`): bumped minimum requirement in
+  `composer.json`. (The engine's `v3.0.1` tag is docs-only and, due to a version-field mismatch in its own
+  `composer.json`, is not yet resolvable by Composer/Packagist as a distinct version — `^3.0.0` already covers it
+  functionally.) `env:check`'s advisory floor for the package moves from `1.0.3` to `3.0.0` to match.
+- **Every framework-owned `.cast.php` file rewritten to directives**: `src/Resources/views/**` (the demo app:
+  layouts, auth, items, stats, home), `src/Views/**` (error, maintenance, updating and SPA-skeleton pages),
+  `starter/resources/views/**` and their matching `src/Stubs/init/**/*.cast.php.stub` files no longer contain a
+  single `<?php` or `<?= ?>` — `@php ... @endphp`, `@{ expr }`, `@if`/`@foreach`/`@else`/`@endif`, and bare
+  `@route(...)`/`@htchars(...)` attribute values throughout. CastTemplateEngine itself is unchanged and still
+  compiles native PHP tags exactly as before — this is a style migration of CastFramework's own shipped code,
+  not a change to what the engine accepts in your app.
+- **Docs rewritten to match**: `README.md` and `docs/TEMPLATE-ENGINE.md`'s code samples now show `@{ }`/`@route`
+  in place of `<?= ?>`, and `docs/TEMPLATE-ENGINE.md` gained a dedicated **Editor & language server installation**
+  section (previously a single bullet) walking through `editor:install` (extension only) and
+  `engine:editor-install` (extension + language server) separately.
+- **A real compiler quirk to know about if you write similarly compact directives**: `@endif`/`@else`/`@elseif`/
+  `@endforeach`/etc. (and any `@directive`) immediately preceded by an alphanumeric character with no whitespace
+  (e.g. `text@endif`) is misdetected as an email address and left as literal text, so the matching `@if`/`@foreach`
+  never closes. Keep at least one non-alphanumeric character (a space, `>`, punctuation) before a directive.
+
 ## 4.1.0
 
 Minor release: exposes CastTemplateEngine's full editor install family (extension + language server, with a

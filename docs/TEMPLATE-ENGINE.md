@@ -12,7 +12,9 @@ framework: `composer require anode/cast-framework` installs it, and `Cast\Core\V
 never construct the engine yourself. Its own repository (<https://github.com/arnoldduo2/CastTemplateEngine>) is the full reference; this page is what
 you need inside a CastFramework app.
 
-Your templates stay plain PHP: `<?php foreach ?>`, `<?php if ?>` and `<?= ?>` work as they always did. The engine adds:
+Views are plain PHP with a concise `@` directive syntax on top (`@foreach`, `@if`, `@{ expr }` for printing). Raw `<?php foreach ?>`, `<?php if ?>`
+and `<?= ?>` still compile exactly as they always did — the engine never touches them — but every view the framework itself ships (layouts, the
+demo, error pages, starter components) is written with directives, and that's what this page shows. The engine adds:
 - **Component tags, children and named slots**
 - **Strictly-typed `@props` directive and component inheritance (`extends::...`)**
 - **Dynamic expressions as props** (`title={$x}`, `active`)
@@ -34,13 +36,13 @@ be written in four styles (`<Btns.AddNew>` finds `btns/add-new.cast.php`, `add_n
 ```php
 <Card title="Stock summary" total={$total} active>
     <Btns.Button label="Save" variant="primary" />
-    <Slot name="footer">Updated <?= date('H:i') ?></Slot>
+    <Slot name="footer">Updated @{ date('H:i') }</Slot>
 </Card>
 ```
 
 | Prop syntax | Value |
 | --- | --- |
-| `title="Sales"` / `title="Hi <?= $name ?>"` | a string, with PHP echoed inside if you like |
+| `title="Sales"` / `title="Hi @{ $name }"` | a string, with PHP echoed inside if you like |
 | `total={$total}` / `rows={[1, 2]}` / `on={fn() => 1}` | any PHP expression: numbers, arrays, closures |
 | `name={"qty-{$p['qty']}"}` | a string built in PHP |
 | `required` | `true` |
@@ -241,7 +243,39 @@ for every editor snippet trigger.
 - **Cache:** compiled views are written to `storage/framework/views`. In development a changed view is recompiled; in production set
   `view.check_modified` false for a little more speed and run `php cast views:clear` (or `deploy:optimize`) when you deploy.
 - **Deploy:** `php cast deploy:optimize` clears compiled views and prepares production assets.
-- **Editor:** `php cast editor:install` (alias for `php cast engine:editor install`) adds highlighting, Ctrl+click to a component's file, diagnostics, and prop completion. For the full Language Server + Tree-sitter setup too (richer, PHP-aware intelligence — see [Language Server & Tree-Sitter](#language-server--tree-sitter)), use `php cast engine:editor-install` instead: it runs a requirements check (Node.js, npm, optional Phpactor for PHP-bridging) and installs both the extension and the global `cast-language-server`. `engine:editor-update`/`engine:editor-uninstall` mirror it. All of these are built and maintained by CastTemplateEngine, not CastFramework.
+- **Editor:** see [Editor & language server installation](#editor--language-server-installation) below.
+
+---
+
+## Editor & language server installation
+
+Both the editor extension and the language server are built and maintained by CastTemplateEngine, not CastFramework — CastFramework's
+`editor:install` and `engine:editor-install` commands are thin aliases for the engine's own `engine:editor` / `engine:editor-install` commands.
+
+### Installing the extension only
+
+```bash
+php cast editor:install        # VS Code, Insiders, VSCodium, Cursor, Antigravity, Windsurf: every one it finds
+```
+
+Adds syntax highlighting for component tags and directives, Ctrl+click (Cmd+click)/F12/hover to a component's or view's file, and prop/snippet
+completion from docblocks and `@props`. `--editor=code|insiders|vscodium|cursor|antigravity|windsurf` picks one editor, `--uninstall` removes it.
+
+### Installing the extension + language server
+
+```bash
+php cast engine:editor-install              # extension + language server, every editor found, with a requirements check
+php cast engine:editor-install lsp --yes    # just the language server, auto-confirming the optional Phpactor download
+php cast engine:editor-install extension --cursor   # just the extension, into Cursor only
+php cast engine:editor-update               # update both
+php cast engine:editor-uninstall            # remove both
+```
+
+This superset runs a requirements check (PHP, Node.js, npm, and optionally Phpactor for PHP-aware bridging), then installs the extension above
+**and** the global `cast-language-server` — real diagnostics with quick fixes, go-to-definition, document links and formatting from an
+out-of-process Language Server Protocol implementation, with the extension deferring to it once it confirms it is running. See
+[Language Server & Tree-Sitter](#language-server--tree-sitter) for what the LSP adds on top of the extension alone, and run either install
+command again after updating `anode/cast-template-engine` to pick up new syntax.
 
 ---
 
@@ -261,7 +295,7 @@ This page is the framework-specific overview; the engine's own README supplies t
 
 ## Versions
 
-The framework requires `anode/cast-template-engine` `^2.0.0`. Keep it current with:
+The framework requires `anode/cast-template-engine` `^3.0.0`. Keep it current with:
 
 ```bash
 composer update anode/cast-template-engine

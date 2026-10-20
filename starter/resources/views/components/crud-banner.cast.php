@@ -1,15 +1,15 @@
-<?php
+@props {
+    ?string $title = 'Use the framework for CRUD operations';
+}
+@php
 /**
  * Banner shown above the login and register forms: what the demo is for, with links to the docs.
  * A component is a file in resources/views/components: <CrudBanner /> (the file name in kebab-case) is replaced by this file's output.
  * The docblock below is read by the editor extension and by `php cast components` (props, types, descriptions).
  * @var string|null $title The headline (default: "Use the framework for CRUD operations")
  */
-?>
-@props {
-    ?string $title = 'Use the framework for CRUD operations';
-}
-@php($docs = config('app.env') !== 'production' || config('cdocs.enabled'))
+$docs = config('app.env') !== 'production' || config('cdocs.enabled');
+@endphp
 <div class="banner">
     <div>
         <strong>@{ htchars($title) }</strong>

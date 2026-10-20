@@ -7,6 +7,19 @@ description: Moving an app to a newer version, adopting migrations, keeping the 
 
 # Upgrading
 
+## 4.x to 5.0.0
+
+`composer require anode/cast-framework:^5.0` pulls in `anode/cast-template-engine:^3.0.0` (up from `^2.0.0`) — run
+`composer update anode/cast-framework anode/cast-template-engine` and then `php cast env:check`. Nothing in your
+own app has to change: the engine still compiles native `<?php ... ?>`/`<?= ... ?>` tags exactly as before, so
+your existing views keep working untouched. What changed is CastFramework's own shipped views (layouts, the demo,
+error pages, the starter and its stubs) — they were rewritten to use the `@` directive syntax (`@if`, `@foreach`,
+`@{ expr }`, `@php`) instead of raw PHP tags. If you copy from one of those files, or from `README.md`/
+`docs/TEMPLATE-ENGINE.md`'s examples, the copy will now be in directives. One thing worth knowing if you write
+compact one-liners of your own: `@directive` immediately after a letter with no space (e.g. `text@endif`) is
+read as part of an email address, not a directive, and is left as literal text — leave at least one
+non-alphanumeric character (a space or `>`) before it.
+
 ## 1.x to 2.0.0-alpha
 
 `composer require anode/cast-framework:2.0.0-alpha` (a pre-release: Composer needs the exact version, or `"minimum-stability": "alpha"` with `^2.0@alpha`). Nothing you wrote for 1.1 has to change; what is new is additive: error handler 1.3 support (the failing code underlined, *Open in editor* links, readable logs), development errors for SPA and API clients (`data.debug`, the overlay), the dock's error count, module gating, the `@` shorthand in views, deploy commands and the clean demo pack. Run `composer update anode/error-handler anode/cast-template-engine` for the new handler and engine, then `php cast env:check`. Because this is an alpha, later alpha versions can still change things: read the CHANGELOG before each update.

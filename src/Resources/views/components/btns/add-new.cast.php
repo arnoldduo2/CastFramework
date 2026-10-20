@@ -1,4 +1,4 @@
-<?php
+@php
 /**
  * Btns Add New component. Describe what it is for.
  * @var string $label Describe label
@@ -10,7 +10,7 @@ $label ??= 'Add';
 $variant ??= 'primary';
 $href ??= null;
 $block ??= false;
-?>
+@endphp
 <div class="btns-add-new">
-    <?= $children ?>
+    @{ $children }
 </div>
