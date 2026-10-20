@@ -2,7 +2,7 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
-## 5.0.0
+## 5.0.1
 
 Major release: every view, component, layout and page the framework itself ships now uses CastTemplateEngine's `@`
 directive syntax instead of native `<?php ... ?>`/`<?= ... ?>` tags, and the minimum `anode/cast-template-engine`
@@ -67,7 +67,7 @@ SPA navigation fixes and a packaging fix that broke `composer install` outside t
   - Rebuilt `/cdocs` site with new engine v2.0 guides, `@props` reference, and CLI tooling.
 - **Packaging fix**: `composer.json`'s committed local path-repo (for symlinked engine development) made `composer install`
   fatally error in any environment without that exact sibling folder — every CI run, and any real `composer require
-  anode/cast-framework`. Moved to local machine config instead; dropped the redundant `version` field that was failing
+anode/cast-framework`. Moved to local machine config instead; dropped the redundant `version` field that was failing
   `composer validate --strict` on its own warning.
 
 ## 3.0.0

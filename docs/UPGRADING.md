@@ -7,7 +7,7 @@ description: Moving an app to a newer version, adopting migrations, keeping the 
 
 # Upgrading
 
-## 4.x to 5.0.0
+## 4.x to 5.0.1
 
 `composer require anode/cast-framework:^5.0` pulls in `anode/cast-template-engine:^3.0.0` (up from `^2.0.0`) — run
 `composer update anode/cast-framework anode/cast-template-engine` and then `php cast env:check`. Nothing in your
@@ -22,7 +22,7 @@ non-alphanumeric character (a space or `>`) before it.
 
 ## 1.x to 2.0.0-alpha
 
-`composer require anode/cast-framework:2.0.0-alpha` (a pre-release: Composer needs the exact version, or `"minimum-stability": "alpha"` with `^2.0@alpha`). Nothing you wrote for 1.1 has to change; what is new is additive: error handler 1.3 support (the failing code underlined, *Open in editor* links, readable logs), development errors for SPA and API clients (`data.debug`, the overlay), the dock's error count, module gating, the `@` shorthand in views, deploy commands and the clean demo pack. Run `composer update anode/error-handler anode/cast-template-engine` for the new handler and engine, then `php cast env:check`. Because this is an alpha, later alpha versions can still change things: read the CHANGELOG before each update.
+`composer require anode/cast-framework:2.0.0-alpha` (a pre-release: Composer needs the exact version, or `"minimum-stability": "alpha"` with `^2.0@alpha`). Nothing you wrote for 1.1 has to change; what is new is additive: error handler 1.3 support (the failing code underlined, _Open in editor_ links, readable logs), development errors for SPA and API clients (`data.debug`, the overlay), the dock's error count, module gating, the `@` shorthand in views, deploy commands and the clean demo pack. Run `composer update anode/error-handler anode/cast-template-engine` for the new handler and engine, then `php cast env:check`. Because this is an alpha, later alpha versions can still change things: read the CHANGELOG before each update.
 
 ## 0.x to 1.0
 
