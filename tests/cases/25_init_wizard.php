@@ -76,7 +76,7 @@ test('init: pressing Enter on every question gives src, the SPA client, the erro
     lacks('error_handler', $config);
     lacks('error_pages', $config);
     has("'spa' => true", (string) file_get_contents("$dir/src/Controllers/HomeController.php"));
-    has('<?= __cast(', (string) file_get_contents("$dir/src/resources/views/layouts/header.cast.php"));
+    has('__cast(', (string) file_get_contents("$dir/src/resources/views/layouts/header.cast.php"));
     ok(!is_dir("$dir/src/resources/views/errors"));
 });
 

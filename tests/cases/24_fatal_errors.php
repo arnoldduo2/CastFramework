@@ -15,7 +15,11 @@ function fatal_app(): string
 function dev_server_get(string $dir, array $headers): array
 {
     $port = random_int(20000, 40000);
-    $proc = proc_open(sprintf('exec php -S 127.0.0.1:%d -t %s', $port, escapeshellarg("$dir/public")), [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes);
+    $null = PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null';
+    $cmd = PHP_OS_FAMILY === 'Windows'
+        ? sprintf('php -S 127.0.0.1:%d -t %s', $port, escapeshellarg("$dir/public"))
+        : sprintf('exec php -S 127.0.0.1:%d -t %s', $port, escapeshellarg("$dir/public"));
+    $proc = proc_open($cmd, [1 => ['file', $null, 'w'], 2 => ['file', $null, 'w']], $pipes);
     try {
         for ($i = 0; $i < 50 && !@fsockopen('127.0.0.1', $port); $i++) usleep(100000);
         $ctx = stream_context_create(['http' => ['header' => implode("\r\n", $headers), 'ignore_errors' => true, 'timeout' => 10]]);

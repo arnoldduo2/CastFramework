@@ -116,7 +116,7 @@ final class View implements ViewRenderer
             return $content;
         }
 
-        $layoutData = [...$data, 'slot' => $content, 'content' => $content, 'pageView' => $view];
+        $layoutData = [...$data, 'slot' => $content, 'content' => $content, 'children' => $content, 'pageView' => $view];
         return $this->render((string) $layout, $layoutData);
     }
 

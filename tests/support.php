@@ -159,7 +159,9 @@ function test(string $name, callable $fn): void
 
 function eq(mixed $expected, mixed $actual, string $what = ''): void
 {
-    if ($expected !== $actual) {
+    $e = is_string($expected) ? str_replace("\r\n", "\n", $expected) : $expected;
+    $a = is_string($actual) ? str_replace("\r\n", "\n", $actual) : $actual;
+    if ($e !== $a) {
         throw new AssertionError(($what !== '' ? "$what: " : '') . 'expected ' . var_export($expected, true) . ', got ' . var_export($actual, true));
     }
 }

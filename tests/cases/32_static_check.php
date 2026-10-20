@@ -25,7 +25,7 @@ function tiny_server(string $router): array
             break;
         }
     }
-    $proc = proc_open([PHP_BINARY, '-S', "127.0.0.1:$port", "$dir/router.php"], [1 => ['file', '/dev/null', 'w'], 2 => ['file', '/dev/null', 'w']], $pipes, $dir);
+    $proc = proc_open([PHP_BINARY, '-S', "127.0.0.1:$port", "$dir/router.php"], [1 => ['file', PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null', 'w'], 2 => ['file', PHP_OS_FAMILY === 'Windows' ? 'NUL' : '/dev/null', 'w']], $pipes, $dir);
     for ($i = 0; $i < 50; $i++) {
         if (@fsockopen('127.0.0.1', $port, $e, $s, 0.1)) break;
         usleep(100000);
