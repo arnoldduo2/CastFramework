@@ -21,15 +21,7 @@ jobs:
       - run: composer validate --strict
       - run: composer install --no-interaction --no-progress
       - name: PHPUnit
-        run: |
-          vendor/bin/phpunit --testdox-text phpunit-testdox.txt > phpunit-out.txt 2>&1 || {
-            STATUS=$?
-            echo '### PHPUnit Output (PHP ${{ matrix.php }})' >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            cat phpunit-out.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            exit $STATUS
-          }
+        run: vendor/bin/phpunit --testdox-text phpunit-testdox.txt
       - name: The dependency-free runner agrees (smoke check of the fallback)
         if: matrix.php == '8.3'
         run: php tests/run.php
@@ -138,12 +130,4 @@ jobs:
           CAST_TEST_DB_NAME: cast_test
           CAST_TEST_DB_USER: ${{ matrix.db == 'mysql' && 'root' || 'postgres' }}
           CAST_TEST_DB_PASS: root
-        run: |
-          vendor/bin/phpunit --testdox-text phpunit-testdox.txt > phpunit-out.txt 2>&1 || {
-            STATUS=$?
-            echo '### PHPUnit Output (${{ matrix.db }})' >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            cat phpunit-out.txt >> "$GITHUB_STEP_SUMMARY"
-            echo '```' >> "$GITHUB_STEP_SUMMARY"
-            exit $STATUS
-          }
+        run: vendor/bin/phpunit --testdox-text phpunit-testdox.txt
