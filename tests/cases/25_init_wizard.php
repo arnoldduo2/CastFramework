@@ -168,7 +168,7 @@ test('app.error_handler can be true, false or an options array', function () {
     $app = boot_app(['config/app.php' => "<?php return ['error_handler' => ['log_errors' => false, 'log_directory' => 'var/log/', 'enabled' => true]];"]);
     $options = ErrorProvider::options($app);
     eq(false, $options['log_errors']);
-    ok(str_starts_with($options['log_directory'], $app->basePath()) && str_ends_with($options['log_directory'], 'var/log' . DIRECTORY_SEPARATOR), 'folders are relative to the app: ' . $options['log_directory']);
+    ok(str_starts_with($options['log_directory'], $app->basePath()) && str_ends_with($options['log_directory'], 'var' . DIRECTORY_SEPARATOR . 'log' . DIRECTORY_SEPARATOR), 'folders are relative to the app: ' . $options['log_directory']);
     ok(!array_key_exists('enabled', $options), 'the switch is not passed to the package');
     eq('Test', $options['app_name'], 'the rest still comes from the app settings');
 });
@@ -191,7 +191,11 @@ test('init with src: views, css and js live in src/resources, and the app finds 
     has('src/resources/views/components', $agents);
 
     // the framework serves css and js from the same place (static files are answered before the app boots)
-    $out = shell_exec(sprintf('cd %s && php -r %s 2>&1', escapeshellarg($dir), escapeshellarg('require "vendor/autoload.php"; $app = require "bootstrap/app.php"; echo json_encode(Cast\Core\Config::get("static.css"));')));
+    $script = "$dir/.check_static.php";
+    file_put_contents($script, '<?php require "vendor/autoload.php"; $app = require "bootstrap/app.php"; echo json_encode(Cast\Core\Config::get("static.css"));');
+    $cd = DIRECTORY_SEPARATOR === '\\' ? 'cd /d' : 'cd';
+    $out = shell_exec(sprintf('%s %s && php %s 2>&1', $cd, escapeshellarg($dir), escapeshellarg($script)));
+    @unlink($script);
     has('"dir":"src\/resources"', (string) $out);
 });
 
@@ -207,8 +211,8 @@ test('init --resources=root keeps resources/ at the root even with src', functio
 test('init writes .env with every setting and its own APP_KEY, and .env.example with the same settings and no key', function () {
     $dir = init_dir();
     cast_in($dir, 'init -n');
-    $env = (string) file_get_contents("$dir/.env");
-    $example = (string) file_get_contents("$dir/.env.example");
+    $env = str_replace("\r\n", "\n", (string) file_get_contents("$dir/.env"));
+    $example = str_replace("\r\n", "\n", (string) file_get_contents("$dir/.env.example"));
     foreach (['APP_NAME', 'APP_ENV', 'APP_DEBUG', 'APP_KEY', 'APP_TIMEZONE', 'APP_BASE_PATH', 'SESSION_NAME', 'COOKIE_LIFE', 'COOKIE_PATH', 'COOKIE_DOMAIN',
         'COOKIE_SECURE', 'COOKIE_HTTP_ONLY', 'COOKIE_SITE', 'CORS_ALLOWED_ORIGINS', 'DB_CONN', 'DB_NAME'] as $key) {
         has("$key=", $env, "$key in .env");
@@ -224,7 +228,7 @@ test('init writes .env with every setting and its own APP_KEY, and .env.example 
     $demo = init_dir();
     cast_in($demo, 'init --demo --no-migrate -n');
     eq(1, preg_match('/^APP_KEY=base64:/m', (string) file_get_contents("$demo/.env")));
-    eq(1, preg_match('/^APP_KEY=$/m', (string) file_get_contents("$demo/.env.example")));
+    eq(1, preg_match('/^APP_KEY=\r?$/m', (string) file_get_contents("$demo/.env.example")));
     has('COOKIE_SITE=Lax', (string) file_get_contents("$demo/.env.example"));
 });
 

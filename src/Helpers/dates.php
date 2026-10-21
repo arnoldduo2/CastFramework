@@ -6,8 +6,9 @@ if (!function_exists('getDateTime')) {
     /** A date string in the app timezone (`app.timezone`, or a given one): `getDateTime('now', 'Y-m-d')`. */
     function getDateTime(string $dateString = 'now', string $format = 'Y-m-d H:i:s', ?string $timezone = null): string
     {
-        $d = new DateTime($dateString);
-        return $d->setTimezone(new DateTimeZone($timezone ?? (string) config('app.timezone', 'UTC')))->format($format);
+        $tz = new DateTimeZone($timezone ?? (string) config('app.timezone', 'UTC'));
+        $d = new DateTime($dateString, $tz);
+        return $d->setTimezone($tz)->format($format);
     }
 }
 
@@ -40,7 +41,8 @@ if (!function_exists('modifyDate')) {
 if (!function_exists('getMonthLastDay')) {
     function getMonthLastDay(string $dateString = 'now'): string
     {
-        return (new DateTime(getDateTime($dateString)))->modify('last day of this month')->format('Y-m-d H:i:s');
+        $tz = new DateTimeZone((string) config('app.timezone', 'UTC'));
+        return (new DateTime(getDateTime($dateString), $tz))->modify('last day of this month')->format('Y-m-d H:i:s');
     }
 }
 

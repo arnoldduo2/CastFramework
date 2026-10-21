@@ -17,7 +17,7 @@ use RuntimeException;
  */
 final class Application
 {
-    public const VERSION = '5.0.2';
+    public const VERSION = '5.0.3';
 
     private static ?self $instance = null;
 
@@ -324,9 +324,9 @@ final class Application
                 'fonts' => ['dir' => 'public/assets/fonts', 'keep_prefix' => false],
                 'images' => ['dir' => 'public/assets/images', 'keep_prefix' => false],
                 'public' => ['dir' => 'public/assets/vendor', 'keep_prefix' => false],
-                'cast' => ['path' => dirname(__DIR__) . '/Resources', 'keep_prefix' => false],   // /cast/cast.module.js, /cast/cast.css
+                'cast' => ['path' => dirname(__DIR__) . DIRECTORY_SEPARATOR . 'Resources', 'keep_prefix' => false],   // /cast/cast.module.js, /cast/cast.css
                 // the documentation viewer at /cdocs (development only; cdocs.enabled turns it on in production)
-                'cdocs' => ['path' => dirname(__DIR__) . '/Resources/docs', 'keep_prefix' => false, 'index' => 'index.html', 'dev_only' => true],
+                'cdocs' => ['path' => dirname(__DIR__) . DIRECTORY_SEPARATOR . 'Resources' . DIRECTORY_SEPARATOR . 'docs', 'keep_prefix' => false, 'index' => 'index.html', 'dev_only' => true],
             ],
             'cdocs' => ['enabled' => false],
             'hashing' => ['driver' => Env::get('HASH_DRIVER', 'auto'), 'bcrypt' => ['cost' => 12], 'argon' => ['memory' => 65536, 'time' => 4, 'threads' => 1]],

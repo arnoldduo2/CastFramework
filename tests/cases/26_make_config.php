@@ -51,7 +51,7 @@ test('config/error-handler.php is the package\'s options; enabled=false turns it
     $o = \Cast\Services\ErrorProvider::options($app);
     eq(false, $o['log_errors']);
     eq(true, $o['dev_logs']);
-    ok(str_ends_with($o['log_directory'], 'var/log' . DIRECTORY_SEPARATOR));
+    ok(str_ends_with($o['log_directory'], 'var' . DIRECTORY_SEPARATOR . 'log' . DIRECTORY_SEPARATOR));
 
     $generated = console_app();
     cast(['make:config', 'error-handler'], $generated);

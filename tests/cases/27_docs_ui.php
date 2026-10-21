@@ -55,14 +55,21 @@ test('docs builder: front matter, README split, link rewriting, anchors', functi
 });
 
 test('docs: the viewer makes the same heading anchors as the builder (slug() in PHP and in index.html)', function () use ($root) {
-    $node = trim((string) shell_exec('command -v node'));
+    $which = DIRECTORY_SEPARATOR === '\\' ? 'where.exe node 2>NUL' : 'command -v node 2>/dev/null';
+    $node = trim((string) shell_exec($which));
+    if ($node !== '') {
+        $node = explode("\n", str_replace("\r", '', $node))[0];
+    }
     if ($node === '') return ok(true, 'node is not installed: skipped');
-    $html = (string) file_get_contents("$root/src/Resources/docs/index.html");
-    preg_match('/function slug\(t\) \{.*?\}\n/s', $html, $m);
+    $html = str_replace("\r\n", "\n", (string) file_get_contents("$root/src/Resources/docs/index.html"));
+    preg_match('/function slug\(t\) \{.*?\}/s', $html, $m);
     ok(isset($m[0]), 'found slug() in the viewer');
     $headings = ['Legacy databases: `migrate:sync`', 'SPA: pages without full reloads', 'Running on Windows / XAMPP, or in a sub-folder', 'Using another ORM', '1. Install and run', 'make:config <name>'];
-    $script = $m[0] . 'console.log(JSON.stringify(' . json_encode($headings) . '.map(slug)));';
-    $out = shell_exec(escapeshellarg($node) . ' -e ' . escapeshellarg($script));
+    $script = $m[0] . '; console.log(JSON.stringify(' . json_encode($headings) . '.map(slug)));';
+    $tmpJs = sys_get_temp_dir() . '/cast_slug_' . uniqid() . '.js';
+    file_put_contents($tmpJs, $script);
+    $out = shell_exec(escapeshellarg($node) . ' ' . escapeshellarg($tmpJs));
+    @unlink($tmpJs);
     eq(array_map([DocsBuilder::class, 'slug'], $headings), json_decode((string) $out, true));
 });
 

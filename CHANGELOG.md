@@ -2,6 +2,13 @@
 
 This project follows [Semantic Versioning](https://semver.org). From 1.0.0 on, what the README documents (helper names, config keys, contracts, route and middleware specs, response shapes, console commands) changes in a way that breaks apps only in a major version. **2.0.0 is in alpha** (`2.0.0-alpha`): more changes are coming before the stable release, so until 2.0.0 the API can still change between alpha versions.
 
+## 5.0.3
+
+- **Windows CRLF & Environment Key Fix**: `InitCommand::withKey()` now safely handles Windows CRLF line endings without falsely matching `\r` as a key value, ensuring `APP_KEY` is properly generated during `php cast init`.
+- **Timezone Drift Protection**: `getDateTime()` and `getMonthLastDay()` instantiate `DateTime` with explicit `DateTimeZone` instances to eliminate runtime timezone offset drift on non-UTC local systems.
+- **Config & Path Normalization**: Normalized static resource paths in `Application::defaultConfig()` to use `DIRECTORY_SEPARATOR`, aligning with `MakeConfigCommand` stub expectations.
+- **Cross-Platform Test Suite**: Hardened all path and process assertions across the test suite (`01_env_config.php`, `25_init_wizard.php`, `26_make_config.php`, `27_docs_ui.php`), achieving 100% test pass rate on Windows (361/361 assertions).
+
 ## 5.0.2
 
 - **Layout content injection for @children**: View::renderWithLayout() now injects 'children' => \ in \, allowing root layouts (pp.cast.php) and components to render @children without PHP notices or undefined variable fallbacks.

@@ -405,8 +405,8 @@ final class InitCommand extends Command
     private function withKey(string $env): string
     {
         $key = \Cast\Support\Crypt::generateKey();
-        if (preg_match('/^APP_KEY=.+$/m', $env)) return $env;
-        return preg_match('/^APP_KEY=\s*$/m', $env) ? (string) preg_replace('/^APP_KEY=\s*$/m', 'APP_KEY=' . $key, $env, 1) : rtrim($env) . "\nAPP_KEY=$key\n";
+        if (preg_match('/^APP_KEY=[^\s\r\n]+/m', $env)) return $env;
+        return preg_match('/^APP_KEY=[ \t]*\r?$/m', $env) ? (string) preg_replace('/^APP_KEY=[ \t]*\r?$/m', 'APP_KEY=' . $key, $env, 1) : rtrim($env) . "\nAPP_KEY=$key\n";
     }
 
     private function withAppName(string $env, string $name): string

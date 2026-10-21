@@ -91,8 +91,8 @@ test('Config: dot notation get/set/has, defaults and loading a config folder', f
 
 test('Application: path helpers, overrides and the framework default config', function () {
     $app = boot_app(['src/config/app.php' => "<?php return ['name' => 'Custom'];"], ['paths' => ['config' => 'src/config', 'views' => 'src/resources/views']], boot: false);
-    ok(str_ends_with($app->configPath(), 'src/config'));
-    ok(str_ends_with($app->viewsPath('x/y.php'), 'src/resources/views' . DIRECTORY_SEPARATOR . 'x' . DIRECTORY_SEPARATOR . 'y.php'));
+    ok(str_ends_with($app->configPath(), 'src' . DIRECTORY_SEPARATOR . 'config'));
+    ok(str_ends_with(str_replace('\\', '/', $app->viewsPath('x/y.php')), 'src/resources/views/x/y.php'));
     ok(str_ends_with($app->storagePath(), 'storage'));
     ok(is_dir($app->frameworkPath('Views')), 'framework Views folder');
     eq('Custom', Config::get('app.name'), 'app config overrides defaults');
@@ -140,7 +140,7 @@ test('Application: loads the custom helpers folder', function () {
     ]);
     (new Application($dir))->boot();
     ok(function_exists('cast_test_tax'));
-    eq(11.0, round(cast_test_tax(10.0), 2));
+    eq(11.0, round(call_user_func('cast_test_tax', 10.0), 2));
 });
 
 test('Config: an app config file only lists what it changes (merged over the framework defaults)', function () {

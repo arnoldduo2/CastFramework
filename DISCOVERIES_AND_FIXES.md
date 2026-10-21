@@ -455,5 +455,32 @@ Synchronized all discovered fixes from the active development environment (`erp-
    - In `tests/cases/25_init_wizard.php`: updated assertion to match `__cast(`.
    - Verified test suites: **All core migration, static check, fatal error, and wizard tests passing**.
 
+---
+
+## Session 5 Discoveries & Applied Fixes: 100% Test Suite Green (361/361 Passed)
+
+### Scope
+Addressed and resolved all 8 failing tests across the framework suite on Windows, achieving **361/361 passing assertions** on both PHPUnit and the dependency-free runner (`tests/run.php`).
+
+---
+
+### Root Causes Discovered & Fixed
+
+1. **`01_env_config.php` Path Separator Discrepancies**:
+   - `Application::configPath()` and `viewsPath()` normalize to OS-native `DIRECTORY_SEPARATOR` (`\`), whereas tests asserted against hardcoded Unix `/` slashes. Updated to compare with OS-normalized directory separators.
+2. **`11_helpers.php` Timezone Drift in `getMonthLastDay()`**:
+   - `getDateTime()` and `getMonthLastDay()` created `new DateTime($dateString)` without passing the timezone to constructor, defaulting to local PHP `date.timezone` (e.g. UTC+1/UTC+2). Converting midnight in local timezone to UTC shifted the timestamp backwards 1-2 hours to 23:00 of the previous day, corrupting end-of-month calculations. Explicitly passed the target `DateTimeZone` to constructors in `src/Helpers/dates.php`.
+3. **`25_init_wizard.php`**:
+   - `ErrorProvider::options()` path check asserted `str_ends_with(..., 'var/log' . DIRECTORY_SEPARATOR)`, mixing forward and backslashes on Windows. Fixed to `'var' . DIRECTORY_SEPARATOR . 'log' . DIRECTORY_SEPARATOR`.
+   - `shell_exec(cd %s && php -r %s)` failed due to Windows cmd.exe argument mangling with double quotes. Replaced with isolated temp script execution.
+   - `InitCommand::withKey()` regex `^APP_KEY=.+$` matched `\r` as a character in `APP_KEY=\r\n`, falsely assuming a key was already present and returning `.env` without generating `APP_KEY`. Fixed regex to match `[^\s\r\n]+`.
+4. **`26_make_config.php` Static Config Default Path Inconsistency**:
+   - `Application::defaultConfig()` used `dirname(__DIR__) . '/Resources'`, while `MakeConfigCommand` stub used `$app->frameworkPath('Resources')` (`DIRECTORY_SEPARATOR`). Changed `defaultConfig()` in `src/App/Application.php` to use `DIRECTORY_SEPARATOR`.
+5. **`27_docs_ui.php` Stale Documentation Data & Regex Newline Matching**:
+   - `src/Resources/docs/data.js` was stale following the version bump to `5.0.2`; rebuilt with `composer docs`.
+   - Node binary check used `command -v node` which fails on Windows cmd.exe; updated to `where.exe node`.
+   - Regex `function slug\(t\) \{.*?\}\n` failed on `\r\n` line endings. Updated to normalize CRLF.
+
+
 
 
